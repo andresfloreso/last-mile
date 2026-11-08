@@ -72,6 +72,7 @@ Las primeras 13 paradas tienen ventana `09:00`, que corresponde a los clientes
 ## Recrear la semilla desde cero
 
 ```bash
+cp -n .env.example .env   # si aún no tienes .env (compose exige JWT_SECRET, POSTGRES_PASSWORD y REDIS_PASSWORD)
 docker compose down -v && docker compose up --build
 ```
 
