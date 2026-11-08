@@ -1,0 +1,7 @@
+# Perfil "seed" (HU-01) — SOLO desarrollo / demo. Nunca activarlo en producción.
+# Agrega infra/seed/delivery a las ubicaciones de Flyway: su afterMigrate.sql se
+# ejecuta después de cada migrate y carga datos de ejemplo de forma idempotente.
+# En docker-compose la carpeta se monta en /seed; en los tests apunta al repo.
+spring:
+  flyway:
+    locations: classpath:db/migration,filesystem:${SEED_LOCATION:/seed}
