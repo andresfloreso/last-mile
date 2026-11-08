@@ -81,8 +81,10 @@ Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
 
 ```bash
 cp .env.example .env
-# edita .env y define:
+# edita .env y reemplaza los valores reemplaza_...:
 #   JWT_SECRET               clave real de al menos 32 caracteres
+#   POSTGRES_PASSWORD        contraseña de PostgreSQL (y del datasource)
+#   REDIS_PASSWORD           contraseña de Redis
 #   BOOTSTRAP_ADMIN_EMAIL    email del primer ADMIN
 #   BOOTSTRAP_ADMIN_PASSWORD contraseña del primer ADMIN (mín. 8 caracteres)
 
@@ -165,6 +167,15 @@ curl http://localhost:8080/api/tracking/ABC123
   el borde; cada microservicio además vuelve a validar el token (defensa en
   profundidad) y aplica autorización por rol (`ADMIN`, `DISPATCHER`, `DRIVER`,
   `OPERATOR`, `CLIENT`).
+- Sin secretos en el repo: `docker-compose.yml` no trae contraseñas por
+  defecto. `JWT_SECRET`, `POSTGRES_PASSWORD` y `REDIS_PASSWORD` se leen de
+  `.env` (ver `.env.example`) y compose falla con un mensaje claro si falta
+  alguna.
+- *Secret scanning*: el workflow `secret-scan.yml` corre
+  [gitleaks](https://github.com/gitleaks/gitleaks) sobre todo el historial en
+  cada PR. Las exclusiones (placeholders `reemplaza_...` y la semilla de demo)
+  están en `.gitleaks.toml`. Para correrlo en local:
+  `docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 git /repo --config /repo/.gitleaks.toml`
 
 ## Documentación de APIs (OpenAPI)
 
@@ -199,41 +210,54 @@ docker compose down -v && docker compose up --build
 
 ```bash
 # Unitarios + integración (Testcontainers levanta un PostgreSQL real: requiere Docker)
-cd services/auth-service && mvn verify
-cd services/delivery-service && mvn verify
+cd services/auth-service && ./mvnw verify
+cd services/delivery-service && ./mvnw verify
 ```
 
 ## Integración continua (GitHub Actions)
 
-`.github/workflows/ci.yml` corre en cada `pull_request` y en cada `push` a `main`,
-con estos jobs en paralelo:
+`.github/workflows/ci.yml` y `.github/workflows/secret-scan.yml` corren en cada
+`pull_request` y en cada `push` a `main`, con estos jobs en paralelo:
 
 | Job | Qué hace |
 |---|---|
-| `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `mvn -B verify` (unit + integración con Testcontainers) |
+| `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `./mvnw -B verify` (unit + integración con Testcontainers) |
 | `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm run build` |
 | `docker-build (×5)` | Construye las 5 imágenes del compose sin publicarlas |
+| `gitleaks` | Busca secretos en todo el historial de git (config en `.gitleaks.toml`) |
 
 Los `package-lock.json` están versionados: usa `npm ci` (no `npm install`)
 para reproducir exactamente las mismas dependencias que el CI.
 
-### Exigir el CI antes del merge (branch protection)
+### Branch protection en `main` (configurada)
 
-1. En GitHub: **Settings → Branches → Add branch ruleset** (o *Add classic branch protection rule*).
-2. *Target*: rama `main`.
-3. Activa **Require a pull request before merging**.
-4. Activa **Require status checks to pass** y agrega los checks
-   `java (api-gateway)`, `java (auth-service)`, `java (delivery-service)`,
-   `node (services/import-service)`, `node (frontend)` y los 5 `docker-build (...)`.
-   Los checks aparecen en el buscador después de que el workflow corrió al menos una vez.
-5. Activa **Require branches to be up to date before merging** y **Block force pushes**.
+`main` está protegida con *classic branch protection* desde que el repo es
+público:
 
-Con `gh` (equivalente, classic protection):
+- **Pull request obligatorio**: no se puede hacer push directo a `main`
+  (0 aprobaciones requeridas, porque hay un solo mantenedor).
+- **Status checks obligatorios** y rama **al día** con `main` antes del merge
+  (`strict`). Un PR con un check en rojo queda bloqueado.
+- **Aplica también a administradores** (`enforce_admins`).
+- **Sin force-push ni borrado** de `main`.
+
+Checks obligatorios:
+
+| Etapa | Checks |
+|---|---|
+| Desde ya | `gitleaks` |
+| Al mergear el PR de HU-03 (trae `ci.yml` a `main`) | `java (api-gateway)`, `java (auth-service)`, `java (delivery-service)`, `node (services/import-service)`, `node (frontend)` y los 5 `docker-build (...)` |
+
+Los checks de `ci.yml` se exigen recién cuando ese workflow está en `main`:
+si se exigieran antes, los PRs anteriores de la pila nunca los reportarían y
+quedarían bloqueados. Configuración completa (revisa la actual con
+`gh api repos/andresfloreso/last-mile/branches/main/protection`):
 
 ```bash
-gh api -X PUT repos/<owner>/last-mile/branches/main/protection --input - <<'EOF'
+gh api -X PUT repos/andresfloreso/last-mile/branches/main/protection --input - <<'EOF'
 {
   "required_status_checks": { "strict": true, "contexts": [
+    "gitleaks",
     "java (api-gateway)", "java (auth-service)", "java (delivery-service)",
     "node (services/import-service)", "node (frontend)",
     "docker-build (api-gateway)", "docker-build (auth-service)", "docker-build (delivery-service)",
@@ -242,28 +266,48 @@ gh api -X PUT repos/<owner>/last-mile/branches/main/protection --input - <<'EOF'
   "enforce_admins": true,
   "required_pull_request_reviews": { "required_approving_review_count": 0 },
   "restrictions": null,
-  "allow_force_pushes": false
+  "allow_force_pushes": false,
+  "allow_deletions": false
 }
 EOF
 ```
 
-> En repositorios **privados**, las reglas de rama solo se aplican con GitHub
-> Pro, Team o Enterprise. En el plan Free hay que hacer público el repo o
-> cambiar de plan para que el bloqueo sea efectivo.
-
 ## Desarrollo local (sin Docker)
 
 ```bash
-# Backend Java — requiere JDK 21 + Maven
-cd services/auth-service && mvn spring-boot:run
-cd services/delivery-service && mvn spring-boot:run
-cd services/api-gateway && mvn spring-boot:run
+# Backend Java — requiere solo JDK 21 (JAVA_HOME); Maven lo trae el wrapper
+cd services/auth-service && ./mvnw spring-boot:run
+cd services/delivery-service && ./mvnw spring-boot:run
+cd services/api-gateway && ./mvnw spring-boot:run
 
 # import-service — requiere Node 20+
 cd services/import-service && npm ci && npm run dev
 
 # frontend — requiere Node 20+
 cd frontend && npm ci && npm run dev
+```
+
+### Maven Wrapper
+
+Cada servicio Java trae su Maven Wrapper (`mvnw`, `mvnw.cmd` y
+`.mvn/wrapper/maven-wrapper.properties`), que fija **Maven 3.9.9** y verifica
+el SHA-256 de la distribución. La primera ejecución la descarga en
+`~/.m2/wrapper`; no hace falta instalar Maven. Docker y CI también usan el
+wrapper, así que todos compilan con la misma versión.
+
+| Sistema | Comando |
+|---|---|
+| Linux / macOS / Git Bash | `./mvnw verify` |
+| Windows (PowerShell) | `.\mvnw.cmd verify` |
+| Windows (cmd) | `mvnw verify` |
+
+Para actualizar Maven en los tres servicios:
+
+```bash
+for s in api-gateway auth-service delivery-service; do
+  (cd services/$s && ./mvnw -N wrapper:wrapper -Dmaven=<versión>)
+done
+# luego agrega distributionSha256Sum (del .zip) a cada maven-wrapper.properties
 ```
 
 ## Próximos pasos sugeridos

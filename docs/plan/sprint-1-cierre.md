@@ -37,11 +37,11 @@ Mergear en ese orden. Al mergear cada uno, GitHub reapunta el siguiente a
 ## Pendiente
 
 - Revisión y merge de los PRs #6, #7, #8, #10, #13 y #14.
-- **Branch protection:** el repo es privado y el plan Free de GitHub no aplica
-  reglas de rama en repos privados. Hasta que se cambie de plan o se haga
-  público, un PR con el CI en rojo **no queda bloqueado**, solo marcado.
-  La demo de cierre ("un PR con error queda bloqueado por CI") depende de esto.
-- Configurar `.env` real (`JWT_SECRET`, `BOOTSTRAP_ADMIN_*`) en cada ambiente.
+- **Branch protection:** el repo ya es público, así que las reglas de rama se
+  aplican. `gitleaks` es obligatorio desde ya; los checks de `ci.yml` se
+  agregan al mergear #8 (ver README, "Branch protection en `main`").
+- Configurar `.env` real (`JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`,
+  `BOOTSTRAP_ADMIN_*`) en cada ambiente: compose ya no trae valores por defecto.
 
 ## Hallazgos (ver `hallazgos.md`)
 
@@ -67,6 +67,6 @@ Mergear en ese orden. Al mergear cada uno, GitHub reapunta el siguiente a
 5. **HU-04 (cobertura ≥60% en `algorithm/`)** ya tiene una base:
    `SeedDataIT` valida el motor contra patrones conocidos. Falta un harness de
    cobertura (JaCoCo) en el CI.
-6. **Herramientas locales.** La máquina de desarrollo no tiene JDK, Maven ni
-   `gh` instalados (en este sprint se usaron copias portables). Conviene
-   agregar Maven Wrapper (`mvnw`) a cada servicio.
+6. **Herramientas locales.** La máquina de desarrollo no tiene JDK ni `gh`
+   instalados (en este sprint se usaron copias portables). Maven ya no hace
+   falta: cada servicio trae Maven Wrapper (`./mvnw`, `mvnw.cmd`).
