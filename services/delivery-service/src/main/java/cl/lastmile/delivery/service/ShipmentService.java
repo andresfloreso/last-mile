@@ -29,11 +29,11 @@ public class ShipmentService {
     private final GeocodingService geocodingService;
 
     @Transactional
-    public Customer createOrGetCustomer(CustomerRequest req) {
+    public CustomerResponse createOrGetCustomer(CustomerRequest req) {
         if (req.externalCode() != null) {
             var existing = customerRepository.findByExternalCode(req.externalCode());
             if (existing.isPresent()) {
-                return existing.get();
+                return CustomerResponse.from(existing.get());
             }
         }
 
@@ -64,11 +64,11 @@ public class ShipmentService {
                 .longitude(longitude)
                 .externalCode(req.externalCode())
                 .build();
-        return customerRepository.save(customer);
+        return CustomerResponse.from(customerRepository.save(customer));
     }
 
     @Transactional
-    public Shipment createShipment(ShipmentRequest req) {
+    public ShipmentResponse createShipment(ShipmentRequest req) {
         Customer customer = customerRepository.findById(UUID.fromString(req.customerId()))
                 .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado: " + req.customerId()));
 
@@ -86,16 +86,16 @@ public class ShipmentService {
                 .label(req.label())
                 .build();
 
-        return shipmentRepository.save(shipment);
+        return ShipmentResponse.from(shipmentRepository.save(shipment));
     }
 
     @Transactional(readOnly = true)
-    public List<Shipment> findByDate(java.time.LocalDate date) {
-        return shipmentRepository.findByScheduledDate(date);
+    public List<ShipmentResponse> findByDate(java.time.LocalDate date) {
+        return shipmentRepository.findByScheduledDate(date).stream().map(ShipmentResponse::from).toList();
     }
 
     @Transactional
-    public Shipment updateShipment(String shipmentId, ShipmentUpdateRequest req) {
+    public ShipmentResponse updateShipment(String shipmentId, ShipmentUpdateRequest req) {
         Shipment shipment = shipmentRepository.findById(UUID.fromString(shipmentId))
                 .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
 
@@ -105,11 +105,11 @@ public class ShipmentService {
         if (req.label() != null) shipment.setLabel(req.label());
         if (req.notes() != null) shipment.setNotes(req.notes());
 
-        return shipmentRepository.save(shipment);
+        return ShipmentResponse.from(shipmentRepository.save(shipment));
     }
 
     @Transactional
-    public Shipment duplicateShipment(String shipmentId, String newTrackingCode) {
+    public ShipmentResponse duplicateShipment(String shipmentId, String newTrackingCode) {
         Shipment original = shipmentRepository.findById(UUID.fromString(shipmentId))
                 .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
 
@@ -125,7 +125,7 @@ public class ShipmentService {
                 .label(original.getLabel())
                 .build();
 
-        return shipmentRepository.save(copy);
+        return ShipmentResponse.from(shipmentRepository.save(copy));
     }
 
     @Transactional
@@ -142,7 +142,7 @@ public class ShipmentService {
     }
 
     @Transactional
-    public DeliveryAttempt registerAttempt(DeliveryAttemptRequest req) {
+    public DeliveryAttemptResponse registerAttempt(DeliveryAttemptRequest req) {
         Shipment shipment = shipmentRepository.findById(UUID.fromString(req.shipmentId()))
                 .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
         Customer customer = customerRepository.findById(UUID.fromString(req.customerId()))
@@ -165,6 +165,6 @@ public class ShipmentService {
                 : Shipment.ShipmentStatus.RESCHEDULED);
         shipmentRepository.save(shipment);
 
-        return attempt;
+        return DeliveryAttemptResponse.from(attempt);
     }
 }

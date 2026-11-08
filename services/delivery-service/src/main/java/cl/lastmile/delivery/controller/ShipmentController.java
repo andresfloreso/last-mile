@@ -1,9 +1,6 @@
 package cl.lastmile.delivery.controller;
 
 import cl.lastmile.delivery.dto.DeliveryDtos.*;
-import cl.lastmile.delivery.model.Customer;
-import cl.lastmile.delivery.model.DeliveryAttempt;
-import cl.lastmile.delivery.model.Shipment;
 import cl.lastmile.delivery.service.ShipmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,30 +19,30 @@ public class ShipmentController {
     private final ShipmentService shipmentService;
 
     @PostMapping("/customers")
-    public ResponseEntity<Customer> createCustomer(@Valid @RequestBody CustomerRequest req) {
+    public ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CustomerRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(shipmentService.createOrGetCustomer(req));
     }
 
     @PostMapping
-    public ResponseEntity<Shipment> createShipment(@Valid @RequestBody ShipmentRequest req) {
+    public ResponseEntity<ShipmentResponse> createShipment(@Valid @RequestBody ShipmentRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(shipmentService.createShipment(req));
     }
 
     @GetMapping
-    public ResponseEntity<List<Shipment>> listByDate(
+    public ResponseEntity<List<ShipmentResponse>> listByDate(
             @RequestParam("date") @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         return ResponseEntity.ok(shipmentService.findByDate(date));
     }
 
     @PostMapping("/attempts")
-    public ResponseEntity<DeliveryAttempt> registerAttempt(@Valid @RequestBody DeliveryAttemptRequest req) {
+    public ResponseEntity<DeliveryAttemptResponse> registerAttempt(@Valid @RequestBody DeliveryAttemptRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(shipmentService.registerAttempt(req));
     }
 
     /** Edita tipo, paquetes, orden, etiqueta o notas de una parada — panel de detalle tipo Spoke. */
     @PatchMapping("/{shipmentId}")
-    public ResponseEntity<Shipment> updateShipment(
+    public ResponseEntity<ShipmentResponse> updateShipment(
             @PathVariable String shipmentId,
             @RequestBody ShipmentUpdateRequest req
     ) {
@@ -54,7 +51,7 @@ public class ShipmentController {
 
     /** "Duplicar parada" — crea una copia con un nuevo tracking code. */
     @PostMapping("/{shipmentId}/duplicate")
-    public ResponseEntity<Shipment> duplicateShipment(
+    public ResponseEntity<ShipmentResponse> duplicateShipment(
             @PathVariable String shipmentId,
             @RequestParam String newTrackingCode
     ) {
