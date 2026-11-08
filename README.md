@@ -139,16 +139,39 @@ curl http://localhost:8080/api/tracking/ABC123
 ## Desarrollo local (sin Docker)
 
 ```bash
-# Backend Java — requiere JDK 21 + Maven
-cd services/auth-service && mvn spring-boot:run
-cd services/delivery-service && mvn spring-boot:run
-cd services/api-gateway && mvn spring-boot:run
+# Backend Java — requiere solo JDK 21 (JAVA_HOME); Maven lo trae el wrapper
+cd services/auth-service && ./mvnw spring-boot:run
+cd services/delivery-service && ./mvnw spring-boot:run
+cd services/api-gateway && ./mvnw spring-boot:run
 
 # import-service — requiere Node 20+
 cd services/import-service && npm install && npm run dev
 
 # frontend — requiere Node 20+
 cd frontend && npm install && npm run dev
+```
+
+### Maven Wrapper
+
+Cada servicio Java trae su Maven Wrapper (`mvnw`, `mvnw.cmd` y
+`.mvn/wrapper/maven-wrapper.properties`), que fija **Maven 3.9.9** y verifica
+el SHA-256 de la distribución. La primera ejecución la descarga en
+`~/.m2/wrapper`; no hace falta instalar Maven. Docker y CI también usan el
+wrapper, así que todos compilan con la misma versión.
+
+| Sistema | Comando |
+|---|---|
+| Linux / macOS / Git Bash | `./mvnw verify` |
+| Windows (PowerShell) | `.\mvnw.cmd verify` |
+| Windows (cmd) | `mvnw verify` |
+
+Para actualizar Maven en los tres servicios:
+
+```bash
+for s in api-gateway auth-service delivery-service; do
+  (cd services/$s && ./mvnw -N wrapper:wrapper -Dmaven=<versión>)
+done
+# luego agrega distributionSha256Sum (del .zip) a cada maven-wrapper.properties
 ```
 
 ## Próximos pasos sugeridos
