@@ -30,6 +30,28 @@ el orden óptimo de entrega de la ruta del camión.
              └─────────┘          └──────────┘
 ```
 
+## Estructura del repositorio
+
+```
+.
+├── services/                 # Microservicios backend
+│   ├── api-gateway/          # Spring Cloud Gateway
+│   ├── auth-service/         # Spring Boot + Spring Security
+│   ├── delivery-service/     # Spring Boot + PostgreSQL
+│   └── import-service/       # Node 20 + TypeScript + Express
+├── frontend/                 # React + Vite + TypeScript
+├── infra/
+│   ├── postgres/             # Scripts de inicialización de PostgreSQL
+│   └── seed/                 # Datos semilla para desarrollo y demo
+├── docs/
+│   ├── adr/                  # Architecture Decision Records
+│   ├── api/                  # Documentación de APIs
+│   └── plan/                 # Plan de trabajo, sprints y hallazgos
+└── docker-compose.yml
+```
+
+Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
+
 ## Servicios
 
 | Servicio | Stack | Responsabilidad |
@@ -118,12 +140,12 @@ curl http://localhost:8080/api/tracking/ABC123
 
 ```bash
 # Backend Java — requiere JDK 21 + Maven
-cd auth-service && mvn spring-boot:run
-cd delivery-service && mvn spring-boot:run
-cd api-gateway && mvn spring-boot:run
+cd services/auth-service && mvn spring-boot:run
+cd services/delivery-service && mvn spring-boot:run
+cd services/api-gateway && mvn spring-boot:run
 
 # import-service — requiere Node 20+
-cd import-service && npm install && npm run dev
+cd services/import-service && npm install && npm run dev
 
 # frontend — requiere Node 20+
 cd frontend && npm install && npm run dev
