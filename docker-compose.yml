@@ -45,7 +45,7 @@ services:
   # Microservicios backend (Java / Spring Boot)
   # ---------------------------------------------------------------
   auth-service:
-    build: ./auth-service
+    build: ./services/auth-service
     container_name: lastmile-auth-service
     depends_on:
       postgres:
@@ -62,7 +62,7 @@ services:
     networks: [lastmile-net]
 
   delivery-service:
-    build: ./delivery-service
+    build: ./services/delivery-service
     container_name: lastmile-delivery-service
     depends_on:
       postgres:
@@ -80,7 +80,7 @@ services:
   # Microservicio de importación de documentos (Node / TypeScript)
   # ---------------------------------------------------------------
   import-service:
-    build: ./import-service
+    build: ./services/import-service
     container_name: lastmile-import-service
     depends_on:
       - delivery-service
@@ -96,7 +96,7 @@ services:
   # API Gateway (Spring Cloud Gateway) — punto único de entrada
   # ---------------------------------------------------------------
   api-gateway:
-    build: ./api-gateway
+    build: ./services/api-gateway
     container_name: lastmile-api-gateway
     depends_on:
       - auth-service
