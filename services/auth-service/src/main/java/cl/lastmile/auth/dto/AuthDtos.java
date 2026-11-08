@@ -3,15 +3,27 @@ package cl.lastmile.auth.dto;
 import cl.lastmile.auth.model.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class AuthDtos {
 
+    /**
+     * Registro público. No incluye rol: cualquier campo "role" que envíe el
+     * cliente se ignora y el usuario siempre se crea como CLIENT (HU-05).
+     */
     public record RegisterRequest(
             @NotBlank String fullName,
             @Email @NotBlank String email,
-            @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres") String password,
-            User.Role role
+            @NotNull @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres") String password
+    ) {}
+
+    /** Alta de usuarios por un ADMIN, con cualquier rol (POST /api/users). */
+    public record CreateUserRequest(
+            @NotBlank String fullName,
+            @Email @NotBlank String email,
+            @NotNull @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres") String password,
+            @NotNull User.Role role
     ) {}
 
     public record LoginRequest(

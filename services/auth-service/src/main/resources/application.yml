@@ -35,3 +35,15 @@ management:
     web:
       exposure:
         include: health,info
+
+# ADMIN inicial (HU-05): se crea al arrancar solo si no existe ningún ADMIN.
+bootstrap:
+  admin:
+    email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

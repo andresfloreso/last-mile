@@ -19,22 +19,35 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
+    /** Registro público: el rol siempre es CLIENT, sin importar lo que envíe el cliente. */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
+        User user = createUser(request.fullName(), request.email(), request.password(), User.Role.CLIENT);
+        return buildAuthResponse(user);
+    }
+
+    /** Alta de usuarios con rol arbitrario. Solo la invoca UserController, protegido para ADMIN. */
+    @Transactional
+    public UserResponse createUserAsAdmin(CreateUserRequest request) {
+        return UserResponse.from(createUser(request.fullName(), request.email(), request.password(), request.role()));
+    }
+
+    @Transactional
+    public User createUser(String fullName, String email, String rawPassword, User.Role role) {
+        String normalizedEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new UserAlreadyExistsException("Ya existe un usuario con ese email");
         }
 
         User user = User.builder()
-                .fullName(request.fullName())
-                .email(request.email().toLowerCase())
+                .fullName(fullName)
+                .email(normalizedEmail)
                 // NUNCA se persiste la contraseña en texto plano
-                .passwordHash(passwordEncoder.encode(request.password()))
-                .role(request.role() != null ? request.role() : User.Role.OPERATOR)
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .role(role)
                 .build();
 
-        userRepository.save(user);
-        return buildAuthResponse(user);
+        return userRepository.save(user);
     }
 
     @Transactional(readOnly = true)

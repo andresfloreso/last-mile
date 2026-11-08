@@ -57,6 +57,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change_this_super_secret_key_min_32_chars_______}
       JWT_EXPIRATION_MS: 3600000
       JWT_REFRESH_EXPIRATION_MS: 604800000
+      # ADMIN inicial (HU-05): solo se crea si no existe ningún ADMIN.
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
     ports:
       - "8081:8081"
     networks: [lastmile-net]
