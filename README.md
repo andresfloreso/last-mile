@@ -241,16 +241,13 @@ público:
 - **Aplica también a administradores** (`enforce_admins`).
 - **Sin force-push ni borrado** de `main`.
 
-Checks obligatorios:
+Checks obligatorios (los 11 jobs de CI): `gitleaks`, `java (api-gateway)`,
+`java (auth-service)`, `java (delivery-service)`,
+`node (services/import-service)`, `node (frontend)` y los 5
+`docker-build (...)`. Si se renombra o agrega un job, hay que actualizar esta
+lista, o los PRs quedan esperando un check que nunca llega.
 
-| Etapa | Checks |
-|---|---|
-| Desde ya | `gitleaks` |
-| Al mergear el PR de HU-03 (trae `ci.yml` a `main`) | `java (api-gateway)`, `java (auth-service)`, `java (delivery-service)`, `node (services/import-service)`, `node (frontend)` y los 5 `docker-build (...)` |
-
-Los checks de `ci.yml` se exigen recién cuando ese workflow está en `main`:
-si se exigieran antes, los PRs anteriores de la pila nunca los reportarían y
-quedarían bloqueados. Configuración completa (revisa la actual con
+Configuración aplicada (revisa la actual con
 `gh api repos/andresfloreso/last-mile/branches/main/protection`):
 
 ```bash

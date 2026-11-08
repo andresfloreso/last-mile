@@ -38,8 +38,8 @@ Mergear en ese orden. Al mergear cada uno, GitHub reapunta el siguiente a
 
 - Revisión y merge de los PRs #6, #7, #8, #10, #13 y #14.
 - **Branch protection:** el repo ya es público, así que las reglas de rama se
-  aplican. `gitleaks` es obligatorio desde ya; los checks de `ci.yml` se
-  agregan al mergear #8 (ver README, "Branch protection en `main`").
+  aplican: los 11 checks de CI son obligatorios en `main` (ver README,
+  "Branch protection en `main`").
 - Configurar `.env` real (`JWT_SECRET`, `POSTGRES_PASSWORD`, `REDIS_PASSWORD`,
   `BOOTSTRAP_ADMIN_*`) en cada ambiente: compose ya no trae valores por defecto.
 
