@@ -165,6 +165,54 @@ cd services/auth-service && mvn verify
 cd services/delivery-service && mvn verify
 ```
 
+## Integración continua (GitHub Actions)
+
+`.github/workflows/ci.yml` corre en cada `pull_request` y en cada `push` a `main`,
+con estos jobs en paralelo:
+
+| Job | Qué hace |
+|---|---|
+| `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `mvn -B verify` (unit + integración con Testcontainers) |
+| `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm run build` |
+| `docker-build (×5)` | Construye las 5 imágenes del compose sin publicarlas |
+
+Los `package-lock.json` están versionados: usa `npm ci` (no `npm install`)
+para reproducir exactamente las mismas dependencias que el CI.
+
+### Exigir el CI antes del merge (branch protection)
+
+1. En GitHub: **Settings → Branches → Add branch ruleset** (o *Add classic branch protection rule*).
+2. *Target*: rama `main`.
+3. Activa **Require a pull request before merging**.
+4. Activa **Require status checks to pass** y agrega los checks
+   `java (api-gateway)`, `java (auth-service)`, `java (delivery-service)`,
+   `node (services/import-service)`, `node (frontend)` y los 5 `docker-build (...)`.
+   Los checks aparecen en el buscador después de que el workflow corrió al menos una vez.
+5. Activa **Require branches to be up to date before merging** y **Block force pushes**.
+
+Con `gh` (equivalente, classic protection):
+
+```bash
+gh api -X PUT repos/<owner>/last-mile/branches/main/protection --input - <<'EOF'
+{
+  "required_status_checks": { "strict": true, "contexts": [
+    "java (api-gateway)", "java (auth-service)", "java (delivery-service)",
+    "node (services/import-service)", "node (frontend)",
+    "docker-build (api-gateway)", "docker-build (auth-service)", "docker-build (delivery-service)",
+    "docker-build (import-service)", "docker-build (frontend)"
+  ]},
+  "enforce_admins": true,
+  "required_pull_request_reviews": { "required_approving_review_count": 0 },
+  "restrictions": null,
+  "allow_force_pushes": false
+}
+EOF
+```
+
+> En repositorios **privados**, las reglas de rama solo se aplican con GitHub
+> Pro, Team o Enterprise. En el plan Free hay que hacer público el repo o
+> cambiar de plan para que el bloqueo sea efectivo.
+
 ## Desarrollo local (sin Docker)
 
 ```bash
@@ -174,10 +222,10 @@ cd services/delivery-service && mvn spring-boot:run
 cd services/api-gateway && mvn spring-boot:run
 
 # import-service — requiere Node 20+
-cd services/import-service && npm install && npm run dev
+cd services/import-service && npm ci && npm run dev
 
 # frontend — requiere Node 20+
-cd frontend && npm install && npm run dev
+cd frontend && npm ci && npm run dev
 ```
 
 ## Próximos pasos sugeridos
