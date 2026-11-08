@@ -81,7 +81,10 @@ Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
 
 ```bash
 cp .env.example .env
-# edita .env y define un JWT_SECRET real de al menos 32 caracteres
+# edita .env y define:
+#   JWT_SECRET               clave real de al menos 32 caracteres
+#   BOOTSTRAP_ADMIN_EMAIL    email del primer ADMIN
+#   BOOTSTRAP_ADMIN_PASSWORD contraseña del primer ADMIN (mín. 8 caracteres)
 
 docker compose up --build
 ```
@@ -98,12 +101,19 @@ docker compose up --build
 ## Flujo típico de uso (vía gateway, puerto 8080)
 
 ```bash
-# 1. Registrar un usuario despachador
-curl -X POST http://localhost:8080/api/auth/register \
+# 1. Login como el ADMIN inicial (BOOTSTRAP_ADMIN_* del .env) -> guarda el accessToken
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@lastmile.cl","password":"<BOOTSTRAP_ADMIN_PASSWORD>"}'
+
+# 2. El ADMIN crea un despachador (solo un ADMIN puede asignar roles)
+curl -X POST http://localhost:8080/api/users \
+  -H "Authorization: Bearer <accessToken del ADMIN>" \
   -H "Content-Type: application/json" \
   -d '{"fullName":"Ana Torres","email":"ana@lastmile.cl","password":"clave12345","role":"DISPATCHER"}'
 
-# 2. Login -> guarda el accessToken
+#    Login del despachador -> usa su accessToken en los pasos siguientes
+#    (el registro público /api/auth/register siempre crea CLIENT, aunque el body traiga "role")
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"ana@lastmile.cl","password":"clave12345"}'
@@ -128,6 +138,11 @@ curl http://localhost:8080/api/tracking/ABC123
 
 - Contraseñas: **bcrypt** (factor de trabajo 12), nunca se persisten en texto plano.
 - Autenticación: **JWT** (HS256) con access token (1h) + refresh token (7 días).
+- Roles: el registro público (`POST /api/auth/register`) **siempre** crea
+  `CLIENT`. Solo un `ADMIN` puede crear usuarios con otro rol
+  (`POST /api/users`). El primer ADMIN se crea al arrancar desde
+  `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`, únicamente si no existe
+  ninguno.
 - El `JWT_SECRET` se comparte entre `auth-service`, `delivery-service`,
   `api-gateway` e `import-service` vía variable de entorno — todos validan la
   misma firma sin tener que llamar de vuelta a `auth-service` en cada request.
@@ -135,6 +150,14 @@ curl http://localhost:8080/api/tracking/ABC123
   el borde; cada microservicio además vuelve a validar el token (defensa en
   profundidad) y aplica autorización por rol (`ADMIN`, `DISPATCHER`, `DRIVER`,
   `OPERATOR`, `CLIENT`).
+
+## Documentación de APIs (OpenAPI)
+
+| Servicio | OpenAPI JSON | Swagger UI |
+|---|---|---|
+| auth-service | http://localhost:8081/v3/api-docs | http://localhost:8081/swagger-ui.html |
+
+Más detalle en [`docs/api/`](docs/api/).
 
 ## Migraciones de base de datos (Flyway)
 
