@@ -153,7 +153,7 @@ Sprints de 2 semanas. Cada sprint es un milestone de GitHub y cierra con una dem
 | El VRP (HU-16) y el reordenamiento en ruta (HU-26) son las historias más inciertas | Sprint 6 se atrasa | Spike de 2 días al final del Sprint 5 para elegir entre OR-Tools y jsprit |
 | Sprints 3 y 4 cruzan fiestas de fin de año | Menos capacidad | Planificar con 20% menos de carga o mover historias hacia adelante |
 | El perfil `seed` viene activo por defecto en `docker-compose.yml` | Usuarios con contraseñas conocidas si se usa ese compose fuera de desarrollo | Desactivarlo por defecto y activarlo con un override de desarrollo; HU-24 lo exige apagado en staging |
-| Un mismo `JWT_SECRET` en 4 servicios | Si se filtra, se compromete todo | Secretos fuera del repo desde HU-24; evaluar RS256 con clave pública más adelante |
+| Un mismo `JWT_SECRET` en 4 servicios | Si se filtra, se compromete todo | Compose sin secretos por defecto y gitleaks en CI ([#17](https://github.com/andresfloreso/last-mile/issues/17)); quitar los defaults del código ([#16](https://github.com/andresfloreso/last-mile/issues/16)); secretos de staging en HU-24; evaluar RS256 con clave pública más adelante |
 
 ## Convenciones de trabajo
 
