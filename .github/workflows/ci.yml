@@ -37,10 +37,13 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-          cache-dependency-path: services/${{ matrix.service }}/pom.xml
+          cache-dependency-path: |
+            services/${{ matrix.service }}/pom.xml
+            services/${{ matrix.service }}/.mvn/wrapper/maven-wrapper.properties
 
-      - name: mvn verify
-        run: mvn -B -ntp verify
+      # Maven Wrapper: misma versión de Maven que en local y en Docker.
+      - name: ./mvnw verify
+        run: ./mvnw -B -ntp verify
 
       - name: Reportes de tests
         if: failure()

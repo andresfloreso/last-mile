@@ -1,0 +1,19 @@
+# Configuración de gitleaks (secret scanning en CI).
+# Extiende las reglas por defecto y solo excluye valores de ejemplo evidentes.
+title = "last-mile gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholders de .env.example y datos semilla públicos de desarrollo"
+# Valores de ejemplo: JWT_SECRET=reemplaza_por_..., POSTGRES_PASSWORD=reemplaza_..., etc.
+regexTarget = "line"
+regexes = [
+  '''=\s*reemplaza_[a-z0-9_]+\s*$''',
+]
+# La semilla (HU-01) contiene contraseñas de demo públicas por diseño
+# (lastmile123, ver docs/adr/0002). Nunca pongas credenciales reales ahí.
+paths = [
+  '''^infra/seed/''',
+]
