@@ -98,6 +98,21 @@ docker compose up --build
 | import-service (directo) | http://localhost:8083 |
 | PostgreSQL | localhost:5432 |
 
+### Healthchecks y datos semilla
+
+`docker compose up` espera a que cada dependencia esté **healthy** antes de
+arrancar el siguiente servicio (Postgres/Redis → auth y delivery → import →
+gateway → frontend). Para ver el estado: `docker compose ps`.
+
+En desarrollo los servicios arrancan con el perfil **`seed`**, que carga datos
+de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
+
+- un usuario por rol (`admin@`, `despacho@`, `conductor@`, `operador@` y `cliente@lastmile.cl`), todos con la contraseña `lastmile123`;
+- 30 clientes en comunas de Santiago con 60 días de historial de entregas con patrones conocidos;
+- 50 envíos para la fecha de hoy.
+
+Para levantar sin datos semilla: `SPRING_PROFILES_ACTIVE=default docker compose up --build`.
+
 ## Flujo típico de uso (vía gateway, puerto 8080)
 
 ```bash
