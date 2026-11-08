@@ -170,8 +170,8 @@ docker compose down -v && docker compose up --build
 
 ```bash
 # Unitarios + integración (Testcontainers levanta un PostgreSQL real: requiere Docker)
-cd services/auth-service && mvn verify
-cd services/delivery-service && mvn verify
+cd services/auth-service && ./mvnw verify
+cd services/delivery-service && ./mvnw verify
 ```
 
 ## Desarrollo local (sin Docker)
