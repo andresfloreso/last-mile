@@ -81,7 +81,7 @@ Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
 
 ```bash
 cp .env.example .env
-# edita .env y define un JWT_SECRET real de al menos 32 caracteres
+# edita .env: reemplaza JWT_SECRET (≥ 32 caracteres), POSTGRES_PASSWORD y REDIS_PASSWORD
 
 docker compose up --build
 ```
@@ -135,6 +135,15 @@ curl http://localhost:8080/api/tracking/ABC123
   el borde; cada microservicio además vuelve a validar el token (defensa en
   profundidad) y aplica autorización por rol (`ADMIN`, `DISPATCHER`, `DRIVER`,
   `OPERATOR`, `CLIENT`).
+- Sin secretos en el repo: `docker-compose.yml` no trae contraseñas por
+  defecto. `JWT_SECRET`, `POSTGRES_PASSWORD` y `REDIS_PASSWORD` se leen de
+  `.env` (ver `.env.example`) y compose falla con un mensaje claro si falta
+  alguna.
+- *Secret scanning*: el workflow `secret-scan.yml` corre
+  [gitleaks](https://github.com/gitleaks/gitleaks) sobre todo el historial en
+  cada PR. Las exclusiones (placeholders `reemplaza_...` y la semilla de demo)
+  están en `.gitleaks.toml`. Para correrlo en local:
+  `docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 git /repo --config /repo/.gitleaks.toml`
 
 ## Desarrollo local (sin Docker)
 
