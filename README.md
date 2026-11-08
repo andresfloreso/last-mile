@@ -81,7 +81,7 @@ Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
 
 ```bash
 cp .env.example .env
-# edita .env y define un JWT_SECRET real de al menos 32 caracteres
+# edita .env: reemplaza JWT_SECRET (≥ 32 caracteres), POSTGRES_PASSWORD y REDIS_PASSWORD
 
 docker compose up --build
 ```
@@ -135,6 +135,15 @@ curl http://localhost:8080/api/tracking/ABC123
   el borde; cada microservicio además vuelve a validar el token (defensa en
   profundidad) y aplica autorización por rol (`ADMIN`, `DISPATCHER`, `DRIVER`,
   `OPERATOR`, `CLIENT`).
+- Sin secretos en el repo: `docker-compose.yml` no trae contraseñas por
+  defecto. `JWT_SECRET`, `POSTGRES_PASSWORD` y `REDIS_PASSWORD` se leen de
+  `.env` (ver `.env.example`) y compose falla con un mensaje claro si falta
+  alguna.
+- *Secret scanning*: el workflow `secret-scan.yml` corre
+  [gitleaks](https://github.com/gitleaks/gitleaks) sobre todo el historial en
+  cada PR. Las exclusiones (placeholders `reemplaza_...` y la semilla de demo)
+  están en `.gitleaks.toml`. Para correrlo en local:
+  `docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 git /repo --config /repo/.gitleaks.toml`
 
 ## Migraciones de base de datos (Flyway)
 
@@ -168,16 +177,39 @@ cd services/delivery-service && mvn verify
 ## Desarrollo local (sin Docker)
 
 ```bash
-# Backend Java — requiere JDK 21 + Maven
-cd services/auth-service && mvn spring-boot:run
-cd services/delivery-service && mvn spring-boot:run
-cd services/api-gateway && mvn spring-boot:run
+# Backend Java — requiere solo JDK 21 (JAVA_HOME); Maven lo trae el wrapper
+cd services/auth-service && ./mvnw spring-boot:run
+cd services/delivery-service && ./mvnw spring-boot:run
+cd services/api-gateway && ./mvnw spring-boot:run
 
 # import-service — requiere Node 20+
 cd services/import-service && npm install && npm run dev
 
 # frontend — requiere Node 20+
 cd frontend && npm install && npm run dev
+```
+
+### Maven Wrapper
+
+Cada servicio Java trae su Maven Wrapper (`mvnw`, `mvnw.cmd` y
+`.mvn/wrapper/maven-wrapper.properties`), que fija **Maven 3.9.9** y verifica
+el SHA-256 de la distribución. La primera ejecución la descarga en
+`~/.m2/wrapper`; no hace falta instalar Maven. Docker y CI también usan el
+wrapper, así que todos compilan con la misma versión.
+
+| Sistema | Comando |
+|---|---|
+| Linux / macOS / Git Bash | `./mvnw verify` |
+| Windows (PowerShell) | `.\mvnw.cmd verify` |
+| Windows (cmd) | `mvnw verify` |
+
+Para actualizar Maven en los tres servicios:
+
+```bash
+for s in api-gateway auth-service delivery-service; do
+  (cd services/$s && ./mvnw -N wrapper:wrapper -Dmaven=<versión>)
+done
+# luego agrega distributionSha256Sum (del .zip) a cada maven-wrapper.properties
 ```
 
 ## Próximos pasos sugeridos
