@@ -176,35 +176,48 @@ cd services/delivery-service && ./mvnw verify
 
 ## Integración continua (GitHub Actions)
 
-`.github/workflows/ci.yml` corre en cada `pull_request` y en cada `push` a `main`,
-con estos jobs en paralelo:
+`.github/workflows/ci.yml` y `.github/workflows/secret-scan.yml` corren en cada
+`pull_request` y en cada `push` a `main`, con estos jobs en paralelo:
 
 | Job | Qué hace |
 |---|---|
-| `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `mvn -B verify` (unit + integración con Testcontainers) |
+| `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `./mvnw -B verify` (unit + integración con Testcontainers) |
 | `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm run build` |
 | `docker-build (×5)` | Construye las 5 imágenes del compose sin publicarlas |
+| `gitleaks` | Busca secretos en todo el historial de git (config en `.gitleaks.toml`) |
 
 Los `package-lock.json` están versionados: usa `npm ci` (no `npm install`)
 para reproducir exactamente las mismas dependencias que el CI.
 
-### Exigir el CI antes del merge (branch protection)
+### Branch protection en `main` (configurada)
 
-1. En GitHub: **Settings → Branches → Add branch ruleset** (o *Add classic branch protection rule*).
-2. *Target*: rama `main`.
-3. Activa **Require a pull request before merging**.
-4. Activa **Require status checks to pass** y agrega los checks
-   `java (api-gateway)`, `java (auth-service)`, `java (delivery-service)`,
-   `node (services/import-service)`, `node (frontend)` y los 5 `docker-build (...)`.
-   Los checks aparecen en el buscador después de que el workflow corrió al menos una vez.
-5. Activa **Require branches to be up to date before merging** y **Block force pushes**.
+`main` está protegida con *classic branch protection* desde que el repo es
+público:
 
-Con `gh` (equivalente, classic protection):
+- **Pull request obligatorio**: no se puede hacer push directo a `main`
+  (0 aprobaciones requeridas, porque hay un solo mantenedor).
+- **Status checks obligatorios** y rama **al día** con `main` antes del merge
+  (`strict`). Un PR con un check en rojo queda bloqueado.
+- **Aplica también a administradores** (`enforce_admins`).
+- **Sin force-push ni borrado** de `main`.
+
+Checks obligatorios:
+
+| Etapa | Checks |
+|---|---|
+| Desde ya | `gitleaks` |
+| Al mergear el PR de HU-03 (trae `ci.yml` a `main`) | `java (api-gateway)`, `java (auth-service)`, `java (delivery-service)`, `node (services/import-service)`, `node (frontend)` y los 5 `docker-build (...)` |
+
+Los checks de `ci.yml` se exigen recién cuando ese workflow está en `main`:
+si se exigieran antes, los PRs anteriores de la pila nunca los reportarían y
+quedarían bloqueados. Configuración completa (revisa la actual con
+`gh api repos/andresfloreso/last-mile/branches/main/protection`):
 
 ```bash
-gh api -X PUT repos/<owner>/last-mile/branches/main/protection --input - <<'EOF'
+gh api -X PUT repos/andresfloreso/last-mile/branches/main/protection --input - <<'EOF'
 {
   "required_status_checks": { "strict": true, "contexts": [
+    "gitleaks",
     "java (api-gateway)", "java (auth-service)", "java (delivery-service)",
     "node (services/import-service)", "node (frontend)",
     "docker-build (api-gateway)", "docker-build (auth-service)", "docker-build (delivery-service)",
@@ -213,14 +226,11 @@ gh api -X PUT repos/<owner>/last-mile/branches/main/protection --input - <<'EOF'
   "enforce_admins": true,
   "required_pull_request_reviews": { "required_approving_review_count": 0 },
   "restrictions": null,
-  "allow_force_pushes": false
+  "allow_force_pushes": false,
+  "allow_deletions": false
 }
 EOF
 ```
-
-> En repositorios **privados**, las reglas de rama solo se aplican con GitHub
-> Pro, Team o Enterprise. En el plan Free hay que hacer público el repo o
-> cambiar de plan para que el bloqueo sea efectivo.
 
 ## Desarrollo local (sin Docker)
 
