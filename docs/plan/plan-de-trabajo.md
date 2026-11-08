@@ -1,37 +1,51 @@
 # LastMile — Plan de trabajo, historias de usuario y sprints
 
 > Fuente de verdad del plan. Versión inicial: 8 de noviembre de 2026.
+> **v2 (8 de noviembre de 2026): enfoque B2B**, con feedback de logística en terreno. Ver "Cambios v2" al final.
 > Si el plan cambia (alcance, fechas, historias), actualiza este archivo en el mismo PR que introduce el cambio.
 
 ## Resumen
 
-LastMile se reorganiza en 6 sprints de 2 semanas, con 24 historias de usuario agrupadas en 8 épicas (127 puntos en total). Primero se consolida la base técnica (migraciones, CI, pruebas, seguridad de roles). Luego se completa el circuito que hoy falta: el conductor registra intentos de entrega, ese historial alimenta el aprendizaje de ventanas horarias y la ruta del día se arma con él.
+LastMile es una plataforma de ruteo para **distribución B2B**: una empresa (por ejemplo, una cervecería o distribuidora de bebidas) reparte con sus camiones a locales comerciales como botillerías, minimarkets, bares y restaurantes. Está inspirada en foxtrot.io.
 
-LastMile es una plataforma de última milla inspirada en recibelo.cl y foxtrot.io. Su diferenciador es aprender, por cliente, la franja horaria en que recibe o rechaza envíos, y usarla para ordenar las paradas del camión.
+El problema que resuelve: cada local **declara** un horario de recepción (la "modulación", por ejemplo 9 a 12), pero en la práctica muchos reciben en otro horario. Cuando el camión llega dentro de la modulación y el local está cerrado, la entrega falla y hay que volver. LastMile aprende, local por local, **en qué horario recibe de verdad**, a partir de las confirmaciones y los rechazos que registra el conductor. Con eso arma el orden de la ruta, y durante el reparto le sugiere al conductor qué local visitar a continuación.
+
+El plan tiene 7 sprints de 2 semanas, 27 historias de usuario en 8 épicas y 151 puntos. El Sprint 1 se completó el 8 de noviembre de 2026.
+
+## Glosario del dominio
+
+| Término | Significado |
+| --- | --- |
+| Local / cliente | Comercio que recibe la mercadería (botillería, minimarket, bar, restaurant). |
+| Modulación | Horario de recepción que el local **declara** (por ejemplo 9:00–12:00). Se carga al crear el cliente o desde la planilla. |
+| Ventana real | Horario en que el local **efectivamente recibe**, aprendido de los intentos de entrega. Puede diferir de la modulación. |
+| Intento de entrega | Cada llegada del camión a un local: entregado (con hora de confirmación) o no entregado con un motivo. |
+| Motivo de no entrega | Local cerrado, encargado no estaba, pidió otro horario, dirección errónea, rechazo de producto. |
+| Entrega en primera visita | Entrega lograda en el primer intento, sin tener que volver. Es el indicador principal del producto. |
+| Despachador | Quien arma, ajusta y asigna las rutas del día. |
+| Conductor | Quien ejecuta la ruta y confirma cada entrega desde el celular. |
 
 ## Estado del repositorio al inicio del plan
 
 | Servicio | Qué existía | Brechas detectadas |
 | --- | --- | --- |
 | `api-gateway` | Spring Cloud Gateway, `JwtAuthenticationFilter`, propaga `X-User-Id` y `X-User-Role` | Sin rate limiting ni CORS centralizado; sin pruebas |
-| `auth-service` | `/api/auth/register`, `/login`, `/refresh`; bcrypt (factor 12); JWT HS256 | El registro público acepta cualquier rol, incluido `ADMIN`; no hay gestión de usuarios; `ddl-auto: update` |
-| `delivery-service` | Clientes, envíos, intentos de entrega; `TimeWindowLearningService` (histograma 24 h); `RouteOptimizationService` (franja + nearest-neighbor); Nominatim y OSRM con fallback Haversine; tracking público | Sin migraciones versionadas; Redis no se usa; sin decaimiento temporal ni cold start en el aprendizaje; un solo camión por ruta |
-| `import-service` | Express + TypeScript; `.xlsx` (ExcelJS) y `.csv` (PapaParse); envía lotes a `delivery-service` | Sin reporte de errores por fila ni plantilla descargable; sin lockfile |
-| `frontend` | React + Vite + Tailwind + Zustand; páginas `/login`, `/` (RouteBuilder estilo Spoke con Leaflet) e `/import` | No hay vista de conductor, listado de envíos, tracking público ni renovación de token; sin lockfile |
-| Transversal | `docker-compose` con PostgreSQL (`authdb`, `deliverydb`) y Redis; README con flujo `curl` | 0 archivos de prueba; sin `.github/workflows`; sin datos semilla; sin documentación de API |
-
-La brecha más importante es funcional: `POST /api/shipments/attempts` existe, pero ninguna pantalla lo usa. Sin intentos registrados, el motor de ventanas horarias no tiene datos para aprender.
+| `auth-service` | `/api/auth/register`, `/login`, `/refresh`; bcrypt (factor 12); JWT HS256 | El registro público aceptaba cualquier rol, incluido `ADMIN`; no hay gestión de usuarios; `ddl-auto: update` |
+| `delivery-service` | Clientes, envíos, intentos de entrega; `TimeWindowLearningService` (histograma 24 h); `RouteOptimizationService` (franja + nearest-neighbor); Nominatim y OSRM con fallback Haversine; tracking público | Sin migraciones versionadas; Redis no se usa; no existe la modulación declarada; sin decaimiento temporal ni cold start; un solo camión por ruta |
+| `import-service` | Express + TypeScript; `.xlsx` (ExcelJS) y `.csv` (PapaParse); envía lotes a `delivery-service` | Sin reporte de errores por fila ni plantilla descargable |
+| `frontend` | React + Vite + Tailwind + Zustand; páginas `/login`, `/` (RouteBuilder estilo Spoke con Leaflet) e `/import` | No lista los envíos existentes; no hay vista de conductor ni listado de envíos; diseño poco legible |
+| Transversal | `docker-compose` con PostgreSQL (`authdb`, `deliverydb`) y Redis | 0 pruebas; sin CI; sin datos semilla; sin documentación de API |
 
 ## Plan de trabajo
 
-1. **Fundaciones (Sprint 1–2).** Migraciones Flyway, CI, pruebas, datos semilla, roles seguros e importación robusta.
-   - Entregable: `docker compose up` levanta todo con datos de ejemplo y cada PR se valida solo.
-2. **Núcleo del despachador (Sprint 3–4).** Listado de envíos, ruta con ETA, ajustes manuales, asignación a conductor y aprendizaje mejorado.
-   - Entregable: un despachador arma, ajusta y asigna la ruta del día viendo la ventana aprendida de cada cliente.
-3. **Operación en terreno (Sprint 5).** App del conductor y ruteo multi-camión.
-   - Entregable: el conductor registra entregas y rechazos, y esos intentos alimentan el aprendizaje.
-4. **Cliente final y producción (Sprint 6).** Tracking en vivo, prueba de entrega, observabilidad y staging.
-   - Entregable: ambiente de staging desplegado desde `main`, con tracking público en vivo.
+1. **Fundaciones (Sprint 1–2).** Migraciones Flyway, CI, pruebas, datos semilla, roles seguros, importación robusta y modulación declarada.
+   - Entregable: `docker compose up` levanta todo con locales de ejemplo, cada uno con su modulación, y cada PR se valida solo.
+2. **Núcleo del despachador (Sprint 3–4).** Pantalla de rutas rediseñada, listado de envíos, ruta con hora estimada, modulación vs. ventana real, aprendizaje mejorado y asignación a conductor.
+   - Entregable: un despachador arma, ajusta y asigna la ruta del día viendo, para cada local, su modulación y en qué horario recibe de verdad.
+3. **Operación en terreno (Sprint 5–6).** App del conductor con confirmación de entrega y motivos, reordenamiento en ruta y ruteo multi-camión.
+   - Entregable: el conductor confirma entregas y rechazos, esos intentos alimentan el aprendizaje, y la app le sugiere el siguiente local durante el reparto.
+4. **Seguimiento y producción (Sprint 7).** Aviso y seguimiento para el local, observabilidad y staging.
+   - Entregable: ambiente de staging desplegado desde `main`, con seguimiento en vivo para el local.
 
 ### Organización del repositorio
 
@@ -64,6 +78,7 @@ last-mile/
 - Los cambios de esquema van en una migración Flyway.
 - Los endpoints nuevos están en el OpenAPI del servicio.
 - Funciona con `docker compose up` usando los datos semilla.
+- Si toca el frontend, el PR incluye capturas de las pantallas cambiadas.
 
 ## Épicas
 
@@ -73,11 +88,11 @@ Cada épica corresponde a un label de GitHub (`epica:E1` … `epica:E8`).
 | --- | --- | --- | --- | --- |
 | E1 Fundaciones técnicas | `epica:E1` | Repo confiable y reproducible | HU-01 a HU-04 (+ reorganización del repo) | 21 |
 | E2 Autenticación y usuarios | `epica:E2` | Roles seguros y sesiones estables | HU-05 a HU-07 | 11 |
-| E3 Envíos e importación | `epica:E3` | Cargar y consultar envíos sin fricción | HU-08 a HU-10 | 15 |
-| E4 Ventanas horarias | `epica:E4` | Aprendizaje preciso y visible | HU-11 a HU-13 | 18 |
-| E5 Rutas | `epica:E5` | Ruta del día óptima, editable y asignada | HU-14 a HU-17 | 26 |
-| E6 Conductor | `epica:E6` | Ejecutar la ruta y registrar intentos | HU-18 a HU-20 | 15 |
-| E7 Cliente final | `epica:E7` | Seguimiento público y en vivo | HU-21 a HU-22 | 11 |
+| E3 Locales, envíos e importación | `epica:E3` | Cargar locales con su modulación y consultar envíos sin fricción | HU-08, HU-09, HU-10, HU-25 | 20 |
+| E4 Ventanas horarias | `epica:E4` | Aprender en qué horario recibe de verdad cada local | HU-11 a HU-13 | 18 |
+| E5 Rutas | `epica:E5` | Ruta del día óptima, editable, asignada y fácil de leer | HU-14 a HU-17, HU-27 | 34 |
+| E6 Conductor | `epica:E6` | Ejecutar la ruta, confirmar entregas y reordenar en terreno | HU-18 a HU-20, HU-26 | 26 |
+| E7 Seguimiento para el local | `epica:E7` | Que el local sepa cuándo llega su pedido | HU-21 a HU-22 | 11 |
 | E8 Operación | `epica:E8` | Observabilidad y despliegue | HU-23 a HU-24 | 10 |
 
 ## Backlog de historias de usuario
@@ -86,61 +101,79 @@ Puntos en escala Fibonacci (1, 2, 3, 5, 8, 13).
 
 | ID | Épica | Historia de usuario | Criterios de aceptación | Pts | Sprint |
 | --- | --- | --- | --- | --- | --- |
-| HU-01 | E1 | Como desarrollador, quiero levantar todo con un comando y datos semilla, para probar sin preparar nada a mano. | `docker compose up` deja los 7 contenedores *healthy*; un seed crea un usuario por rol, 30 clientes con historial de intentos y 50 envíos del día. | 3 | S1 |
-| HU-02 | E1 | Como desarrollador, quiero migraciones versionadas, para que el esquema no cambie sin control. | Flyway con `V1__baseline` en `authdb` y `deliverydb`; `ddl-auto: validate`; la base se recrea desde cero sin errores. | 5 | S1 |
-| HU-03 | E1 | Como equipo, quiero CI en cada PR, para no integrar código roto. | GitHub Actions compila los 3 servicios Maven y corre `npm ci`, lint y build en los 2 servicios Node; lockfiles versionados; un fallo bloquea el merge a `main`. | 5 | S1 |
+| HU-01 | E1 | Como desarrollador, quiero levantar todo con un comando y datos semilla, para probar sin preparar nada a mano. | `docker compose up` deja los 7 contenedores *healthy*; un seed crea un usuario por rol, 30 clientes con historial de intentos y 50 envíos del día. | 3 | S1 ✅ |
+| HU-02 | E1 | Como desarrollador, quiero migraciones versionadas, para que el esquema no cambie sin control. | Flyway con `V1__baseline` en `authdb` y `deliverydb`; `ddl-auto: validate`; la base se recrea desde cero sin errores. | 5 | S1 ✅ |
+| HU-03 | E1 | Como equipo, quiero CI en cada PR, para no integrar código roto. | GitHub Actions compila los 3 servicios Maven y corre `npm ci`, lint y build en los 2 servicios Node; lockfiles versionados; un fallo bloquea el merge a `main`. | 5 | S1 ✅ |
 | HU-04 | E1 | Como desarrollador, quiero pruebas base por servicio, para refactorizar con seguridad. | Pruebas unitarias de `JwtUtil`, `TimeWindowLearningService`, `RouteOptimizationService` y los parsers Excel/CSV; repositorios probados con Testcontainers; cobertura de 60% o más en `algorithm/`. | 8 | S2 |
-| HU-05 | E2 | Como administrador, quiero que solo un ADMIN asigne roles, para que nadie se registre como ADMIN. | `/register` público ignora el rol enviado y crea `CLIENT`; `POST /api/users` (solo ADMIN) crea usuarios con rol; prueba que confirma 403 en otro caso. | 3 | S1 |
-| HU-06 | E2 | Como usuario, quiero que mi sesión se renueve sola, para no perder trabajo cuando expira el token. | El interceptor de axios llama a `/refresh` ante un 401 y reintenta la request; si el refresh falla, cierra sesión y redirige a `/login`. | 3 | S2 |
-| HU-07 | E2 | Como administrador, quiero gestionar usuarios, para dar de alta conductores y bajar cuentas. | Pantalla para listar, crear, editar rol y desactivar; un usuario desactivado no puede iniciar sesión. | 5 | S3 |
+| HU-05 | E2 | Como administrador, quiero que solo un ADMIN asigne roles, para que nadie se registre como ADMIN. | `/register` público ignora el rol enviado y crea `CLIENT`; `POST /api/users` (solo ADMIN) crea usuarios con rol; prueba que confirma 403 en otro caso. | 3 | S1 ✅ |
+| HU-06 | E2 | Como usuario, quiero que mi sesión se renueve sola, para no perder trabajo cuando expira el token. | El interceptor de axios llama a `/refresh` ante un 401 y reintenta la request; si el refresh falla, cierra sesión y redirige a `/login`. | 3 | S4 |
+| HU-07 | E2 | Como administrador, quiero gestionar usuarios, para dar de alta conductores y bajar cuentas. | Pantalla para listar, crear, editar rol y desactivar; un usuario desactivado no puede iniciar sesión. | 5 | S4 |
 | HU-08 | E3 | Como despachador, quiero ver los errores de importación por fila, para corregir la planilla rápido. | Resumen con creados, omitidos y errores, cada error con fila y motivo; plantilla `.xlsx` descargable; importar 2 veces el mismo `codigo_externo` no duplica. | 5 | S2 |
 | HU-09 | E3 | Como despachador, quiero geocodificar al importar las direcciones sin coordenadas, para no ingresarlas a mano. | Usa Nominatim respetando 1 request por segundo y caché por dirección; los resultados de baja confianza quedan marcados "revisar" en el mapa. | 5 | S2 |
-| HU-10 | E3 | Como despachador, quiero listar y filtrar envíos, para saber qué sale cada día. | `GET /api/shipments` paginado con filtros por fecha, estado y comuna; tabla en el frontend con búsqueda por tracking. | 5 | S3 |
-| HU-11 | E4 | Como despachador, quiero ver la ventana aprendida de cada cliente y su confianza, para entender el orden propuesto. | `GET /api/customers/{id}/time-window` devuelve histograma, franja recomendada y confianza; el panel de la parada muestra un histograma de 24 h. | 5 | S3 |
+| HU-10 | E3 | Como despachador, quiero listar y filtrar envíos, para saber qué sale cada día. | `GET /api/shipments` paginado con filtros por fecha, estado y comuna; tabla en el frontend con búsqueda por local, dirección o código. | 5 | S3 |
+| HU-11 | E4 | Como despachador, quiero ver la modulación de cada local junto a su ventana real aprendida, para entender por qué la ruta lo ordena así. | `GET /api/customers/{id}/time-window` devuelve modulación, ventana real recomendada, histograma por hora y el conteo de intentos; la ventana real se expresa como "recibió X de Y visitas en esa franja" (aceptadas / intentos en la franja), nunca como un puntaje sin explicar; el detalle del local muestra "Declara 9–12 · recibe 12–15 (8 de 10 visitas)" y el histograma de 07 a 22 h, marcando la modulación y los rechazos. | 5 | S3 |
 | HU-12 | E4 | Como sistema, quiero priorizar intentos recientes y cachear el perfil, para aprender cambios de hábito sin recalcular siempre. | Decaimiento temporal configurable; perfil en Redis con TTL; la caché se invalida al registrar un intento. | 8 | S4 |
-| HU-13 | E4 | Como despachador, quiero una ventana estimada para clientes nuevos, para ordenarlos aunque no tengan historial. | Si el cliente tiene menos de N intentos, se usa el perfil agregado de su comuna; la confianza se muestra como "baja". | 5 | S4 |
-| HU-14 | E5 | Como despachador, quiero ver la ruta del día en el mapa con orden y hora estimada por parada, para validarla antes de salir. | ETA por parada calculada con tiempos de OSRM y duración de parada; respeta `orderPreference` Primera y Última; polilínea en Leaflet. | 5 | S3 |
-| HU-15 | E5 | Como despachador, quiero mover paradas y fijar posiciones, para aplicar lo que sé del terreno. | Arrastrar para reordenar; una parada fijada no se mueve al reoptimizar; las ETA se recalculan. | 5 | S4 |
-| HU-16 | E5 | Como despachador, quiero repartir los envíos entre varios camiones, para cubrir el volumen del día. | Solver VRP (OR-Tools o jsprit) con capacidad por paquetes y ventanas aprendidas; una ruta por vehículo; el resultado mejora la distancia total frente al nearest-neighbor actual. | 13 | S5 |
+| HU-13 | E4 | Como despachador, quiero una ventana estimada para locales con poco historial, para ordenarlos desde el primer día. | Con menos de N intentos se usa la modulación declarada; si el local tampoco tiene modulación, se usa el perfil agregado de su comuna y tipo de local; la ventana muestra de dónde salió ("según modulación" o "estimada por comuna") y se reemplaza gradualmente por la aprendida a medida que llegan intentos. | 5 | S4 |
+| HU-14 | E5 | Como despachador, quiero ver la ruta del día en el mapa con orden y hora estimada por parada, para validarla antes de salir. | Hora estimada por parada calculada con tiempos de OSRM y duración de parada; respeta `orderPreference` Primera y Última; polilínea en Leaflet; marca las paradas cuya hora estimada cae fuera de su ventana real. | 5 | S3 |
+| HU-15 | E5 | Como despachador, quiero mover paradas y fijar posiciones, para aplicar lo que sé del terreno. | Arrastrar para reordenar; una parada fijada no se mueve al reoptimizar; las horas estimadas se recalculan. | 5 | S5 |
+| HU-16 | E5 | Como despachador, quiero repartir los envíos entre varios camiones, para cubrir el volumen del día. | Solver VRP (OR-Tools o jsprit) con capacidad por camión y ventanas reales aprendidas; una ruta por vehículo; mejora la distancia total y las entregas dentro de ventana frente al nearest-neighbor actual. | 13 | S6 |
 | HU-17 | E5 | Como despachador, quiero confirmar la ruta y asignarla a un conductor, para que la vea en su teléfono. | Estados de ruta: borrador, confirmada, en curso y cerrada; una ruta confirmada queda bloqueada para edición. | 3 | S4 |
-| HU-18 | E6 | Como conductor, quiero ver mi ruta del día en el celular, para seguir el orden sin llamar al despachador. | Vista móvil con la siguiente parada destacada; botón para abrir la navegación en Google Maps o Waze. | 5 | S5 |
-| HU-19 | E6 | Como conductor, quiero marcar entregado o rechazado en un toque, para registrar el resultado de cada parada. | Crea un `DeliveryAttempt` con hora del dispositivo y motivo (no está, dirección errónea, rechaza); el intento alimenta el aprendizaje de la ventana. | 5 | S5 |
-| HU-20 | E6 | Como conductor, quiero registrar una prueba de entrega, para respaldar el envío ante reclamos. | Foto y nombre de quien recibe; se guarda en almacenamiento de objetos y aparece en el detalle del envío. | 5 | S6 |
-| HU-21 | E7 | Como cliente final, quiero consultar mi envío con su código, para saber cuándo llega. | Página pública `/tracking/:codigo` sin login; muestra estado e historial de intentos. | 3 | S3 |
-| HU-22 | E7 | Como cliente final, quiero ver la franja estimada y el camión en vivo, para estar en casa cuando llegue. | La posición del conductor se transmite por WebSocket o SSE; la página de tracking muestra el mapa y la franja estimada. | 8 | S6 |
-| HU-23 | E8 | Como equipo, quiero observabilidad, para diagnosticar fallas entre servicios. | Health checks en compose; logs JSON con un `traceId` que viaja desde el gateway; métricas de Actuator expuestas. | 5 | S6 |
-| HU-24 | E8 | Como equipo, quiero un ambiente de staging, para mostrar avances sin levantar nada local. | Despliegue automático desde `main`; secretos fuera del repo; URL pública documentada en el README. | 5 | S6 |
+| HU-18 | E6 | Como conductor, quiero ver mi ruta del día en el celular, para seguir el orden sin llamar al despachador. | Vista móvil con el siguiente local destacado, su ventana real y la hora estimada; botón para abrir la navegación en Google Maps o Waze. | 5 | S5 |
+| HU-19 | E6 | Como conductor, quiero confirmar la entrega o registrar por qué no se pudo, para que el sistema aprenda el horario real de cada local. | "Entregado" registra la hora de confirmación (equivalente a la firma de la factura); "No entregado" exige un motivo: local cerrado, encargado no estaba, pidió otro horario, dirección errónea o rechazo de producto; "pidió otro horario" guarda la franja indicada por el local; cada registro crea un `DeliveryAttempt` que alimenta el aprendizaje; funciona con mala señal y sincroniza al recuperar conexión. | 8 | S5 |
+| HU-20 | E6 | Como conductor, quiero registrar una prueba de entrega, para respaldar el envío ante reclamos. | Foto de la factura o guía firmada y nombre de quien recibe; se guarda en almacenamiento de objetos y aparece en el detalle del envío. | 5 | S5 |
+| HU-21 | E7 | Como encargado de un local, quiero consultar mi pedido con su código, para saber cuándo llega. | Página pública `/tracking/:codigo` sin login; muestra estado, hora estimada e historial de intentos. | 3 | S7 |
+| HU-22 | E7 | Como encargado de un local, quiero ver la hora estimada y el camión en vivo, para tener a alguien que reciba. | La posición del conductor se transmite por WebSocket o SSE; la página de seguimiento muestra el mapa y la hora estimada actualizada. | 8 | S7 |
+| HU-23 | E8 | Como equipo, quiero observabilidad, para diagnosticar fallas entre servicios. | Health checks en compose; logs JSON con un `traceId` que viaja desde el gateway; métricas de Actuator expuestas. | 5 | S7 |
+| HU-24 | E8 | Como equipo, quiero un ambiente de staging, para mostrar avances sin levantar nada local. | Despliegue automático desde `main`; secretos fuera del repo; perfil `seed` desactivado; URL pública documentada en el README. | 5 | S7 |
+| HU-25 | E3 | Como despachador, quiero registrar la modulación declarada de cada local, para que la ruta parta de lo que el local dice y el sistema mida cuánto se cumple. | Migración que agrega a `Customer` el tipo de local (botillería, minimarket, bar, restaurant, otro) y la modulación (`declared_window_start`, `declared_window_end`, opcionalmente dos tramos); columnas `tipo_local`, `modulacion_desde` y `modulacion_hasta` en la planilla de importación y en la plantilla descargable; edición de la modulación en el detalle del local; la semilla se convierte a 30 locales comerciales de Santiago, con al menos un tercio cuya modulación no coincide con su ventana real. | 5 | S2 |
+| HU-26 | E6 | Como conductor, quiero que la app me sugiera el siguiente local cuando algo cambia en la ruta, para no perder viajes. | Al registrar un "No entregado", o si el camión va más de 20 minutos atrasado, se recalcula el orden de las paradas pendientes con la ventana real y la posición actual; la app muestra la sugerencia ("Ve primero a Botillería El Roble: recibe hasta las 13:00") y el conductor la acepta o la ignora; el despachador ve el cambio en su pantalla; la decisión queda registrada. | 8 | S6 |
+| HU-27 | E5 | Como despachador, quiero una pantalla de rutas clara y centrada en el mapa, para leer la ruta del día de un vistazo. | Implementa el diseño combinado aprobado (panel lateral + mapa a pantalla completa + línea de tiempo); modo claro y oscuro; la ruta del día carga sola los envíos de la fecha; colores por franja con leyenda fija; resumen con paradas, km, hora de término y % de entregas en primera visita; detalle del local con modulación vs. ventana real; mapa base neutro (CARTO Positron / Dark Matter); usable desde 1280 px y en tablet. | 8 | S3 |
 
 ## Sprints
 
-Sprints de 2 semanas desde el lunes 16 de noviembre de 2026. Cada sprint es un milestone de GitHub (`Sprint 1` … `Sprint 6`) y cierra con una demo.
+Sprints de 2 semanas. Cada sprint es un milestone de GitHub y cierra con una demo. El Sprint 1 terminó antes de lo planificado; las fechas siguientes se mantienen hasta medir la velocidad real del Sprint 2.
 
 | Sprint | Fechas | Objetivo | Historias | Pts | Demo al cierre |
 | --- | --- | --- | --- | --- | --- |
-| S1 | 16 nov – 27 nov 2026 | Base técnica confiable y roles seguros | HU-01, HU-02, HU-03, HU-05 | 16 | Todo levanta con datos semilla; un PR con error queda bloqueado por CI |
-| S2 | 30 nov – 11 dic 2026 | Pruebas e importación robusta | HU-04, HU-06, HU-08, HU-09 | 21 | Importar una planilla con errores y ver el detalle por fila; direcciones geocodificadas solas |
-| S3 | 14 dic – 25 dic 2026 | Envíos visibles y ruta con ETA | HU-07, HU-10, HU-11, HU-14, HU-21 | 23 | Ruta del día con ETA y ventana aprendida por parada; tracking público por código |
-| S4 | 28 dic 2026 – 8 ene 2027 | Aprendizaje mejorado y ruta asignable | HU-12, HU-13, HU-15, HU-17 | 21 | Reordenar y fijar paradas, confirmar la ruta y asignarla; clientes nuevos con ventana estimada |
-| S5 | 11 ene – 22 ene 2027 | Operación en terreno y multi-camión | HU-16, HU-18, HU-19 | 23 | Conductor registra entregas desde el celular; rutas repartidas entre 2 o más camiones |
-| S6 | 25 ene – 5 feb 2027 | Cliente final y producción | HU-20, HU-22, HU-23, HU-24 | 23 | Camión en vivo en la página de tracking; prueba de entrega; staging desplegado desde `main` |
+| S1 ✅ | 16 nov – 27 nov 2026 (terminado el 8 nov) | Base técnica confiable y roles seguros | HU-01, HU-02, HU-03, HU-05 | 16 | Todo levanta con datos semilla; CI en cada PR |
+| S2 | 30 nov – 11 dic 2026 | Pruebas, importación robusta y modulación | HU-04, HU-08, HU-09, HU-25 + bugs #9 y #12 | 23 | Importar una planilla de locales con su modulación y ver los errores por fila |
+| S3 | 14 dic – 25 dic 2026 | Pantalla de rutas nueva y ventana real visible | HU-10, HU-11, HU-14, HU-27 | 23 | Ruta del día rediseñada, con hora estimada y "declara vs. recibe" por local |
+| S4 | 28 dic 2026 – 8 ene 2027 | Aprendizaje mejorado y ruta asignable | HU-06, HU-07, HU-12, HU-13, HU-17 | 24 | Locales nuevos ordenados por su modulación; ruta confirmada y asignada a un conductor |
+| S5 | 11 ene – 22 ene 2027 | App del conductor | HU-15, HU-18, HU-19, HU-20 | 23 | El conductor confirma entregas y rechazos con motivo, y el aprendizaje los usa |
+| S6 | 25 ene – 5 feb 2027 | Ruteo en terreno y multi-camión | HU-16, HU-26 | 21 | Un rechazo en ruta reordena las paradas pendientes; rutas repartidas entre 2 o más camiones |
+| S7 | 8 feb – 19 feb 2027 | Seguimiento para el local y producción | HU-21, HU-22, HU-23, HU-24 | 21 | Seguimiento en vivo para el local; staging desplegado desde `main` |
 
 ## Riesgos
 
 | Riesgo | Impacto | Mitigación |
 | --- | --- | --- |
-| Sin intentos reales, el aprendizaje no se puede validar | El diferenciador del producto queda sin demostrar | Seed con historial sintético de patrones conocidos y pruebas que verifican que el motor los recupera (HU-01, HU-04) |
+| Sin intentos reales, el aprendizaje no se puede validar | El diferenciador del producto queda sin demostrar | Semilla con locales cuya modulación difiere de su ventana real, y pruebas que verifican que el motor recupera la ventana real (HU-04, HU-25) |
+| Los conductores no registran el motivo o la hora | El algoritmo aprende de datos incompletos | Confirmación en un toque, motivo obligatorio y funcionamiento sin señal (HU-19) |
 | Nominatim público limita a 1 request por segundo | Importaciones grandes lentas o bloqueadas | Caché por dirección, cola de geocodificación y opción de instancia propia (HU-09) |
-| El VRP (HU-16) es la historia más grande e incierta | Sprint 5 se atrasa | Spike de 2 días al final del Sprint 4 para elegir entre OR-Tools y jsprit |
-| Sprints 3 y 4 cruzan fiestas de fin de año | Menos capacidad | Planificar esos sprints con 20% menos de carga o mover historias de S4 a S5 |
+| El VRP (HU-16) y el reordenamiento en ruta (HU-26) son las historias más inciertas | Sprint 6 se atrasa | Spike de 2 días al final del Sprint 5 para elegir entre OR-Tools y jsprit |
+| Sprints 3 y 4 cruzan fiestas de fin de año | Menos capacidad | Planificar con 20% menos de carga o mover historias hacia adelante |
+| El perfil `seed` viene activo por defecto en `docker-compose.yml` | Usuarios con contraseñas conocidas si se usa ese compose fuera de desarrollo | Desactivarlo por defecto y activarlo con un override de desarrollo; HU-24 lo exige apagado en staging |
 | Un mismo `JWT_SECRET` en 4 servicios | Si se filtra, se compromete todo | Secretos fuera del repo desde HU-24; evaluar RS256 con clave pública más adelante |
 
 ## Convenciones de trabajo
 
-- **Ramas:** `main` protegida; ramas `feature/HU-xx-descripcion-corta`, `fix/...` y `chore/...`; merge solo por PR con CI en verde.
-- **Commits:** Conventional Commits con el ID de la historia, por ejemplo `feat(delivery): HU-12 decaimiento temporal en ventanas`.
+- **Ramas:** `main` protegida; ramas `feature/HU-xx-descripcion-corta`, `fix/...`, `chore/...` y `docs/...`; merge solo por PR con CI en verde.
+- **Commits:** Conventional Commits con el ID de la historia, por ejemplo `feat(delivery): HU-25 modulación declarada por local`.
 - **PR:** enlaza su issue con `Closes #n`, describe cómo probarlo e incluye capturas si toca el frontend.
-- **Issues:** uno por historia, con labels `sprint-N`, `epica:EN` y `tipo:*`, milestone del sprint y criterios de aceptación como checklist.
+- **Issues:** uno por historia, con labels `sprint-N`, `epica:EN` y `tipo:*`, milestone del sprint y criterios de aceptación como checklist. Se crean al iniciar cada sprint.
 - **Tablero:** GitHub Projects con columnas Backlog, En curso, En revisión y Terminado.
+- **Lenguaje:** en la interfaz y la documentación se usa el vocabulario del glosario (local, modulación, ventana real, primera visita).
 - **Hallazgos fuera de alcance:** issue con `tipo:bug` o `tipo:chore` y nota en `docs/plan/hallazgos.md`.
 - **Cierre de sprint:** `docs/plan/sprint-N-cierre.md` con lo completado, lo pendiente y los hallazgos.
-- **Ceremonias:** planificación al inicio del sprint, revisión con demo al cierre y retrospectiva breve.
+
+## Cambios v2
+
+Feedback de una persona que trabajó en logística de distribución usando foxtrot.io:
+
+- El producto pasa a ser **B2B**: se reparte a locales comerciales, no a personas.
+- Se incorpora la **modulación** (horario declarado) como dato propio, distinto de la ventana real aprendida (HU-25, HU-11, HU-13).
+- La fuente principal de aprendizaje es la **confirmación del conductor**: hora de entrega y motivo de no entrega, incluido "pidió otro horario" (HU-19).
+- La ruta se **reordena durante el reparto**, no solo en la mañana (HU-26).
+- Se agrega el **rediseño de la pantalla de rutas** como historia propia (HU-27).
+- Se agrega un Sprint 7 y se reordenan historias: HU-06 y HU-07 pasan a S4, HU-15 y HU-20 a S5, HU-16 a S6, y HU-21 a S7.
+- El indicador principal es **entrega en primera visita**.
