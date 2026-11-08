@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+        - id: delivery-service-shipments
+          uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/shipments/**
+        - id: delivery-service-routes
+          uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/routes/**
+        - id: delivery-service-tracking
+          uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/tracking/**
+        - id: delivery-service-geocoding
+          uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/geocoding/**
+        - id: import-service
+          uri: ${IMPORT_SERVICE_URI:http://localhost:8083}
+          predicates:
+            - Path=/api/import/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+            allowedHeaders: "*"
+            allowCredentials: true
+
+jwt:
+  secret: ${JWT_SECRET:change_this_super_secret_key_min_32_chars_______}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

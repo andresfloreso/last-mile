@@ -1,0 +1,34 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: delivery-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/deliverydb}
+    username: ${SPRING_DATASOURCE_USERNAME:lastmile}
+    password: ${SPRING_DATASOURCE_PASSWORD:lastmile_pw}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+jwt:
+  secret: ${JWT_SECRET:change_this_super_secret_key_min_32_chars_______}
+
+geocoding:
+  # Nominatim (OpenStreetMap) — mismo dataset que usa Leaflet en el frontend,
+  # para que el pin del mapa y la dirección geocodificada coincidan siempre.
+  nominatim-url: ${NOMINATIM_URL:https://nominatim.openstreetmap.org}
+
+routing:
+  # OSRM (Open Source Routing Machine) — distancias reales por calle en vez
+  # de línea recta. Se puede apuntar a un servidor propio en producción para
+  # no depender del límite de tasa del demo público.
+  osrm-url: ${OSRM_URL:https://router.project-osrm.org}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

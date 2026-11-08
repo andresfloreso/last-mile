@@ -1,0 +1,170 @@
+package cl.lastmile.delivery.service;
+
+import cl.lastmile.delivery.dto.DeliveryDtos.*;
+import cl.lastmile.delivery.geo.GeocodingService;
+import cl.lastmile.delivery.model.Customer;
+import cl.lastmile.delivery.model.DeliveryAttempt;
+import cl.lastmile.delivery.model.Shipment;
+import cl.lastmile.delivery.repository.CustomerRepository;
+import cl.lastmile.delivery.repository.DeliveryAttemptRepository;
+import cl.lastmile.delivery.repository.ShipmentRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ShipmentService {
+
+    private final ShipmentRepository shipmentRepository;
+    private final CustomerRepository customerRepository;
+    private final DeliveryAttemptRepository deliveryAttemptRepository;
+    private final GeocodingService geocodingService;
+
+    @Transactional
+    public Customer createOrGetCustomer(CustomerRequest req) {
+        if (req.externalCode() != null) {
+            var existing = customerRepository.findByExternalCode(req.externalCode());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
+        // Prioridad de precisión: si el frontend ya mandó lat/lng exactas (el
+        // usuario las fijó con el pin en el mapa Leaflet), se usan tal cual y
+        // NUNCA se sobreescriben. Sólo se geocodifica cuando faltan — típico
+        // de una importación masiva desde planilla sin columnas de coordenadas.
+        Double latitude = req.latitude();
+        Double longitude = req.longitude();
+
+        if (latitude == null || longitude == null) {
+            var geocoded = geocodingService.geocode(req.address(), req.commune());
+            if (geocoded.isPresent()) {
+                latitude = geocoded.get().latitude();
+                longitude = geocoded.get().longitude();
+                log.info("Dirección '{}' geocodificada con confianza {}", req.address(), geocoded.get().confidence());
+            } else {
+                log.warn("No se pudo geocodificar '{}': el cliente quedará sin coordenadas", req.address());
+            }
+        }
+
+        Customer customer = Customer.builder()
+                .fullName(req.fullName())
+                .phone(req.phone())
+                .address(req.address())
+                .commune(req.commune())
+                .latitude(latitude)
+                .longitude(longitude)
+                .externalCode(req.externalCode())
+                .build();
+        return customerRepository.save(customer);
+    }
+
+    @Transactional
+    public Shipment createShipment(ShipmentRequest req) {
+        Customer customer = customerRepository.findById(UUID.fromString(req.customerId()))
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado: " + req.customerId()));
+
+        Shipment shipment = Shipment.builder()
+                .trackingCode(req.trackingCode())
+                .customer(customer)
+                .scheduledDate(req.scheduledDate())
+                .source(req.source())
+                .notes(req.notes())
+                .stopType(req.stopType() != null ? Shipment.StopType.valueOf(req.stopType()) : Shipment.StopType.DELIVERY)
+                .packageCount(req.packageCount() != null ? req.packageCount() : 1)
+                .orderPreference(req.orderPreference() != null
+                        ? Shipment.OrderPreference.valueOf(req.orderPreference())
+                        : Shipment.OrderPreference.AUTO)
+                .label(req.label())
+                .build();
+
+        return shipmentRepository.save(shipment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Shipment> findByDate(java.time.LocalDate date) {
+        return shipmentRepository.findByScheduledDate(date);
+    }
+
+    @Transactional
+    public Shipment updateShipment(String shipmentId, ShipmentUpdateRequest req) {
+        Shipment shipment = shipmentRepository.findById(UUID.fromString(shipmentId))
+                .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
+
+        if (req.stopType() != null) shipment.setStopType(Shipment.StopType.valueOf(req.stopType()));
+        if (req.packageCount() != null) shipment.setPackageCount(req.packageCount());
+        if (req.orderPreference() != null) shipment.setOrderPreference(Shipment.OrderPreference.valueOf(req.orderPreference()));
+        if (req.label() != null) shipment.setLabel(req.label());
+        if (req.notes() != null) shipment.setNotes(req.notes());
+
+        return shipmentRepository.save(shipment);
+    }
+
+    @Transactional
+    public Shipment duplicateShipment(String shipmentId, String newTrackingCode) {
+        Shipment original = shipmentRepository.findById(UUID.fromString(shipmentId))
+                .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
+
+        Shipment copy = Shipment.builder()
+                .trackingCode(newTrackingCode)
+                .customer(original.getCustomer())
+                .scheduledDate(original.getScheduledDate())
+                .source(original.getSource())
+                .notes(original.getNotes())
+                .stopType(original.getStopType())
+                .packageCount(original.getPackageCount())
+                .orderPreference(original.getOrderPreference())
+                .label(original.getLabel())
+                .build();
+
+        return shipmentRepository.save(copy);
+    }
+
+    @Transactional
+    public void deleteShipment(String shipmentId) {
+        Shipment shipment = shipmentRepository.findById(UUID.fromString(shipmentId))
+                .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
+        shipmentRepository.delete(shipment);
+    }
+
+    @Transactional(readOnly = true)
+    public Shipment findByTrackingCode(String trackingCode) {
+        return shipmentRepository.findByTrackingCode(trackingCode)
+                .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado: " + trackingCode));
+    }
+
+    @Transactional
+    public DeliveryAttempt registerAttempt(DeliveryAttemptRequest req) {
+        Shipment shipment = shipmentRepository.findById(UUID.fromString(req.shipmentId()))
+                .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
+        Customer customer = customerRepository.findById(UUID.fromString(req.customerId()))
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
+
+        DeliveryAttempt.AttemptOutcome outcome = DeliveryAttempt.AttemptOutcome.valueOf(req.outcome());
+
+        DeliveryAttempt attempt = DeliveryAttempt.builder()
+                .shipment(shipment)
+                .customer(customer)
+                .attemptedAt(req.attemptedAt() != null ? req.attemptedAt() : Instant.now())
+                .outcome(outcome)
+                .rejectionReason(req.rejectionReason())
+                .build();
+
+        deliveryAttemptRepository.save(attempt);
+
+        shipment.setStatus(outcome == DeliveryAttempt.AttemptOutcome.ACCEPTED
+                ? Shipment.ShipmentStatus.DELIVERED
+                : Shipment.ShipmentStatus.RESCHEDULED);
+        shipmentRepository.save(shipment);
+
+        return attempt;
+    }
+}
