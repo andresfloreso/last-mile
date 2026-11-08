@@ -136,6 +136,35 @@ curl http://localhost:8080/api/tracking/ABC123
   profundidad) y aplica autorización por rol (`ADMIN`, `DISPATCHER`, `DRIVER`,
   `OPERATOR`, `CLIENT`).
 
+## Migraciones de base de datos (Flyway)
+
+El esquema de `authdb` y `deliverydb` se versiona con **Flyway**; Hibernate
+corre con `ddl-auto: validate` y **nunca** modifica tablas.
+
+- Migraciones: `services/<servicio>/src/main/resources/db/migration/`
+- Convención de nombres: `V<n>__<descripcion>.sql` (p.ej. `V2__agregar_ventana_cliente.sql`).
+- Nunca edites una migración ya aplicada: crea una nueva versión.
+- Las migraciones se ejecutan solas al arrancar el servicio.
+- Si una entidad JPA y el esquema no coinciden, el servicio **no arranca**
+  (y los tests de integración fallan): agrega la migración correspondiente.
+
+Para recrear las bases desde cero (borra todos los datos locales):
+
+```bash
+docker compose down -v && docker compose up --build
+```
+
+> Bases creadas antes de Flyway (con `ddl-auto: update`) se marcan como
+> versión 1 automáticamente (`baseline-on-migrate`), sin perder datos.
+
+## Tests
+
+```bash
+# Unitarios + integración (Testcontainers levanta un PostgreSQL real: requiere Docker)
+cd services/auth-service && mvn verify
+cd services/delivery-service && mvn verify
+```
+
 ## Desarrollo local (sin Docker)
 
 ```bash
