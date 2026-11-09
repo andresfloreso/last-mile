@@ -175,7 +175,7 @@ export default function RoutePage() {
                 type="button"
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Cerrar panel de paradas"
-                className="absolute right-3 top-3 rounded-md p-1.5 text-muted hover:bg-tile hover:text-ink"
+                className="absolute -right-12 top-3 rounded-lg border border-line bg-float p-2 text-ink hover:bg-tile"
               >
                 <CloseIcon />
               </button>

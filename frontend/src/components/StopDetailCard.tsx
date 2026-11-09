@@ -92,10 +92,10 @@ const StopDetailCard = forwardRef<HTMLDivElement, Props>(function StopDetailCard
     >
       <header className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="truncate text-15 font-semibold">
+          <h2 className="text-15 font-semibold leading-snug">
             {stop.position} · {stop.name}
           </h2>
-          <p className="truncate text-xs text-muted">
+          <p className="text-xs text-muted">
             {stop.address}
             {stop.businessType ? ` · ${BUSINESS_LABEL[stop.businessType]}` : ""}
           </p>
@@ -122,24 +122,22 @@ const StopDetailCard = forwardRef<HTMLDivElement, Props>(function StopDetailCard
 
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg bg-tile p-2.5">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted">Declara (modulación)</p>
-            {!editing && (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="text-xs font-semibold text-ink underline underline-offset-2"
-                aria-label="Editar modulación"
-              >
-                Editar
-              </button>
-            )}
-          </div>
+          <p className="text-xs text-muted">Declara (modulación)</p>
           <p className="text-13 font-semibold tabular-nums">
             {declared ? longRange(declared.start, declared.end) : "Sin modulación"}
           </p>
           {declared?.start2 && declared.end2 && (
             <p className="text-13 font-semibold tabular-nums">{longRange(declared.start2, declared.end2)}</p>
+          )}
+          {!editing && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="mt-0.5 text-xs font-semibold text-ink underline underline-offset-2"
+              aria-label="Editar modulación"
+            >
+              Editar
+            </button>
           )}
         </div>
         <div className={`rounded-lg p-2.5 ${c.bg}`}>
