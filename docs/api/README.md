@@ -78,3 +78,21 @@ plantilla `.xlsx`, con una hoja "Envíos" y otra "Instrucciones". Columnas:
 otro. La modulación se escribe en HH:mm (también acepta `9`, `9:30` o una celda
 con formato de hora de Excel). Si una fila trae un tipo o una modulación
 inválidos, se informa con su número de fila y no se importa.
+
+### Resumen de importación (HU-08)
+
+`POST /api/import/shipments` (multipart, campo `file`) responde **200** con el
+resumen, aunque algunas filas fallen:
+
+```json
+{
+  "totalRows": 4, "created": 2, "skipped": 1, "failed": 1,
+  "skippedRows": [{ "rowNumber": 3, "trackingCode": "PED-2", "message": "Ya existe un envío con el trackingCode PED-2" }],
+  "errors":      [{ "rowNumber": 5, "trackingCode": "PED-4", "message": "tipo_local inválido: \"kiosco\" (...)" }]
+}
+```
+
+- **Omitidas** (`skippedRows`): el envío ya existía (mismo `tracking`). Reimportar la misma planilla no duplica envíos ni
+  locales (los locales se reutilizan por `codigo_externo`).
+- **Errores** (`errors`): fila inválida en la planilla o rechazada por delivery-service, con su número de fila y el motivo.
+- **422**: problema del archivo completo (no se puede leer, no tiene hojas o faltan columnas obligatorias).
