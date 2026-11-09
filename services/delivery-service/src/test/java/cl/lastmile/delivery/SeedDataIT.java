@@ -52,6 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SeedDataIT {
 
     private static final String SEED_CUSTOMERS = "external_code LIKE 'SEED-C%'";
+    private static final String ZONE = "('Santiago', 'Providencia', 'Ñuñoa', 'Macul', 'San Joaquín')";
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
@@ -67,11 +68,11 @@ class SeedDataIT {
     }
 
     private Map<String, String> patternByCustomerName() {
-        // El patrón queda registrado en las notas de los envíos del día.
+        // El patrón queda registrado en las notas de los envíos semilla (históricos y del día).
         return jdbc.query("""
                         SELECT DISTINCT c.full_name, substring(s.notes FROM 'patrón ([A-Z]+)') AS pattern
                         FROM shipments s JOIN customers c ON c.id = s.customer_id
-                        WHERE s.scheduled_date = CURRENT_DATE AND s.source = 'seed'""",
+                        WHERE s.source = 'seed' AND s.notes LIKE '%patrón%'""",
                         (rs, i) -> Map.entry(rs.getString(1), rs.getString(2)))
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -148,7 +149,10 @@ class SeedDataIT {
     @Test
     void cargaTreintaClientesConCoordenadasEnSantiago() {
         assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(30);
-        assertThat(count("SELECT count(DISTINCT commune) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(30);
+        // 25 locales en la zona de reparto (5 por comuna) y 5 fuera de ella.
+        assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS + " AND commune IN " + ZONE))
+                .isEqualTo(25);
+        assertThat(count("SELECT count(DISTINCT commune) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(10);
         // Bounding box aproximado del Gran Santiago.
         assertThat(count("""
                 SELECT count(*) FROM customers WHERE %s
@@ -163,7 +167,11 @@ class SeedDataIT {
                 SELECT (max(attempted_at)::date - min(attempted_at)::date) FROM delivery_attempts
                 """)).isBetween(55, 60);
         assertThat(count("SELECT count(*) FROM delivery_attempts WHERE attempted_at > now()")).isZero();
-        assertThat(count("SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE")).isEqualTo(50);
+        assertThat(count("SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE")).isEqualTo(24);
+        // Todos los envíos del día son de la zona de 5 comunas vecinas, uno por local.
+        assertThat(count("""
+                SELECT count(DISTINCT s.customer_id) FROM shipments s JOIN customers c ON c.id = s.customer_id
+                WHERE s.scheduled_date = CURRENT_DATE AND c.commune IN """ + ZONE)).isEqualTo(24);
     }
 
     @Test
@@ -187,6 +195,40 @@ class SeedDataIT {
         UUID clienteB = UUID.fromString("5eed0000-0000-4000-8000-000000000004");
         assertThat(learning.learn(clienteA, attempts).hoursToAvoid()).contains(14, 15, 16);
         assertThat(learning.learn(clienteB, attempts).hoursToAvoid()).contains(11, 15, 17);
+    }
+
+    /** Los locales no reciben siempre en su ventana real: entre 70% y 95% de las visitas en ella. */
+    @Test
+    void dentroDeSuVentanaRealCadaLocalRecibeEntre70Y95PorCiento() {
+        Map<String, Integer> realStart = Map.of("MORNING", 9, "MIDDAY", 12, "AFTERNOON", 15, "EVENING", 18);
+        Map<String, String> patterns = patternByCustomerName();
+        List<Map<String, Object>> customers = jdbc.queryForList(
+                "SELECT id, full_name FROM customers WHERE " + SEED_CUSTOMERS);
+        Set<Integer> distinctAccepted = new java.util.HashSet<>();
+
+        for (Map<String, Object> c : customers) {
+            String name = (String) c.get("full_name");
+            int start = realStart.get(patterns.get(name));
+            Map<String, Object> counts = jdbc.queryForMap("""
+                    SELECT count(*) AS visits, count(*) FILTER (WHERE outcome = 'ACCEPTED') AS accepted
+                    FROM delivery_attempts
+                    WHERE customer_id = ?
+                      AND extract(hour FROM attempted_at AT TIME ZONE 'America/Santiago') BETWEEN ? AND ?""",
+                    c.get("id"), start, start + 1);
+            long visits = (Long) counts.get("visits");
+            long accepted = (Long) counts.get("accepted");
+            assertThat(visits).as(name).isEqualTo(14);
+            assertThat((double) accepted / visits).as("%s: %d de %d", name, accepted, visits).isBetween(0.70, 0.95);
+            distinctAccepted.add((int) accepted);
+
+            // El motor sigue aprendiendo la misma ventana con el ruido.
+            assertThat(learning.learn((UUID) c.get("id"), attempts).recommendedStartHour()).as(name).isEqualTo(start);
+        }
+        // No todos iguales: hay locales de 10, 11, 12 y 13 de 14.
+        assertThat(distinctAccepted).containsExactlyInAnyOrder(10, 11, 12, 13);
+        // Los rechazos dentro de la ventana son "encargado no estaba".
+        assertThat(count("SELECT count(*) FROM delivery_attempts WHERE rejection_reason = 'Encargado no estaba'"))
+                .isEqualTo(75); // 1 + idx % 4 por local: 8 locales con 2, 8 con 3, 7 con 4 y 7 con 1
     }
 
     @Test
@@ -213,7 +255,7 @@ class SeedDataIT {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
 
         JsonNode route = json.readTree(body);
-        assertThat(route).hasSize(50);
+        assertThat(route).hasSize(count("SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE"));
 
         Map<String, String> patterns = patternByCustomerName();
         int morningStops = count("""

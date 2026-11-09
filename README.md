@@ -115,8 +115,8 @@ cuando corres `docker compose up` en la raíz) activa el perfil **`seed`**, que
 carga datos de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
 
 - un usuario por rol (`admin@`, `despacho@`, `conductor@`, `operador@` y `cliente@lastmile.cl`), todos con la contraseña `lastmile123`;
-- 30 locales comerciales de Santiago (botillerías, minimarkets, bares y restaurantes) con tipo, modulación declarada y 60 días de historial de intentos; 11 declaran un horario distinto de su ventana real;
-- 50 envíos para la fecha de hoy.
+- 30 locales comerciales de Santiago (botillerías, minimarkets, bares y restaurantes) con tipo, modulación declarada y 60 días de historial de intentos; 11 declaran un horario distinto de su ventana real, y dentro de su ventana reciben entre 71% y 93% de las visitas;
+- 24 envíos para la fecha de hoy, en 5 comunas vecinas (Santiago, Providencia, Ñuñoa, Macul y San Joaquín), que un camión alcanza a repartir en el horario.
 
 | Quiero… | Comando |
 |---|---|
