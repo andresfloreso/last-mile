@@ -2,10 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
+/*
+ * Tokens de diseño (HU-27). Los componentes usan solo estas variables, a través de
+ * las clases de Tailwind (tailwind.config.js): nada de colores sueltos.
+ * Franjas: Mañana 07–12, Mediodía 12–15, Tarde 15–19, Noche 19–22.
+ */
+:root {
+  color-scheme: light;
+  --color-page: #f4f6f8;
+  --color-panel: #ffffff;
+  --color-tile: #f3f4f6;
+  --color-float: #ffffff;
+  --color-line: #e5e7eb;
+  --color-border: #d1d5db;
+  --color-text: #111827;
+  --color-muted: #4b5563;
+  --color-primary: #1d4ed8;
+  --color-on-primary: #ffffff;
+  --color-reject: #dc2626;
+  --color-modband: #e5e7eb;
+  --color-route: #1d4ed8;
+  --color-badge-ink: #ffffff;
+  --color-warning-bg: #fef3c7;
+  --color-warning-ink: #78350f;
+
+  --band-morning: #2563eb;
+  --band-morning-bg: #dbeafe;
+  --band-morning-text: #1e3a8a;
+  --band-midday: #0f766e;
+  --band-midday-bg: #ccfbf1;
+  --band-midday-text: #134e4a;
+  --band-afternoon: #c2410c;
+  --band-afternoon-bg: #ffedd5;
+  --band-afternoon-text: #7c2d12;
+  --band-night: #7c3aed;
+  --band-night-bg: #ede9fe;
+  --band-night-text: #4c1d95;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-page: #0b0f14;
+  --color-panel: #11171f;
+  --color-tile: #18202a;
+  --color-float: #151c25;
+  --color-line: #1f2933;
+  --color-border: #2b3642;
+  --color-text: #f3f4f6;
+  --color-muted: #9ca3af;
+  --color-primary: #a3e635;
+  --color-on-primary: #0b0f14;
+  --color-reject: #f87171;
+  --color-modband: #253041;
+  --color-route: #a3e635;
+  --color-badge-ink: #0b0f14;
+  --color-warning-bg: #3a2e0a;
+  --color-warning-ink: #fde68a;
+
+  --band-morning: #38bdf8;
+  --band-morning-bg: #0c2a3a;
+  --band-morning-text: #bae6fd;
+  --band-midday: #2dd4bf;
+  --band-midday-bg: #0b2e2a;
+  --band-midday-text: #99f6e4;
+  --band-afternoon: #fbbf24;
+  --band-afternoon-bg: #33270a;
+  --band-afternoon-text: #fde68a;
+  --band-night: #c4b5fd;
+  --band-night-bg: #241f3a;
+  --band-night-text: #ddd6fe;
+}
+
+html,
+body,
+#root {
   height: 100%;
 }
 
 body {
-  @apply bg-slate-50 text-slate-800;
+  @apply bg-page text-ink font-sans text-sm antialiased;
+}
+
+/*
+ * #42: Leaflet usa z-index 400+ en sus capas. Con su propio contexto de apilamiento
+ * (isolation), el mapa no puede quedar encima de los paneles, drawers ni modales.
+ */
+.leaflet-container {
+  isolation: isolate;
+  z-index: 0;
+  background: var(--color-tile);
+  font-family: inherit;
+}
+
+.leaflet-control-attribution {
+  background: var(--color-float) !important;
+  color: var(--color-muted) !important;
+  font-size: 11px;
+}
+
+.leaflet-control-attribution a {
+  color: var(--color-muted) !important;
+}
+
+/* Marcadores divIcon de LastMile: sin fondo ni borde por defecto de Leaflet. */
+.lm-marker {
+  background: transparent;
+  border: none;
 }

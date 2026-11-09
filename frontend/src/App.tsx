@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import Login from "@/pages/Login";
-import RouteBuilder from "@/pages/RouteBuilder";
+import RoutePage from "@/pages/RoutePage";
 import Import from "@/pages/Import";
 import Shipments from "@/pages/Shipments";
 import LocalDetail from "@/pages/LocalDetail";
@@ -20,7 +20,7 @@ export default function App() {
         path="/"
         element={
           <RequireAuth>
-            <RouteBuilder />
+            <RoutePage />
           </RequireAuth>
         }
       />

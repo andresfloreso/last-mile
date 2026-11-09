@@ -1,15 +1,13 @@
 import { useState } from "react";
 import type { TimeWindow } from "@/types";
 import { declaredSpans, hourOf } from "@/lib/timeWindow";
+import { bandForWindowStart, bandVars } from "@/lib/timeWindows";
 
 /** Rango visible: de 07 a 22 h (HU-11). */
 const FIRST_HOUR = 7;
 const LAST_HOUR = 22; // la última columna es 22:00–23:00
 const HOURS = Array.from({ length: LAST_HOUR - FIRST_HOUR + 1 }, (_, i) => FIRST_HOUR + i);
 
-// Paleta categórica validada (slots 1 y 2: par adyacente, apto para daltonismo).
-const ACCEPTED = "#2a78d6";
-const REJECTED = "#eb6834";
 
 const W = 640;
 const H = 220;
@@ -41,6 +39,9 @@ function hh(h: number) {
  * modulación declarada (banda gris) y la ventana real aprendida (marco punteado).
  */
 export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
+  // Mismos colores que la tarjeta de la ruta (HU-27): entregas en la franja del local, no entregas en rechazo.
+  const ACCEPTED = bandVars(bandForWindowStart(tw.realWindow.start).id).solid;
+  const REJECTED = "var(--color-reject)";
   const [hover, setHover] = useState<number | null>(null);
   const buckets = tw.histogram.filter((b) => b.hour >= FIRST_HOUR && b.hour <= LAST_HOUR);
   const outside = tw.histogram
@@ -60,7 +61,7 @@ export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
 
   return (
     <figure className="space-y-2">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600" aria-hidden="true">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted" aria-hidden="true">
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: ACCEPTED }} /> Recibió
         </span>
@@ -69,11 +70,11 @@ export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
         </span>
         {spans.length > 0 && (
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-4 rounded-sm bg-slate-200" /> Modulación (declarada)
+            <span className="h-2.5 w-4 rounded-sm bg-tile" /> Modulación (declarada)
           </span>
         )}
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-4 rounded-sm border-2 border-dashed border-slate-700" />
+          <span className="h-2.5 w-4 rounded-sm border-2 border-dashed border-ink" />
           {real.basis === "LEARNED" ? "Ventana real" : "Horario por defecto"}
         </span>
       </div>
@@ -89,8 +90,8 @@ export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
           {/* Modulación: banda de fondo */}
           {spans.map(([a, b], i) => (
             <g key={i}>
-              <rect x={xOf(clamp(a))} y={PAD.top} width={xOf(clamp(b)) - xOf(clamp(a))} height={PLOT_H} fill="#e2e8f0" opacity={0.7} />
-              <text x={xOf(clamp(a)) + 4} y={PAD.top - 6} fontSize="10" fill="#475569">
+              <rect x={xOf(clamp(a))} y={PAD.top} width={xOf(clamp(b)) - xOf(clamp(a))} height={PLOT_H} fill="var(--color-modband)" opacity={0.7} />
+              <text x={xOf(clamp(a)) + 4} y={PAD.top - 6} fontSize="10" fill="var(--color-muted)">
                 Modulación
               </text>
             </g>
@@ -99,8 +100,8 @@ export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
           {/* Grilla y eje y */}
           {ticks.map((t) => (
             <g key={t}>
-              <line x1={PAD.left} x2={W - PAD.right} y1={yOf(t)} y2={yOf(t)} stroke="#e5e7eb" strokeWidth={1} />
-              <text x={PAD.left - 6} y={yOf(t) + 3} fontSize="10" textAnchor="end" fill="#64748b">
+              <line x1={PAD.left} x2={W - PAD.right} y1={yOf(t)} y2={yOf(t)} stroke="var(--color-line)" strokeWidth={1} />
+              <text x={PAD.left - 6} y={yOf(t) + 3} fontSize="10" textAnchor="end" fill="var(--color-muted)">
                 {t}
               </text>
             </g>
@@ -140,20 +141,20 @@ export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
             width={Math.max(realX2 - realX1 - 2, 0)}
             height={PLOT_H + 1}
             fill="none"
-            stroke="#334155"
+            stroke="var(--color-text)"
             strokeWidth={2}
             strokeDasharray="5 3"
             rx={4}
             pointerEvents="none"
           />
-          <text x={realX2 - 4} y={PAD.top - 6} fontSize="10" fontWeight={600} textAnchor="end" fill="#1e293b">
+          <text x={realX2 - 4} y={PAD.top - 6} fontSize="10" fontWeight={600} textAnchor="end" fill="var(--color-text)">
             {real.basis === "LEARNED" ? "Ventana real" : "Por defecto"}
           </text>
 
           {/* Eje x */}
-          <line x1={PAD.left} x2={W - PAD.right} y1={yOf(0)} y2={yOf(0)} stroke="#94a3b8" />
+          <line x1={PAD.left} x2={W - PAD.right} y1={yOf(0)} y2={yOf(0)} stroke="var(--color-border)" />
           {HOURS.map((h) => (
-            <text key={h} x={xOf(h) + COL / 2} y={H - 8} fontSize="10" textAnchor="middle" fill="#64748b">
+            <text key={h} x={xOf(h) + COL / 2} y={H - 8} fontSize="10" textAnchor="middle" fill="var(--color-muted)">
               {String(h).padStart(2, "0")}
             </text>
           ))}
@@ -161,32 +162,32 @@ export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
 
         {hovered && (
           <div
-            className="pointer-events-none absolute top-0 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs shadow-md"
+            className="pointer-events-none absolute top-0 rounded-md border border-line bg-panel px-2.5 py-1.5 text-xs shadow-md"
             style={{
               left: `${((xOf(hovered.hour) + COL / 2) / W) * 100}%`,
               transform: hovered.hour > 17 ? "translateX(-100%)" : "translateX(0)",
             }}
           >
-            <p className="font-semibold text-slate-800">
+            <p className="font-semibold text-ink">
               {hh(hovered.hour)}–{hh(hovered.hour + 1)}
             </p>
-            <p className="text-slate-600">
+            <p className="text-muted">
               Recibió {hovered.accepted} · No recibió {hovered.rejected}
             </p>
           </div>
         )}
       </div>
 
-      <figcaption className="text-xs text-slate-500">
+      <figcaption className="text-xs text-muted">
         Intentos de entrega por hora (hora de Santiago), de 07 a 22 h.
         {outside > 0 && ` ${outside} ${outside === 1 ? "intento" : "intentos"} fuera de ese rango no se muestran.`}
       </figcaption>
 
-      <details className="text-xs text-slate-600">
-        <summary className="cursor-pointer select-none text-brand-700">Ver como tabla</summary>
+      <details className="text-xs text-muted">
+        <summary className="cursor-pointer select-none text-primary">Ver como tabla</summary>
         <table className="mt-2 w-full max-w-sm">
           <thead>
-            <tr className="text-left text-slate-500">
+            <tr className="text-left text-muted">
               <th className="py-1 font-medium">Hora</th>
               <th className="py-1 font-medium text-right">Recibió</th>
               <th className="py-1 font-medium text-right">No recibió</th>
@@ -196,7 +197,7 @@ export default function TimeWindowChart({ tw }: { tw: TimeWindow }) {
             {buckets
               .filter((b) => b.accepted + b.rejected > 0)
               .map((b) => (
-                <tr key={b.hour} className="border-t border-slate-100">
+                <tr key={b.hour} className="border-t border-line">
                   <td className="py-1">
                     {hh(b.hour)}–{hh(b.hour + 1)}
                   </td>

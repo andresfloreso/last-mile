@@ -15,12 +15,12 @@ const STATUS_LABEL: Record<ShipmentStatus, string> = {
 };
 
 const STATUS_STYLE: Record<ShipmentStatus, string> = {
-  PENDING: "bg-slate-100 text-slate-700",
-  ROUTED: "bg-blue-100 text-blue-800",
-  OUT_FOR_DELIVERY: "bg-indigo-100 text-indigo-800",
-  DELIVERED: "bg-emerald-100 text-emerald-800",
-  REJECTED: "bg-red-100 text-red-800",
-  RESCHEDULED: "bg-amber-100 text-amber-800",
+  PENDING: "bg-tile text-ink",
+  ROUTED: "bg-band-morning-bg text-band-morning-ink",
+  OUT_FOR_DELIVERY: "bg-band-night-bg text-band-night-ink",
+  DELIVERED: "bg-band-midday-bg text-band-midday-ink",
+  REJECTED: "bg-tile text-reject",
+  RESCHEDULED: "bg-warning-bg text-warning-ink",
 };
 
 const BUSINESS_LABEL: Record<BusinessType, string> = {
@@ -96,24 +96,24 @@ export default function Shipments() {
   const hasFilters = !!(status || commune || search);
 
   const inputClass =
-    "rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
+    "rounded-md border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto space-y-4">
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-semibold text-slate-800">Envíos</h1>
-            <p className="text-sm text-slate-500">Qué sale cada día, con su local y estado.</p>
+            <h1 className="text-xl font-semibold text-ink">Envíos</h1>
+            <p className="text-sm text-muted">Qué sale cada día, con su local y estado.</p>
           </div>
         </div>
 
         <form
-          className="bg-white rounded-lg border border-slate-200 p-4 flex flex-wrap items-end gap-3"
+          className="bg-panel rounded-lg border border-line p-4 flex flex-wrap items-end gap-3"
           onSubmit={(e) => e.preventDefault()}
           role="search"
         >
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted">
             Fecha
             <span className="flex items-center gap-2">
               <input
@@ -124,18 +124,18 @@ export default function Shipments() {
                 aria-label="Fecha programada"
               />
               {date ? (
-                <button type="button" onClick={() => setDate("")} className="text-xs text-brand-700 hover:underline">
+                <button type="button" onClick={() => setDate("")} className="text-xs text-primary hover:underline">
                   Todas las fechas
                 </button>
               ) : (
-                <button type="button" onClick={() => setDate(localToday())} className="text-xs text-brand-700 hover:underline">
+                <button type="button" onClick={() => setDate(localToday())} className="text-xs text-primary hover:underline">
                   Hoy
                 </button>
               )}
             </span>
           </label>
 
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted">
             Estado
             <select
               value={status}
@@ -151,7 +151,7 @@ export default function Shipments() {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted">
             Comuna
             <input
               type="text"
@@ -162,7 +162,7 @@ export default function Shipments() {
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600 flex-1 min-w-[16rem]">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted flex-1 min-w-[16rem]">
             Buscar
             <input
               type="search"
@@ -181,17 +181,17 @@ export default function Shipments() {
                 setCommune("");
                 setSearch("");
               }}
-              className="text-sm text-slate-500 hover:text-slate-800 py-2"
+              className="text-sm text-muted hover:text-ink py-2"
             >
               Limpiar filtros
             </button>
           )}
         </form>
 
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="bg-panel rounded-lg border border-line overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <thead className="bg-tile text-left text-xs font-semibold uppercase tracking-wide text-muted">
                 <tr>
                   <th className="px-4 py-3">Fecha</th>
                   <th className="px-4 py-3">Código</th>
@@ -202,51 +202,51 @@ export default function Shipments() {
                   <th className="px-4 py-3 text-right">Bultos</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line">
                 {result?.content.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600">{formatDate(s.scheduledDate)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-slate-700">{s.trackingCode}</td>
+                  <tr key={s.id} className="hover:bg-tile">
+                    <td className="px-4 py-3 whitespace-nowrap text-muted">{formatDate(s.scheduledDate)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-ink">{s.trackingCode}</td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-800">{s.customer.fullName}</div>
+                      <div className="font-medium text-ink">{s.customer.fullName}</div>
                       {s.customer.businessType && (
-                        <div className="text-xs text-slate-500">{BUSINESS_LABEL[s.customer.businessType]}</div>
+                        <div className="text-xs text-muted">{BUSINESS_LABEL[s.customer.businessType]}</div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-muted">
                       {s.customer.address}
                       {s.customer.geocodeStatus === "REVIEW" && (
                         <span
-                          className="ml-2 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800"
+                          className="ml-2 inline-block rounded bg-warning-bg px-1.5 py-0.5 text-xs font-medium text-warning-ink"
                           title="Ubicación aproximada o no encontrada al geocodificar"
                         >
                           Revisar
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600">{s.customer.commune ?? "—"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted">{s.customer.commune ?? "—"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[s.status]}`}>
                         {STATUS_LABEL[s.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-700">{s.packageCount}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-ink">{s.packageCount}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {error && <p className="px-4 py-6 text-sm text-red-600">{error}</p>}
+          {error && <p className="px-4 py-6 text-sm text-reject">{error}</p>}
           {!error && !loading && total === 0 && (
-            <p className="px-4 py-10 text-center text-sm text-slate-500">
+            <p className="px-4 py-10 text-center text-sm text-muted">
               {date && !hasFilters
                 ? `No hay envíos programados para el ${formatDate(date)}.`
                 : "Ningún envío coincide con los filtros."}
             </p>
           )}
 
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
+          <div className="flex items-center justify-between border-t border-line px-4 py-3 text-sm text-muted">
             <span aria-live="polite">
               {loading ? "Cargando…" : total === 0 ? "Sin resultados" : `Mostrando ${first}–${last} de ${total}`}
             </span>
@@ -255,7 +255,7 @@ export default function Shipments() {
                 type="button"
                 onClick={() => setPage((p) => p - 1)}
                 disabled={loading || page === 0}
-                className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-40 hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1.5 disabled:opacity-40 hover:bg-tile"
               >
                 Anterior
               </button>
@@ -263,7 +263,7 @@ export default function Shipments() {
                 type="button"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={loading || !result || page + 1 >= result.totalPages}
-                className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-40 hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1.5 disabled:opacity-40 hover:bg-tile"
               >
                 Siguiente
               </button>
