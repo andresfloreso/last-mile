@@ -26,6 +26,11 @@ spring:
       hibernate:
         format_sql: true
 
+auth:
+  # #44: LastMile es B2B; las cuentas las crea un ADMIN (POST /api/users).
+  # Con false (por defecto), POST /api/auth/register responde 404.
+  public-registration-enabled: ${PUBLIC_REGISTRATION_ENABLED:false}
+
 jwt:
   # Sin valor por defecto: si falta o tiene menos de 32 caracteres, el servicio
   # no arranca (ver JwtSecrets). En tests lo define src/test/resources/config/application.yml.

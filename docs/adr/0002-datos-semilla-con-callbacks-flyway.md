@@ -9,7 +9,8 @@
 Para desarrollar, probar y hacer demos se necesita un ambiente con datos
 realistas: un usuario por rol, 30 clientes en Santiago, 60 días de intentos
 de entrega con **patrones conocidos** (para demostrar que el motor de
-ventanas horarias los aprende) y 50 envíos para **la fecha de hoy**.
+ventanas horarias los aprende) y envíos para **la fecha de hoy** (50 al
+inicio; 24 en una zona de 5 comunas desde el Sprint 3).
 
 Requisitos:
 

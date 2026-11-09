@@ -16,10 +16,31 @@ código y es la fuente de verdad, así que no se edita a mano.
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| POST | `/api/auth/register` | Público | Crea un usuario **CLIENT**; el campo `role` se ignora |
 | POST | `/api/auth/login` | Público | Devuelve access token y refresh token |
 | POST | `/api/auth/refresh` | Público (refresh token) | Renueva el access token |
-| POST | `/api/users` | `ADMIN` | Crea un usuario con cualquier rol (HU-05) |
+| POST | `/api/users` | `ADMIN` | Crea un usuario con cualquier rol (HU-05). Es la única forma de crear cuentas |
+| POST | `/api/auth/register` | Desactivado (404) | LastMile es B2B: no hay registro público (#44). Solo existe con `PUBLIC_REGISTRATION_ENABLED=true`, y entonces crea **CLIENT** (el campo `role` se ignora) |
+
+## Permisos (#44: denegar por defecto)
+
+En `delivery-service` e `import-service`, todo lo que no es público exige un
+rol interno (`ADMIN`, `DISPATCHER`, `OPERATOR` o `DRIVER`). `CLIENT` solo llega
+a lo público. Un endpoint sin regla propia queda cerrado a `CLIENT`.
+
+| Servicio | Ruta | ADMIN | DISPATCHER | OPERATOR | DRIVER | CLIENT / sin token |
+|---|---|:-:|:-:|:-:|:-:|:-:|
+| delivery | `GET /api/tracking/{codigo}`, `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ | ✓ (público) |
+| delivery | `POST /api/shipments/customers`, `POST /api/shipments`, `GET /api/shipments`, `PATCH`/`DELETE /api/shipments/{id}`, `POST /api/shipments/{id}/duplicate` | ✓ | ✓ | ✓ | — | — |
+| delivery | `POST /api/shipments/attempts` (intentos de entrega) | ✓ | ✓ | ✓ | ✓ | — |
+| delivery | `GET /api/customers/{id}`, `GET /api/customers/{id}/time-window` | ✓ | ✓ | ✓ | ✓ | — |
+| delivery | `PUT /api/customers/{id}/declared-window`, `PUT /api/customers/{id}/location` | ✓ | ✓ | ✓ | — | — |
+| delivery | `POST /api/routes/build` | ✓ | ✓ | — | — | — |
+| delivery | `GET /api/geocoding/search` y cualquier otra ruta | ✓ | ✓ | ✓ | ✓ | — |
+| import | `GET /api/import/template`, `POST /api/import/shipments` | ✓ | ✓ | ✓ | — | — |
+| import | `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ | ✓ (público) |
+
+`—` = 403 con token válido; 401 sin token. Swagger sigue público en desarrollo
+(se desactiva fuera de desarrollo en #43).
 
 ### `POST /api/users`
 
@@ -39,8 +60,8 @@ código y es la fuente de verdad, así que no se edita a mano.
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| POST | `/api/shipments/customers` | Autenticado | Crea un local o devuelve el existente con el mismo `externalCode`. Acepta `businessType`, `declaredWindowStart`/`End` y el segundo tramo `declaredWindow2Start`/`End`; si el local ya existía y la request trae tipo o modulación, los actualiza |
-| GET | `/api/customers/{id}` | Autenticado | Detalle del local, con su tipo y su modulación |
+| POST | `/api/shipments/customers` | `ADMIN`, `DISPATCHER`, `OPERATOR` | Crea un local o devuelve el existente con el mismo `externalCode`. Acepta `businessType`, `declaredWindowStart`/`End` y el segundo tramo `declaredWindow2Start`/`End`; si el local ya existía y la request trae tipo o modulación, los actualiza |
+| GET | `/api/customers/{id}` | `ADMIN`, `DISPATCHER`, `OPERATOR`, `DRIVER` | Detalle del local, con su tipo y su modulación. `CLIENT` recibe 403 (#38) |
 | PUT | `/api/customers/{id}/declared-window` | `ADMIN`, `DISPATCHER`, `OPERATOR` | Reemplaza la modulación (uno o dos tramos); todo en `null` la elimina |
 | PUT | `/api/customers/{id}/location` | `ADMIN`, `DISPATCHER`, `OPERATOR` | Fija `latitude`/`longitude` a mano y quita la marca "revisar" (HU-09) |
 
@@ -63,7 +84,7 @@ Respuesta (`CustomerResponse`):
 | Código | Cuándo |
 |---|---|
 | 400 | Tramo incompleto, inicio posterior al término, segundo tramo solapado, hora con formato inválido o `businessType` desconocido |
-| 403 | Rol sin permiso para editar |
+| 403 | Rol sin permiso: `CLIENT` en el detalle; `DRIVER` o `CLIENT` al editar |
 | 404 | El local no existe |
 
 ### Geocodificación al importar (HU-09)
@@ -91,6 +112,37 @@ salieron las coordenadas:
 - Variables: `NOMINATIM_URL`, `NOMINATIM_USER_AGENT` (la política de Nominatim
   exige identificar la app y un contacto), `GEOCODING_MIN_INTERVAL` y
   `GEOCODING_MIN_PLACE_RANK` (ver `.env.example`).
+
+## Listado de envíos (HU-10)
+
+`GET /api/shipments` (`ADMIN`, `DISPATCHER`, `OPERATOR`; ver Permisos) devuelve una página de envíos, cada uno con
+su local embebido. Todos los filtros son opcionales y se combinan con AND.
+
+| Parámetro | Ejemplo | Descripción |
+|---|---|---|
+| `date` | `2026-12-15` | Un solo día programado. No se combina con `from`/`to` |
+| `from`, `to` | `2026-12-01`, `2026-12-15` | Rango de días, inclusive. Se puede usar solo uno de los dos |
+| `status` | `PENDING` | Uno o más estados: `status=PENDING&status=ROUTED` o `status=PENDING,ROUTED` |
+| `commune` | `nunoa` | Comuna del local, exacta, sin distinguir mayúsculas ni tildes |
+| `q` | `roble` | Busca en el nombre del local, su dirección, el tracking y el código externo |
+| `page` | `0` | Página, desde 0 (por defecto 0) |
+| `size` | `20` | De 1 a 500 (por defecto 20). 500 alcanza para la ruta completa de un día |
+
+Orden: fecha más reciente primero; dentro de un día, por posición en la ruta
+(los que no tienen posición van al final) y luego por tracking.
+
+```json
+{
+  "content": [ { "trackingCode": "SEED-20261109-01", "status": "PENDING", "customer": { "fullName": "Minimarket Don Lucho", "...": "..." }, "...": "..." } ],
+  "page": 0, "size": 20, "totalElements": 50, "totalPages": 3
+}
+```
+
+Responde 400 si una fecha o un estado son inválidos, si se combina `date` con
+`from`/`to`, si `from` es posterior a `to` o si `page`/`size` están fuera de rango.
+
+> Hasta el Sprint 2 este endpoint exigía `date` y devolvía un arreglo. La
+> pantalla de rutas usa ahora `size=500` y lee `content`.
 
 ## Modulación vs. ventana real (HU-11)
 

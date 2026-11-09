@@ -14,6 +14,8 @@ import cl.lastmile.delivery.repository.ShipmentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -113,9 +115,22 @@ public class ShipmentService {
         return ShipmentResponse.from(shipmentRepository.save(shipment));
     }
 
+    /** Tamaño máximo de página: alcanza para cargar la ruta completa de un día en una sola llamada. */
+    public static final int MAX_PAGE_SIZE = 500;
+
+    /** Orden del listado: fecha más reciente primero; dentro del día, por posición en la ruta y tracking. */
+    static final Sort LIST_ORDER = Sort.by(
+            Sort.Order.desc("scheduledDate"),
+            Sort.Order.asc("routePosition").nullsLast(),
+            Sort.Order.asc("trackingCode"));
+
     @Transactional(readOnly = true)
-    public List<ShipmentResponse> findByDate(java.time.LocalDate date) {
-        return shipmentRepository.findByScheduledDate(date).stream().map(ShipmentResponse::from).toList();
+    public PageResponse<ShipmentResponse> search(ShipmentFilter filter, int page, int size) {
+        if (page < 0) throw new BadRequestException("page debe ser 0 o mayor");
+        if (size < 1 || size > MAX_PAGE_SIZE) throw new BadRequestException("size debe estar entre 1 y " + MAX_PAGE_SIZE);
+        return PageResponse.from(shipmentRepository
+                .findAll(filter.toSpecification(), PageRequest.of(page, size, LIST_ORDER))
+                .map(ShipmentResponse::from));
     }
 
     @Transactional

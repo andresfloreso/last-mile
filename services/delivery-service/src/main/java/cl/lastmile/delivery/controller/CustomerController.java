@@ -26,9 +26,11 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @GetMapping("/{customerId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'OPERATOR', 'DRIVER')")
     @Operation(summary = "Detalle de un local", description = "Incluye el tipo de local y su modulación declarada.")
     @ApiResponse(responseCode = "200", description = "Local encontrado")
     @ApiResponse(responseCode = "400", description = "customerId no es un identificador válido")
+    @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN, DISPATCHER, OPERATOR o DRIVER)")
     @ApiResponse(responseCode = "404", description = "El local no existe")
     public ResponseEntity<CustomerResponse> get(@Parameter(description = "Id del local") @PathVariable String customerId) {
         return ResponseEntity.ok(customerService.get(customerId));

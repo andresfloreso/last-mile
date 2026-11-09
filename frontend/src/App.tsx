@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import Login from "@/pages/Login";
 import RouteBuilder from "@/pages/RouteBuilder";
 import Import from "@/pages/Import";
+import Shipments from "@/pages/Shipments";
 import LocalDetail from "@/pages/LocalDetail";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -13,12 +13,6 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
-
-  useEffect(() => {
-    hydrateFromStorage();
-  }, [hydrateFromStorage]);
-
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -27,6 +21,14 @@ export default function App() {
         element={
           <RequireAuth>
             <RouteBuilder />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/envios"
+        element={
+          <RequireAuth>
+            <Shipments />
           </RequireAuth>
         }
       />

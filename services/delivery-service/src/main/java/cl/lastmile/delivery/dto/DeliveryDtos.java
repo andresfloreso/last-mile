@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.Page;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -253,6 +254,20 @@ public class DeliveryDtos {
         public static DeliveryAttemptResponse from(DeliveryAttempt a) {
             return new DeliveryAttemptResponse(a.getId(), a.getShipment().getId(), a.getCustomer().getId(),
                     a.getAttemptedAt(), name(a.getOutcome()), a.getRejectionReason());
+        }
+    }
+
+    @Schema(description = "Una página de resultados")
+    public record PageResponse<T>(
+            @Schema(description = "Elementos de esta página") List<T> content,
+            @Schema(description = "Número de página, desde 0", example = "0") int page,
+            @Schema(description = "Tamaño de página pedido", example = "20") int size,
+            @Schema(description = "Total de elementos que cumplen los filtros", example = "57") long totalElements,
+            @Schema(description = "Total de páginas", example = "3") int totalPages
+    ) {
+        public static <T> PageResponse<T> from(Page<T> page) {
+            return new PageResponse<>(page.getContent(), page.getNumber(), page.getSize(),
+                    page.getTotalElements(), page.getTotalPages());
         }
     }
 

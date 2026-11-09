@@ -37,16 +37,23 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
 ## Locales, historial y envíos (deliverydb)
 
 - **30 locales comerciales** de Santiago (8 minimarkets, 8 botillerías, 7
-  restaurantes y 7 bares), uno por comuna, con coordenadas reales.
-  `external_code` = `SEED-C01` … `SEED-C30`. Cada local tiene **tipo** y
-  **modulación** (horario de recepción declarado, HU-25).
+  restaurantes y 7 bares) con coordenadas aproximadas de calles reales.
+  **25 están en una zona de reparto de 5 comunas vecinas** (Santiago,
+  Providencia, Ñuñoa, Macul y San Joaquín, 5 por comuna) y **5 fuera** (Las
+  Condes, Vitacura, Lo Barnechea, Puente Alto y San Bernardo: locales 3, 6, 7,
+  11 y 16). `external_code` = `SEED-C01` … `SEED-C30`. Cada local tiene
+  **tipo** y **modulación** (horario de recepción declarado, HU-25).
 - **Historial de 60 días**: un intento cada 3 días por local (600 en total).
-  ~70% dentro de su ventana real (`ACCEPTED`) y ~30% fuera de ella
-  (`REJECTED_NOT_HOME`, "Local cerrado"). Es determinista: siempre se generan
-  los mismos datos.
-- **50 envíos para hoy** (`SEED-<yyyymmdd>-01` … `-50`): los locales 1–20
-  reciben 2 y los 21–30, 1. Si levantas el ambiente otro día, se crean los
-  envíos de ese día.
+  Por local: 14 visitas en su ventana real y 6 fuera de ella
+  (`REJECTED_NOT_HOME`, "Local cerrado"). **Dentro de la ventana no siempre
+  recibe**: entre 1 y 4 de las 14 son "Encargado no estaba", así que acepta
+  10, 11, 12 o 13 de 14 (71% a 93%; `1 + idx % 4` rechazos). Esos rechazos se
+  reparten entre las dos horas de la ventana para que el motor aprenda la misma
+  ventana. Es determinista: siempre se generan los mismos datos.
+- **24 envíos para hoy** (`SEED-<yyyymmdd>-01` … `-24`): uno por local de la
+  zona, salvo el 29, para que **un camión alcance a hacer la ruta en el
+  horario** (mañana 7, mediodía 7, tarde 4, noche 6). Si levantas el ambiente
+  otro día, se crean los envíos de ese día.
 - Si la base ya tenía la semilla de HU-01 (30 "clientes" personas), los
   locales se actualizan solos al arrancar: el script usa `ON CONFLICT DO UPDATE`.
 
@@ -65,7 +72,7 @@ las 18 h, por eso el patrón `EVENING` se aprende como 18:00–20:00.
 ### Modulación (lo que el local declara)
 
 **19 locales** declaran su ventana real: minimarkets 09–12, botillerías 12–15,
-restaurantes 15–18 y bares 18–21. La **Botillería Huechuraba** (26) declara
+restaurantes 15–18 y bares 18–21. La **Botillería Villa Frei** (26) declara
 además un segundo tramo, de 17 a 19 h.
 
 **11 locales (más de un tercio) declaran otro horario**, como pasa en
@@ -78,16 +85,22 @@ que reciben en la mañana declaran 15–18.
 | 4 | Bar La Esquina de Ñuñoa ("local B") | 09–12 | después de las 19 |
 | 6 | Botillería Vitacura | 09–12 | 12–14 |
 | 9 | Minimarket Los Andes | 15–18 | 09–11 |
-| 12 | Bar La Gran Avenida | 09–12 | después de las 19 |
-| 15 | Restaurant Lo Martínez | 09–12 | 15–17 |
-| 18 | Botillería Cerrillos | 09–12 | 12–14 |
-| 21 | Minimarket San Pablo | 15–18 | 09–11 |
+| 12 | Bar Dublé Almeyda | 09–12 | después de las 19 |
+| 15 | Restaurant Alessandri | 09–12 | 15–17 |
+| 18 | Botillería Carlos Valdovinos | 09–12 | 12–14 |
+| 21 | Minimarket Los Leones | 15–18 | 09–11 |
 | 24 | Bar Santa María | 09–12 | después de las 19 |
-| 27 | Restaurant Independencia | 09–12 | 15–17 |
+| 27 | Restaurant San Diego | 09–12 | 15–17 |
 | 30 | Botillería Departamental | 09–12 | 12–14 |
 
 `SeedDataIT` verifica que el motor aprende la ventana real de los 30 locales,
-y no la modulación declarada.
+y no la modulación declarada, también con el ruido dentro de la ventana.
+
+> Los locales mantienen su UUID y su historial. En el Sprint 3 se reubicaron 20
+> de ellos en la zona de reparto y se renombraron los que tenían nombre de otra
+> comuna. Una base existente se actualiza sola (dirección, comuna y
+> coordenadas), pero su historial no cambia: para tener el ruido nuevo, recrea
+> la base con `docker compose down -v`.
 
 Ejemplos: el **local 1** (Minimarket Don Lucho, Santiago) es un local A que
 declara y recibe en la mañana. El **local 4** (Bar La Esquina de Ñuñoa) es un
