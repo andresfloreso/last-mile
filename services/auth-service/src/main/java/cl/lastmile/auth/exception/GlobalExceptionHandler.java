@@ -15,6 +15,9 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
         return build(HttpStatus.UNAUTHORIZED, ex.getMessage());
@@ -48,9 +51,15 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Cuerpo de la solicitud inválido");
     }
 
+    /** 500 genérico (#12): el detalle queda en el log con un código, nunca en la respuesta. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno: " + ex.getMessage());
+        String errorId = java.util.UUID.randomUUID().toString();
+        log.error("Error no controlado [errorId={}]", errorId, ex);
+        ResponseEntity<Map<String, Object>> response = build(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error interno del servidor. Si persiste, informa este código: " + errorId);
+        response.getBody().put("errorId", errorId);
+        return response;
     }
 
     private ResponseEntity<Map<String, Object>> build(HttpStatus status, String message) {

@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
     Optional<Shipment> findByTrackingCode(String trackingCode);
+    boolean existsByTrackingCode(String trackingCode);
     List<Shipment> findByScheduledDate(LocalDate date);
     List<Shipment> findByScheduledDateOrderByRoutePositionAsc(LocalDate date);
 }
