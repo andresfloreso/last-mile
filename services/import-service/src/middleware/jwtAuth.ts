@@ -47,6 +47,9 @@ export function jwtAuth(req: AuthenticatedRequest, res: Response, next: NextFunc
   }
 }
 
+/** Roles de la distribuidora. CLIENT queda fuera de todo lo no público (#44). */
+export const INTERNAL_ROLES = ["ADMIN", "DISPATCHER", "OPERATOR", "DRIVER"] as const;
+
 /** Restringe el acceso a un conjunto de roles (ADMIN, DISPATCHER, OPERATOR, etc). */
 export function requireRole(...roles: string[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {

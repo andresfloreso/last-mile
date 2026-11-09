@@ -34,10 +34,11 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/tracking/**").permitAll() // seguimiento público por trackingCode
-                .requestMatchers("/api/geocoding/**").authenticated() // buscador de direcciones del frontend
                 .requestMatchers("/api/routes/**").hasAnyRole("ADMIN", "DISPATCHER")
                 .requestMatchers("/api/shipments/import").hasAnyRole("ADMIN", "DISPATCHER", "OPERATOR")
-                .anyRequest().authenticated()
+                // Denegar por defecto (#44): todo lo demás exige un rol interno. CLIENT solo
+                // llega a lo público (seguimiento y health); cada controller afina con @PreAuthorize.
+                .anyRequest().hasAnyRole("ADMIN", "DISPATCHER", "OPERATOR", "DRIVER")
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
