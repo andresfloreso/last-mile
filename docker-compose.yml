@@ -161,7 +161,14 @@ services:
   # Frontend (React + Vite + TypeScript)
   # ---------------------------------------------------------------
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # Las VITE_* se leen al construir. Vacías = mapa base Esri (HU-27).
+      args:
+        VITE_TILE_URL_LIGHT: ${VITE_TILE_URL_LIGHT:-}
+        VITE_TILE_URL_DARK: ${VITE_TILE_URL_DARK:-}
+        VITE_TILE_ATTRIBUTION: ${VITE_TILE_ATTRIBUTION:-}
+        VITE_TILE_MAX_NATIVE_ZOOM: ${VITE_TILE_MAX_NATIVE_ZOOM:-}
     container_name: lastmile-frontend
     depends_on:
       api-gateway:

@@ -335,8 +335,14 @@ cd frontend && npm ci && npm run dev
 | `VITE_API_BASE_URL` | — | URL del gateway (por ejemplo `http://localhost:8080`) |
 | `VITE_TILE_URL_LIGHT` / `VITE_TILE_URL_DARK` | Esri Gray Canvas claro / oscuro | Mapa base. CARTO exige API key desde 2026: ver `frontend/src/lib/config.ts` |
 | `VITE_TILE_ATTRIBUTION` | Atribución de Esri y OpenStreetMap | Atribución del mapa base |
+| `VITE_TILE_MAX_NATIVE_ZOOM` | `16` | Zoom máximo con teselas propias del proveedor |
 | `VITE_DEPOT_LAT` / `VITE_DEPOT_LNG` | `-33.4489` / `-70.6693` | Bodega desde donde sale el camión |
 | `VITE_DEPARTURE_TIME` | `08:00` | Hora de salida para la hora estimada (HU-14) |
+
+Con Docker, las cuatro `VITE_TILE_*` van en `.env` y compose las pasa como
+build args (vacías = Esri); hay que reconstruir con `--build`. El proveedor
+definitivo del mapa base y su API key se eligen antes de HU-24 (ver
+`docs/plan/hallazgos.md`).
 
 El tema claro u oscuro se elige con el botón del header, se guarda en el
 navegador y, la primera vez, sigue la preferencia del sistema.
