@@ -56,6 +56,10 @@ class JwtAuthenticationFilterTest {
         return run(MockServerHttpRequest.get(path).header("Authorization", "Bearer " + token).build());
     }
 
+    private static String body(MockServerWebExchange exchange) {
+        return exchange.getResponse().getBodyAsString().block();
+    }
+
     @Test
     void lasRutasPublicasPasanSinToken() {
         for (String path : new String[]{"/api/auth/login", "/api/auth/register", "/api/auth/refresh",
@@ -102,6 +106,8 @@ class JwtAuthenticationFilterTest {
 
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(forwarded.get()).isNull();
+        // #36: mensaje fijo, sin la hora del servidor ni el clock skew que trae jjwt.
+        assertThat(body(exchange)).isEqualTo("{\"error\":\"Token expirado\"}");
     }
 
     @Test
@@ -120,6 +126,8 @@ class JwtAuthenticationFilterTest {
 
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(forwarded.get()).isNull();
+        // #36: no dice que la firma no coincide ni repite el mensaje de jjwt.
+        assertThat(body(exchange)).isEqualTo("{\"error\":\"Token inválido\"}");
     }
 
     @Test
@@ -128,6 +136,25 @@ class JwtAuthenticationFilterTest {
 
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(forwarded.get()).isNull();
+        assertThat(body(exchange)).isEqualTo("{\"error\":\"Token inválido\"}");
+    }
+
+    @Test
+    void ningunaFallaDeValidacionExponeElMensajeDeJjwt() {
+        String[] tokens = {
+                token(SECRET, -1_000, Map.of("type", "access")),
+                token("otra-clave-distinta-tambien-de-32-caracteres", 60_000, Map.of("type", "access")),
+                "no-es-un-jwt",
+                accessToken("ADMIN") + "x",
+                "",
+        };
+        for (String t : tokens) {
+            String body = body(runWithToken("/api/shipments", t));
+            assertThat(body).as(t)
+                    .matches("\\{\"error\":\"Token (inválido|expirado)\"}")
+                    .doesNotContainIgnoringCase("signature")
+                    .doesNotContain("Current time", "clock skew", "JWT");
+        }
     }
 
     @Test
