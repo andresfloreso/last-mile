@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { DraftStop } from "@/types";
+import type { DraftStop, RouteStop } from "@/types";
 
 // Los iconos por defecto de Leaflet no cargan bien con bundlers (Vite) porque
 // referencian rutas relativas a los assets del paquete; se reconstruyen
@@ -17,12 +17,22 @@ L.Icon.Default.mergeOptions({
 /** Color de los locales con ubicación aproximada (HU-09: "revisar"). */
 export const REVIEW_COLOR = "#7c3aed";
 
-function numberedIcon(position: number, color: string, needsReview = false) {
+/** Paradas cuya hora estimada cae fuera de su ventana real (HU-14). */
+export const OUTSIDE_WINDOW_COLOR = "#dc2626";
+
+function hhmm(t: string) {
+  return t.substring(0, 5);
+}
+
+function numberedIcon(position: number, color: string, needsReview = false, outsideWindow = false) {
   // Un local "por revisar" lleva borde punteado y un "!" para distinguirlo sin depender solo del color.
+  // Una parada fuera de su ventana real lleva un reloj (HU-14), también además del color.
   const border = needsReview ? "2px dashed white" : "2px solid white";
   const badge = needsReview
     ? `<span style="position:absolute;top:-6px;right:-6px;background:#fff;color:${REVIEW_COLOR};width:14px;height:14px;border-radius:50%;font-size:11px;line-height:14px;text-align:center;font-weight:800">!</span>`
-    : "";
+    : outsideWindow
+      ? `<span style="position:absolute;top:-7px;right:-7px;background:#fff;width:15px;height:15px;border-radius:50%;font-size:10px;line-height:15px;text-align:center">⏰</span>`
+      : "";
   return L.divIcon({
     className: "custom-numbered-marker",
     html: `<div style="position:relative;background:${color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;border:${border};box-shadow:0 1px 4px rgba(0,0,0,0.4)">${position}${badge}</div>`,
@@ -57,10 +67,13 @@ function FitBounds({ points }: { points: [number, number][] }) {
 interface RouteMapProps {
   stops: DraftStop[];
   orderedPositions?: Record<string, number>; // tempId/shipmentId -> posición óptima (post-optimización)
+  /** Ruta optimizada con hora estimada y tramos por calle (HU-14). */
+  plannedRoute?: RouteStop[];
   currentLocation?: { lat: number; lng: number } | null;
 }
 
-export default function RouteMap({ stops, orderedPositions, currentLocation }: RouteMapProps) {
+export default function RouteMap({ stops, orderedPositions, plannedRoute, currentLocation }: RouteMapProps) {
+  const planByShipment = new Map((plannedRoute ?? []).map((r) => [r.shipmentId, r]));
   const geolocated = stops.filter((s) => s.latitude != null && s.longitude != null);
 
   const points: [number, number][] = geolocated.map((s) => [s.latitude!, s.longitude!]);
@@ -79,9 +92,14 @@ export default function RouteMap({ stops, orderedPositions, currentLocation }: R
       )
     : [];
 
+  // Con la ruta del backend, la polilínea sigue las calles (tramos de OSRM); si no, une las paradas en orden.
   const polylinePoints: [number, number][] = [];
-  if (currentLocation) polylinePoints.push([currentLocation.lat, currentLocation.lng]);
-  orderedGeolocated.forEach((s) => polylinePoints.push([s.latitude!, s.longitude!]));
+  if (plannedRoute && plannedRoute.some((r) => r.path.length > 0)) {
+    plannedRoute.forEach((r) => polylinePoints.push(...r.path));
+  } else {
+    if (currentLocation) polylinePoints.push([currentLocation.lat, currentLocation.lng]);
+    orderedGeolocated.forEach((s) => polylinePoints.push([s.latitude!, s.longitude!]));
+  }
 
   return (
     <MapContainer center={defaultCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
@@ -103,12 +121,20 @@ export default function RouteMap({ stops, orderedPositions, currentLocation }: R
       {geolocated.map((stop) => {
         const key = stop.shipmentId ?? stop.tempId;
         const position = orderedPositions?.[key];
-        const color = stop.needsReview ? REVIEW_COLOR : stop.stopType === "PICKUP" ? "#f59e0b" : "#0d6efd";
+        const plan = stop.shipmentId ? planByShipment.get(stop.shipmentId) : undefined;
+        const outside = plan?.outsideWindow ?? false;
+        const color = stop.needsReview
+          ? REVIEW_COLOR
+          : outside
+            ? OUTSIDE_WINDOW_COLOR
+            : stop.stopType === "PICKUP"
+              ? "#f59e0b"
+              : "#0d6efd";
         return (
           <Marker
             key={key}
             position={[stop.latitude!, stop.longitude!]}
-            icon={numberedIcon(position ?? 0, color, stop.needsReview)}
+            icon={numberedIcon(position ?? 0, color, stop.needsReview, outside)}
           >
             <Popup>
               <strong>{stop.customerName}</strong>
@@ -118,6 +144,23 @@ export default function RouteMap({ stops, orderedPositions, currentLocation }: R
               <span className="text-xs text-slate-500">
                 {stop.stopType === "PICKUP" ? "Recogida" : "Entrega"} · {stop.packageCount} paquete(s)
               </span>
+              {plan && (
+                <>
+                  <br />
+                  <span>
+                    Entrega {hhmm(plan.serviceStart)}
+                    {plan.waitMinutes > 0 ? ` (llega ${hhmm(plan.estimatedArrival)}, espera ${plan.waitMinutes} min)` : ""}
+                    {plan.dayOffset > 0 ? " (día siguiente)" : ""} · ventana real {hhmm(plan.windowStart)}–
+                    {hhmm(plan.windowEnd)}
+                  </span>
+                  {outside && (
+                    <>
+                      <br />
+                      <span style={{ color: OUTSIDE_WINDOW_COLOR, fontWeight: 600 }}>Fuera de su ventana real</span>
+                    </>
+                  )}
+                </>
+              )}
               {stop.needsReview && (
                 <>
                   <br />

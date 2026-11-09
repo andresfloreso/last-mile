@@ -1,12 +1,15 @@
 package cl.lastmile.delivery.dto;
 
 import cl.lastmile.delivery.algorithm.TimeWindowLearningService.CustomerTimeWindowProfile;
+import cl.lastmile.delivery.algorithm.RouteOptimizationService;
 import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.model.DeclaredWindow;
 import cl.lastmile.delivery.model.DeliveryAttempt;
 import cl.lastmile.delivery.model.Shipment;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
@@ -87,8 +90,64 @@ public class DeliveryDtos {
     public record RouteRequest(
             @NotNull LocalDate date,
             double depotLat,
-            double depotLng
+            double depotLng,
+            @Schema(description = "Hora de salida del depósito (HU-14). Por defecto routing.default-departure (08:00)",
+                    type = "string", example = "08:00")
+            LocalTime departureTime,
+            @Schema(description = "Minutos de entrega en cada local (HU-14). Por defecto routing.stop-minutes (10)",
+                    example = "10", minimum = "1", maximum = "120")
+            @Min(1) @Max(120) Integer stopMinutes
     ) {}
+
+    @Schema(description = "Parada de la ruta con su hora estimada (HU-14)")
+    public record PlannedStopResponse(
+            UUID shipmentId,
+            String customerName,
+            String address,
+            @Schema(description = "Posición en la ruta, desde 1") int position,
+            @Schema(description = "Inicio de la ventana real del local", type = "string", example = "12:00:00") LocalTime windowStart,
+            @Schema(description = "Fin de la ventana real del local", type = "string", example = "14:00:00") LocalTime windowEnd,
+            double confidence,
+            List<Integer> hoursToAvoid,
+            String stopType,
+            int packageCount,
+            @Schema(allowableValues = {"FIRST", "AUTO", "LAST"}) String orderPreference,
+            String label,
+            Double latitude,
+            Double longitude,
+            @JsonFormat(pattern = "HH:mm") @Schema(description = "Hora estimada de llegada del camión", type = "string", example = "11:42")
+            LocalTime estimatedArrival,
+            @JsonFormat(pattern = "HH:mm") @Schema(description = "Inicio estimado de la entrega: la llegada, o la apertura de la ventana si el camión llega antes", type = "string", example = "12:00")
+            LocalTime serviceStart,
+            @JsonFormat(pattern = "HH:mm") @Schema(description = "Salida estimada del local", type = "string", example = "12:10")
+            LocalTime estimatedDeparture,
+            @Schema(description = "Minutos de espera hasta que abre la ventana real", example = "18") int waitMinutes,
+            @Schema(description = "Minutos de viaje desde la parada anterior (o el depósito); null si el local no tiene coordenadas", example = "14")
+            Integer travelMinutes,
+            @Schema(description = "Metros desde la parada anterior; null si el local no tiene coordenadas", example = "5230")
+            Integer legDistanceMeters,
+            @Schema(description = "true si la entrega empezaría a la hora de cierre de la ventana real o después")
+            boolean outsideWindow,
+            @Schema(description = "Tramo desde la parada anterior como pares [lat, lng], para la polilínea del mapa")
+            List<double[]> path,
+            @Schema(description = "OSRM: tiempos por calle; ESTIMATED: OSRM no respondió, línea recta a velocidad urbana; NO_LOCATION: el local no tiene coordenadas",
+                    allowableValues = {"OSRM", "ESTIMATED", "NO_LOCATION"})
+            String timingSource,
+            @Schema(description = "0 si la llegada es el día programado; 1 si la ruta no alcanza y llega al día siguiente", example = "0")
+            int dayOffset
+    ) {
+        public static PlannedStopResponse of(RouteOptimizationService.RouteStop s,
+                                             LocalTime arrival, LocalTime serviceStart, LocalTime departure,
+                                             int waitMinutes, Integer travelMinutes, Integer legDistanceMeters,
+                                             boolean outsideWindow, List<double[]> path, String timingSource,
+                                             int dayOffset) {
+            return new PlannedStopResponse(s.shipmentId(), s.customerName(), s.address(), s.position(),
+                    s.windowStart(), s.windowEnd(), s.confidence(), s.hoursToAvoid(), s.stopType(),
+                    s.packageCount(), s.orderPreference(), s.label(), s.latitude(), s.longitude(),
+                    arrival, serviceStart, departure, waitMinutes, travelMinutes, legDistanceMeters,
+                    outsideWindow, path, timingSource, dayOffset);
+        }
+    }
 
     /** Edición parcial de una parada — refleja el panel de detalle de la app de referencia. */
     public record ShipmentUpdateRequest(

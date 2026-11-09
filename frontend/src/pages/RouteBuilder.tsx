@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import AddressSearch from "@/components/AddressSearch";
 import StopEditor from "@/components/StopEditor";
 import RouteMap, { REVIEW_COLOR } from "@/components/RouteMap";
+import RouteSchedule from "@/components/RouteSchedule";
 import { routesApi, shipmentsApi } from "@/api/endpoints";
 import type { DraftStop, GeocodeResult, GeocodeStatus, OrderPreference, RouteStop, StopType } from "@/types";
 
@@ -62,6 +63,7 @@ export default function RouteBuilder() {
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const [optimizedRoute, setOptimizedRoute] = useState<RouteStop[]>([]);
+  const [departureTime, setDepartureTime] = useState("08:00");
   const [optimizing, setOptimizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -190,7 +192,7 @@ export default function RouteBuilder() {
       setStops(persisted);
 
       // 2) Calcula el orden óptimo (ventana horaria aprendida + distancia real por calle).
-      const route = await routesApi.build(scheduledDate, currentLocation.lat, currentLocation.lng);
+      const route = await routesApi.build(scheduledDate, currentLocation.lat, currentLocation.lng, departureTime);
       setOptimizedRoute(route);
     } catch (err: any) {
       setError(err?.response?.data?.message || "No se pudo optimizar la ruta");
@@ -264,6 +266,20 @@ export default function RouteBuilder() {
                   className="bg-slate-800 rounded-md px-2 py-1 text-sm"
                 />
               </div>
+
+              <div className="flex items-center justify-between py-2 border-t border-slate-800">
+                <div>
+                  <p className="text-sm font-medium">Hora de salida</p>
+                  <p className="text-xs text-slate-500">Desde el punto de partida; con ella se estima la hora de cada parada</p>
+                </div>
+                <input
+                  type="time"
+                  value={departureTime}
+                  onChange={(e) => setDepartureTime(e.target.value)}
+                  className="bg-slate-800 rounded-md px-2 py-1 text-sm"
+                  aria-label="Hora de salida"
+                />
+              </div>
             </div>
 
             <div className="px-5 pt-2">
@@ -329,11 +345,19 @@ export default function RouteBuilder() {
           </div>
         </div>
 
+        {/* HU-14: horario estimado de la ruta optimizada */}
+        {optimizedRoute.length > 0 && (
+          <div className="lg:col-span-2 lg:order-last">
+            <RouteSchedule route={optimizedRoute} departureTime={departureTime} />
+          </div>
+        )}
+
         {/* Panel derecho: mapa Leaflet */}
         <div className="h-[600px] rounded-2xl overflow-hidden border border-slate-200">
           <RouteMap
             stops={stops}
             orderedPositions={orderedPositions}
+            plannedRoute={optimizedRoute}
             currentLocation={currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : null}
           />
         </div>

@@ -23,8 +23,10 @@ export const authApi = {
 };
 
 export const routesApi = {
-  build: (date: string, depotLat: number, depotLng: number) =>
-    apiClient.post<RouteStop[]>("/api/routes/build", { date, depotLat, depotLng }).then((r) => r.data),
+  build: (date: string, depotLat: number, depotLng: number, departureTime?: string, stopMinutes?: number) =>
+    apiClient
+      .post<RouteStop[]>("/api/routes/build", { date, depotLat, depotLng, departureTime, stopMinutes })
+      .then((r) => r.data),
 };
 
 export const importApi = {
