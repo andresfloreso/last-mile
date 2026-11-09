@@ -175,6 +175,40 @@ intentos de entrega.
 - `histogram`: hora de Santiago. `rejected` agrupa local cerrado, rechazo y
   "pidió otro horario".
 
+## Ruta del día con hora estimada (HU-14)
+
+`POST /api/routes/build` (`ADMIN`, `DISPATCHER`) ordena los envíos de la fecha,
+guarda el orden y devuelve cada parada con su hora estimada.
+
+```json
+{ "date": "2026-12-15", "depotLat": -33.4489, "depotLng": -70.6693,
+  "departureTime": "08:00", "stopMinutes": 10 }
+```
+
+`departureTime` (por defecto `routing.default-departure`, 08:00) y
+`stopMinutes` (1–120, por defecto `routing.stop-minutes`, 10) son opcionales.
+La respuesta sigue siendo un arreglo de paradas en orden, con estos campos
+nuevos:
+
+| Campo | Significado |
+|---|---|
+| `estimatedArrival` | Llegada del camión: salida anterior + tramo |
+| `serviceStart` | Inicio de la entrega: la llegada, o la apertura de la ventana real si llega antes |
+| `waitMinutes` | Espera hasta que abre la ventana real. Llegar antes y esperar cuenta como dentro de ventana (lo realista en B2B) |
+| `estimatedDeparture` | `serviceStart` + `stopMinutes` |
+| `travelMinutes`, `legDistanceMeters` | Tramo desde la parada anterior (o el depósito) |
+| `outsideWindow` | La entrega empezaría cuando la ventana real ya cerró |
+| `dayOffset` | 1 si la ruta no alcanza en el día y la llegada es al día siguiente |
+| `path` | Tramo como pares `[lat, lng]`, para la polilínea |
+| `timingSource` | `OSRM` (por calle), `ESTIMATED` (OSRM no respondió: línea recta × 1,3 a `routing.fallback-speed-kmh`, 25 km/h) o `NO_LOCATION` (local sin coordenadas) |
+
+La **hora estimada** que muestra la pantalla es `serviceStart` (llegada +
+espera), con "espera N min" debajo cuando corresponde.
+
+El orden lo decide `RouteOptimizationService`, sin cambios: las paradas
+Primera y Última quedan en los extremos. La hora estimada es una capa aparte
+(`RouteTimingService`) que no reordena.
+
 ## Planilla de importación (import-service)
 
 `GET /api/import/template` (`ADMIN`, `DISPATCHER`, `OPERATOR`) descarga la
