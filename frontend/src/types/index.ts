@@ -65,9 +65,19 @@ export const STOP_LABELS: { name: string; color: string }[] = [
   { name: "Urgente", color: "#ef4444" },
 ];
 
+/** Fila con un problema en el resumen de importación (HU-08). */
+export interface ImportRowIssue {
+  rowNumber: number;
+  trackingCode?: string;
+  message: string;
+}
+
 export interface ImportSummary {
   totalRows: number;
   created: number;
+  /** Filas cuyo envío ya existía (por ejemplo, al reimportar la misma planilla). */
   skipped: number;
-  errors: string[];
+  failed: number;
+  skippedRows: ImportRowIssue[];
+  errors: ImportRowIssue[];
 }

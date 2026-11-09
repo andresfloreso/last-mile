@@ -27,9 +27,23 @@ export interface ParseResult {
   errors: RowError[];
 }
 
+/** Fila con un problema en el resumen de importación (HU-08). */
+export interface RowIssue {
+  /** Número de fila en la planilla (la fila 1 es el encabezado). */
+  rowNumber: number;
+  trackingCode?: string;
+  message: string;
+}
+
 export interface ImportSummary {
+  /** Filas con datos leídas de la planilla. */
   totalRows: number;
+  /** Envíos creados. */
   created: number;
+  /** Filas omitidas porque el envío ya existía (por ejemplo, al reimportar la misma planilla). */
   skipped: number;
-  errors: string[];
+  /** Filas con error (datos inválidos o rechazadas por delivery-service). */
+  failed: number;
+  skippedRows: RowIssue[];
+  errors: RowIssue[];
 }

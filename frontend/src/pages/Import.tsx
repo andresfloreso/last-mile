@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import { importApi } from "@/api/endpoints";
-import type { ImportSummary } from "@/types";
+import type { ImportRowIssue, ImportSummary } from "@/types";
 
 export default function Import() {
   const [file, setFile] = useState<File | null>(null);
@@ -88,33 +88,76 @@ export default function Import() {
           {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
         </div>
 
-        {summary && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="font-semibold text-slate-800 mb-3">Resultado de la importación</h3>
-            <div className="grid grid-cols-3 gap-3 text-center mb-4">
-              <div className="bg-slate-50 rounded-md p-3">
-                <div className="text-2xl font-bold text-slate-800">{summary.totalRows}</div>
-                <div className="text-xs text-slate-500">Filas leídas</div>
-              </div>
-              <div className="bg-green-50 rounded-md p-3">
-                <div className="text-2xl font-bold text-green-700">{summary.created}</div>
-                <div className="text-xs text-slate-500">Envíos creados</div>
-              </div>
-              <div className="bg-red-50 rounded-md p-3">
-                <div className="text-2xl font-bold text-red-600">{summary.skipped}</div>
-                <div className="text-xs text-slate-500">Con error</div>
-              </div>
-            </div>
-            {summary.errors.length > 0 && (
-              <ul className="text-xs text-red-600 space-y-1 max-h-48 overflow-y-auto">
-                {summary.errors.map((e, i) => (
-                  <li key={i}>{e}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+        {summary && <ImportResult summary={summary} />}
       </div>
     </Layout>
+  );
+}
+
+function Stat({ value, label, className }: { value: number; label: string; className: string }) {
+  return (
+    <div className={`rounded-md p-3 ${className}`}>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-xs text-slate-500">{label}</div>
+    </div>
+  );
+}
+
+/** Resumen de la importación (HU-08): totales y, por fila, qué se omitió o falló y por qué. */
+function ImportResult({ summary }: { summary: ImportSummary }) {
+  const issues: (ImportRowIssue & { kind: "error" | "skipped" })[] = [
+    ...summary.errors.map((e) => ({ ...e, kind: "error" as const })),
+    ...summary.skippedRows.map((e) => ({ ...e, kind: "skipped" as const })),
+  ].sort((a, b) => a.rowNumber - b.rowNumber);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h3 className="font-semibold text-slate-800 mb-3">Resultado de la importación</h3>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-4">
+        <Stat value={summary.totalRows} label="Filas leídas" className="bg-slate-50 text-slate-800" />
+        <Stat value={summary.created} label="Envíos creados" className="bg-green-50 text-green-700" />
+        <Stat value={summary.skipped} label="Omitidos (ya existían)" className="bg-amber-50 text-amber-700" />
+        <Stat value={summary.failed} label="Con error" className="bg-red-50 text-red-600" />
+      </div>
+
+      {issues.length === 0 ? (
+        <p className="text-sm text-green-700">Todas las filas se importaron sin problemas.</p>
+      ) : (
+        <>
+          <p className="text-xs text-slate-500 mb-2">
+            Corrige las filas con error en la planilla y vuelve a importarla: las filas ya creadas se omiten, no se
+            duplican.
+          </p>
+          <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-md">
+            <table className="w-full text-xs">
+              <thead className="bg-slate-50 text-slate-500 sticky top-0">
+                <tr>
+                  <th className="text-left font-semibold px-3 py-2 w-14">Fila</th>
+                  <th className="text-left font-semibold px-3 py-2 w-28">Tracking</th>
+                  <th className="text-left font-semibold px-3 py-2 w-24">Estado</th>
+                  <th className="text-left font-semibold px-3 py-2">Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {issues.map((issue) => (
+                  <tr key={`${issue.kind}-${issue.rowNumber}`} className="border-t border-slate-100">
+                    <td className="px-3 py-2 font-mono">{issue.rowNumber}</td>
+                    <td className="px-3 py-2 font-mono text-slate-600">{issue.trackingCode ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      {issue.kind === "error" ? (
+                        <span className="rounded bg-red-50 px-2 py-0.5 font-semibold text-red-600">Error</span>
+                      ) : (
+                        <span className="rounded bg-amber-50 px-2 py-0.5 font-semibold text-amber-700">Omitido</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-700">{issue.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
