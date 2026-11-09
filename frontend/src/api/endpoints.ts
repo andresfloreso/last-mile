@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { AuthResponse, RouteStop, ImportSummary, DraftStop, GeocodeResult } from "@/types";
+import type { AuthResponse, RouteStop, ImportSummary, DraftStop, GeocodeResult, Page, Shipment, ShipmentQuery } from "@/types";
 
 export const authApi = {
   login: (email: string, password: string) =>
@@ -95,5 +95,12 @@ export const shipmentsApi = {
 
   remove: (shipmentId: string) => apiClient.delete(`/api/shipments/${shipmentId}`),
 
-  listByDate: (date: string) => apiClient.get(`/api/shipments`, { params: { date } }).then((r) => r.data),
+  /** Listado paginado con filtros (HU-10). Los estados viajan como status=A&status=B. */
+  list: (query: ShipmentQuery) =>
+    apiClient
+      .get<Page<Shipment>>("/api/shipments", { params: query, paramsSerializer: { indexes: null } })
+      .then((r) => r.data),
+
+  /** Todos los envíos de un día, para armar la ruta (el backend admite hasta 500 por página). */
+  listByDate: (date: string) => shipmentsApi.list({ date, size: 500 }).then((p) => p.content),
 };

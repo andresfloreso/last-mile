@@ -81,14 +81,14 @@ class ShipmentApiIT {
         // El caso que fallaba con 500: listar envíos con el cliente LAZY.
         mvc.perform(auth(get("/api/shipments").param("date", date.toString())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].trackingCode").value("IT-" + suffix))
-                .andExpect(jsonPath("$[0].status").value("PENDING"))
-                .andExpect(jsonPath("$[0].packageCount").value(2))
-                .andExpect(jsonPath("$[0].customer.id").value(customerId))
-                .andExpect(jsonPath("$[0].customer.fullName").value("Andrea Muñoz"))
-                .andExpect(jsonPath("$[0].customer.latitude").value(-33.4378))
-                .andExpect(jsonPath("$[0].hibernateLazyInitializer").doesNotExist());
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].trackingCode").value("IT-" + suffix))
+                .andExpect(jsonPath("$.content[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.content[0].packageCount").value(2))
+                .andExpect(jsonPath("$.content[0].customer.id").value(customerId))
+                .andExpect(jsonPath("$.content[0].customer.fullName").value("Andrea Muñoz"))
+                .andExpect(jsonPath("$.content[0].customer.latitude").value(-33.4378))
+                .andExpect(jsonPath("$.content[0].hibernateLazyInitializer").doesNotExist());
 
         mvc.perform(auth(patch("/api/shipments/" + shipmentId)).content("""
                         {"label":"Urgente","orderPreference":"FIRST"}"""))

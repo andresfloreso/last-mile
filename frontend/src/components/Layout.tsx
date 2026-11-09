@@ -17,6 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className="font-bold text-brand-700 text-lg">LastMile</span>
           <nav className="flex gap-1">
             <NavLink to="/" end className={linkClass}>Rutas</NavLink>
+            <NavLink to="/envios" className={linkClass}>Envíos</NavLink>
             <NavLink to="/import" className={linkClass}>Importar</NavLink>
           </nav>
         </div>
