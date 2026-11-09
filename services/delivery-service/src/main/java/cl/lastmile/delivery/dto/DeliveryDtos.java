@@ -1,5 +1,6 @@
 package cl.lastmile.delivery.dto;
 
+import cl.lastmile.delivery.algorithm.TimeWindowLearningService.CustomerTimeWindowProfile;
 import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.model.DeclaredWindow;
 import cl.lastmile.delivery.model.DeliveryAttempt;
@@ -144,6 +145,68 @@ public class DeliveryDtos {
         static DeclaredWindowResponse from(DeclaredWindow w) {
             return w.isEmpty() ? null : new DeclaredWindowResponse(w.start(), w.end(), w.start2(), w.end2());
         }
+    }
+
+    @Schema(description = "Modulación declarada vs. ventana real aprendida de un local (HU-11)")
+    public record TimeWindowResponse(
+            UUID customerId,
+            String customerName,
+            @Schema(description = "Modulación declarada; null si el local no declaró horario")
+            DeclaredWindowResponse declaredWindow,
+            @Schema(description = "Ventana real que usa la ruta para ordenar este local")
+            RealWindowResponse realWindow,
+            @Schema(description = "Explicación en una frase", example = "Recibió 8 de 10 visitas entre 12:00 y 14:00")
+            String summary,
+            @Schema(description = "Intentos de entrega registrados", example = "25") int totalAttempts,
+            @Schema(description = "Intentos aceptados", example = "20") int acceptedAttempts,
+            @Schema(description = "Intentos no aceptados (cerrado, rechazo o pidió otro horario)", example = "5") int rejectedAttempts,
+            @Schema(description = "Horas (8 a 19) en que el local rechaza más de lo que recibe", example = "[9, 10]")
+            List<Integer> hoursToAvoid,
+            @Schema(description = "24 casilleros, de 0 a 23 h (hora de Santiago)")
+            List<HourBucketResponse> histogram
+    ) {
+        public static TimeWindowResponse from(Customer customer, CustomerTimeWindowProfile profile, String summary) {
+            List<HourBucketResponse> histogram = profile.histogram().stream()
+                    .map(b -> new HourBucketResponse(b.hour(), b.accepted(), b.rejected()))
+                    .toList();
+            int accepted = histogram.stream().mapToInt(HourBucketResponse::accepted).sum();
+            return new TimeWindowResponse(
+                    customer.getId(),
+                    customer.getFullName(),
+                    DeclaredWindowResponse.from(customer.declaredWindow()),
+                    new RealWindowResponse(
+                            LocalTime.of(profile.recommendedStartHour(), 0),
+                            LocalTime.of(profile.recommendedEndHour(), 0),
+                            profile.acceptedInWindow(),
+                            profile.attemptsInWindow(),
+                            profile.learned() ? "LEARNED" : "DEFAULT"),
+                    summary,
+                    profile.sampleSize(),
+                    accepted,
+                    profile.sampleSize() - accepted,
+                    profile.hoursToAvoid(),
+                    histogram);
+        }
+    }
+
+    public record RealWindowResponse(
+            @JsonFormat(pattern = "HH:mm") @Schema(type = "string", example = "12:00") LocalTime start,
+            @JsonFormat(pattern = "HH:mm") @Schema(type = "string", example = "14:00") LocalTime end,
+            @Schema(description = "Visitas aceptadas dentro de la ventana (la X de \"X de Y visitas\")", example = "8")
+            int acceptedVisits,
+            @Schema(description = "Visitas dentro de la ventana (la Y)", example = "10")
+            int visits,
+            @Schema(description = "LEARNED: aprendida de los intentos; DEFAULT: sin intentos, horario comercial por defecto",
+                    allowableValues = {"LEARNED", "DEFAULT"})
+            String basis
+    ) {
+    }
+
+    public record HourBucketResponse(
+            @Schema(description = "Hora del día, 0 a 23", example = "12") int hour,
+            @Schema(description = "Visitas aceptadas en esa hora", example = "4") int accepted,
+            @Schema(description = "Visitas no aceptadas en esa hora", example = "1") int rejected
+    ) {
     }
 
     public record ShipmentResponse(

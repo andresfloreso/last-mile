@@ -80,6 +80,7 @@ class AuthorizationIT {
     static Stream<Arguments> otherProtectedEndpoints() {
         return Stream.of(
                 Arguments.of("GET", "/api/customers/" + ID, null),
+                Arguments.of("GET", "/api/customers/" + ID + "/time-window", null),
                 Arguments.of("PUT", "/api/customers/" + ID + "/declared-window", "{\"start\":\"09:00\",\"end\":\"12:00\"}"),
                 Arguments.of("PUT", "/api/customers/" + ID + "/location", "{\"latitude\":-33.4,\"longitude\":-70.6}"),
                 Arguments.of("GET", "/api/geocoding/search?q=providencia", null),

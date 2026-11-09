@@ -1,5 +1,16 @@
 import { apiClient } from "./client";
-import type { AuthResponse, RouteStop, ImportSummary, DraftStop, GeocodeResult, Page, Shipment, ShipmentQuery } from "@/types";
+import type {
+  AuthResponse,
+  Customer,
+  DraftStop,
+  GeocodeResult,
+  ImportSummary,
+  Page,
+  RouteStop,
+  Shipment,
+  ShipmentQuery,
+  TimeWindow,
+} from "@/types";
 
 export const authApi = {
   // Sin registro: las cuentas las crea un ADMIN (#44).
@@ -99,4 +110,12 @@ export const shipmentsApi = {
 
   /** Todos los envíos de un día, para armar la ruta (el backend admite hasta 500 por página). */
   listByDate: (date: string) => shipmentsApi.list({ date, size: 500 }).then((p) => p.content),
+};
+
+export const customersApi = {
+  get: (customerId: string) => apiClient.get<Customer>(`/api/customers/${customerId}`).then((r) => r.data),
+
+  /** Modulación declarada vs. ventana real aprendida (HU-11). */
+  timeWindow: (customerId: string) =>
+    apiClient.get<TimeWindow>(`/api/customers/${customerId}/time-window`).then((r) => r.data),
 };
