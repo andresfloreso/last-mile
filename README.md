@@ -59,7 +59,7 @@ de trabajo (ramas, commits, PRs, issues) están en [`CLAUDE.md`](CLAUDE.md).
 
 | Servicio | Stack | Responsabilidad |
 |---|---|---|
-| `api-gateway` | Java, Spring Cloud Gateway | Punto único de entrada, valida JWT una sola vez y enruta a cada microservicio, propaga `X-User-Id` / `X-User-Role` |
+| `api-gateway` | Java, Spring Cloud Gateway | Punto único de entrada, valida JWT una sola vez y enruta a cada microservicio, propaga `X-User-Id` / `X-User-Role` (descarta los que manda el cliente) |
 | `auth-service` | Java, Spring Boot, Spring Security | Registro/login, hash de contraseñas con **bcrypt**, emisión y refresh de **JWT** |
 | `delivery-service` | Java, Spring Boot, PostgreSQL | Clientes, envíos, registro de intentos de entrega; **`TimeWindowLearningService`** (aprendizaje de ventana horaria por cliente) y **`RouteOptimizationService`** (orden de entrega: ventana horaria + cercanía geográfica) |
 | `import-service` | Node.js, TypeScript, Express | Recibe planillas **.xlsx / .csv** (ExcelJS + PapaParse), las valida y crea los envíos en `delivery-service` |
@@ -176,7 +176,8 @@ curl http://localhost:8080/api/tracking/ABC123
   `api-gateway` e `import-service` vía variable de entorno — todos validan la
   misma firma sin tener que llamar de vuelta a `auth-service` en cada request.
 - El gateway (`JwtAuthenticationFilter`) corta las requests no autenticadas en
-  el borde; cada microservicio además vuelve a validar el token (defensa en
+  el borde y elimina siempre los `X-User-Id` / `X-User-Role` que manda el
+  cliente (también en rutas públicas); solo propaga los que salen del JWT; cada microservicio además vuelve a validar el token (defensa en
   profundidad) y aplica autorización por rol (`ADMIN`, `DISPATCHER`, `DRIVER`,
   `OPERATOR`, `CLIENT`).
 - Sin secretos en el repo: `docker-compose.yml` no trae contraseñas por
