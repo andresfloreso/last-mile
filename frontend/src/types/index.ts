@@ -37,6 +37,8 @@ export interface RouteStop {
 export interface DraftStop {
   tempId: string; // id local mientras no existe en el backend
   shipmentId?: string; // id real una vez creada
+  /** Id del local, cuando la parada viene de un envío existente (HU-11: detalle del local). */
+  customerId?: string;
   customerName: string;
   address: string;
   commune?: string;
@@ -130,7 +132,7 @@ export interface Shipment {
     longitude?: number | null;
     externalCode?: string | null;
     businessType?: BusinessType | null;
-    declaredWindow?: { start: string; end: string; start2?: string | null; end2?: string | null } | null;
+    declaredWindow?: DeclaredWindow | null;
     geocodeStatus?: GeocodeStatus;
   };
 }
@@ -145,4 +147,52 @@ export interface ShipmentQuery {
   q?: string;
   page?: number;
   size?: number;
+}
+
+/** Modulación declarada por el local (HU-25). Horas en formato HH:mm. */
+export interface DeclaredWindow {
+  start: string;
+  end: string;
+  start2?: string | null;
+  end2?: string | null;
+}
+
+/** GET /api/customers/{id}/time-window (HU-11): modulación vs. ventana real. */
+export interface TimeWindow {
+  customerId: string;
+  customerName: string;
+  declaredWindow: DeclaredWindow | null;
+  realWindow: {
+    start: string;
+    end: string;
+    /** La X de "X de Y visitas". */
+    acceptedVisits: number;
+    /** La Y. */
+    visits: number;
+    /** LEARNED: aprendida de los intentos; DEFAULT: sin intentos, horario comercial por defecto. */
+    basis: "LEARNED" | "DEFAULT";
+  };
+  summary: string;
+  totalAttempts: number;
+  acceptedAttempts: number;
+  rejectedAttempts: number;
+  hoursToAvoid: number[];
+  /** 24 casilleros, de 0 a 23 h (hora de Santiago). */
+  histogram: { hour: number; accepted: number; rejected: number }[];
+}
+
+
+/** GET /api/customers/{id} */
+export interface Customer {
+  id: string;
+  fullName: string;
+  phone?: string | null;
+  address: string;
+  commune?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  externalCode?: string | null;
+  businessType?: BusinessType | null;
+  declaredWindow: DeclaredWindow | null;
+  geocodeStatus?: GeocodeStatus;
 }

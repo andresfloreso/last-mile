@@ -122,6 +122,36 @@ Responde 400 si una fecha o un estado son inválidos, si se combina `date` con
 
 > Hasta el Sprint 2 este endpoint exigía `date` y devolvía un arreglo. La
 > pantalla de rutas usa ahora `size=500` y lee `content`.
+## Modulación vs. ventana real (HU-11)
+
+`GET /api/customers/{id}/time-window` (`ADMIN`, `DISPATCHER`, `OPERATOR`,
+`DRIVER`) devuelve, para un local, lo que declara y lo que muestran los
+intentos de entrega.
+
+```json
+{
+  "customerName": "Bar La Esquina de Ñuñoa",
+  "declaredWindow": { "start": "09:00", "end": "12:00", "start2": null, "end2": null },
+  "realWindow": { "start": "18:00", "end": "20:00", "acceptedVisits": 14, "visits": 14, "basis": "LEARNED" },
+  "summary": "Recibió 14 de 14 visitas entre 18:00 y 20:00",
+  "totalAttempts": 20, "acceptedAttempts": 14, "rejectedAttempts": 6,
+  "hoursToAvoid": [11, 15, 17],
+  "histogram": [ { "hour": 0, "accepted": 0, "rejected": 0 }, "… 24 casilleros, 0 a 23 h" ]
+}
+```
+
+- **Una sola fuente de verdad:** `realWindow` sale de
+  `TimeWindowLearningService.learn()`, el mismo cálculo que usa
+  `POST /api/routes/build`. `TimeWindowApiIT` verifica, parada por parada de la
+  ruta semilla, que ambas coinciden.
+- La ventana se explica con visitas ("X de Y visitas en esa franja"), nunca con
+  un puntaje: `acceptedVisits` / `visits` cuentan los intentos dentro de
+  `[start, end)`.
+- `basis`: `LEARNED` si hay intentos; `DEFAULT` si no los hay, y entonces la
+  ruta usa el horario comercial por defecto (09:00–18:00). HU-13 agregará la
+  modulación y el perfil por comuna como base para locales con poco historial.
+- `histogram`: hora de Santiago. `rejected` agrupa local cerrado, rechazo y
+  "pidió otro horario".
 
 ## Planilla de importación (import-service)
 
