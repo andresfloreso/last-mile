@@ -228,9 +228,26 @@ docker compose down -v && docker compose up --build
 
 ```bash
 # Unitarios + integración (Testcontainers levanta un PostgreSQL real: requiere Docker)
+cd services/api-gateway && ./mvnw verify
 cd services/auth-service && ./mvnw verify
 cd services/delivery-service && ./mvnw verify
+cd services/import-service && npm test
 ```
+
+Qué cubren las pruebas base (HU-04):
+
+| Servicio | Pruebas |
+|---|---|
+| api-gateway | `JwtAuthenticationFilterTest`: rutas públicas, token ausente, vencido, de refresh, con otra firma o inválido, y propagación de `X-User-Id` / `X-User-Role` |
+| auth-service | `JwtUtilTest` (emisión y validación de access y refresh tokens), `UserRepositoryIT` |
+| delivery-service | `JwtValidatorTest`, `TimeWindowLearningServiceTest`, `RouteOptimizationServiceTest` (OSRM simulado), `RepositoryIT` |
+| import-service | `baseParsers.test.ts` (CSV y Excel), además de los tests de columnas, plantilla e importación |
+
+**Cobertura:** JaCoCo mide delivery-service en `./mvnw verify` y deja el reporte
+en `target/site/jacoco/index.html`. Si la cobertura de líneas del paquete
+`algorithm/` baja del **60%**, `verify` falla (y con él el CI). El CI muestra el
+porcentaje en el resumen del job y publica el reporte como artefacto
+`jacoco-delivery-service`.
 
 ## Integración continua (GitHub Actions)
 
@@ -239,7 +256,7 @@ cd services/delivery-service && ./mvnw verify
 
 | Job | Qué hace |
 |---|---|
-| `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `./mvnw -B verify` (unit + integración con Testcontainers) |
+| `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `./mvnw -B verify` (unit + integración con Testcontainers; en delivery-service, cobertura de `algorithm/` ≥ 60% con JaCoCo) |
 | `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm test` (si existe; vitest en import-service), `npm run build` |
 | `docker-build (×5)` | Construye las 5 imágenes del compose sin publicarlas |
 | `gitleaks` | Busca secretos en todo el historial de git (config en `.gitleaks.toml`) |

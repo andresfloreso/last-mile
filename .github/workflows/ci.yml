@@ -45,6 +45,23 @@ jobs:
       - name: ./mvnw verify
         run: ./mvnw -B -ntp verify
 
+      # HU-04: el check de JaCoCo (pom de delivery-service) ya hace fallar
+      # "verify" si algorithm/ baja del 60%; aquí solo se publica el resultado.
+      - name: Cobertura de algorithm/ (JaCoCo)
+        if: always() && matrix.service == 'delivery-service' && hashFiles('services/delivery-service/target/site/jacoco/jacoco.csv') != ''
+        run: |
+          awk -F, 'NR > 1 && $2 ~ /\.algorithm$/ { covered += $9; missed += $8 }
+            END { printf "### Cobertura de líneas en algorithm/: %.1f%% (%d de %d), mínimo 60%%\n", 100 * covered / (covered + missed), covered, covered + missed }' \
+            target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reporte de cobertura (JaCoCo)
+        if: always() && matrix.service == 'delivery-service'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-delivery-service
+          path: services/delivery-service/target/site/jacoco/
+          if-no-files-found: ignore
+
       - name: Reportes de tests
         if: failure()
         uses: actions/upload-artifact@v4
