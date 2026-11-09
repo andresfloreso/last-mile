@@ -149,7 +149,7 @@ Sprints de 2 semanas. Cada sprint es un milestone de GitHub y cierra con una dem
 | --- | --- | --- |
 | Sin intentos reales, el aprendizaje no se puede validar | El diferenciador del producto queda sin demostrar | Semilla con locales cuya modulación difiere de su ventana real, y pruebas que verifican que el motor recupera la ventana real (HU-04, HU-25) |
 | Los conductores no registran el motivo o la hora | El algoritmo aprende de datos incompletos | Confirmación en un toque, motivo obligatorio y funcionamiento sin señal (HU-19) |
-| Nominatim público limita a 1 request por segundo | Importaciones grandes lentas o bloqueadas | Caché por dirección, cola de geocodificación y opción de instancia propia (HU-09) |
+| Nominatim público limita a 1 request por segundo | Importaciones grandes lentas o bloqueadas | 1 req/s y caché por dirección (HU-09); geocodificación en segundo plano ([#32](https://github.com/andresfloreso/last-mile/issues/32)) u opción de instancia propia (`NOMINATIM_URL`) |
 | El VRP (HU-16) y el reordenamiento en ruta (HU-26) son las historias más inciertas | Sprint 6 se atrasa | Spike de 2 días al final del Sprint 5 para elegir entre OR-Tools y jsprit |
 | Sprints 3 y 4 cruzan fiestas de fin de año | Menos capacidad | Planificar con 20% menos de carga o mover historias hacia adelante |
 | El perfil `seed` viene activo por defecto en `docker-compose.yml` | Usuarios con contraseñas conocidas si se usa ese compose fuera de desarrollo | Apagado por defecto; lo activa `docker-compose.override.yml` solo en desarrollo ([#25](https://github.com/andresfloreso/last-mile/issues/25)); HU-24 lo exige apagado en staging |

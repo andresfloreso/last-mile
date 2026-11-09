@@ -48,6 +48,8 @@ export interface DraftStop {
   orderPreference: OrderPreference;
   label: string;
   notes: string;
+  /** HU-09: la ubicación se geocodificó de forma aproximada; el mapa la marca "revisar". */
+  needsReview?: boolean;
 }
 
 export interface GeocodeResult {
@@ -55,6 +57,8 @@ export interface GeocodeResult {
   latitude: number;
   longitude: number;
   confidence: number;
+  /** HU-09: Nominatim no ubicó el número de calle; el pin es aproximado. */
+  needsReview?: boolean;
 }
 
 export const STOP_LABELS: { name: string; color: string }[] = [
@@ -78,6 +82,12 @@ export interface ImportSummary {
   /** Filas cuyo envío ya existía (por ejemplo, al reimportar la misma planilla). */
   skipped: number;
   failed: number;
+  /** Locales con ubicación aproximada o no encontrada al geocodificar (HU-09). */
+  toReview: number;
   skippedRows: ImportRowIssue[];
   errors: ImportRowIssue[];
+  reviewRows: ImportRowIssue[];
 }
+
+/** Origen de las coordenadas de un local (HU-09). REVIEW = aproximada o no encontrada: revisar. */
+export type GeocodeStatus = "PROVIDED" | "GEOCODED" | "REVIEW";

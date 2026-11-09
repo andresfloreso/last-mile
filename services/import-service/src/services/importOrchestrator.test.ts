@@ -65,12 +65,14 @@ describe("importShipmentRows (HU-08)", () => {
       created: 1,
       skipped: 1,
       failed: 3,
+      toReview: 0,
       skippedRows: [{ rowNumber: 3, trackingCode: "PED-3", message: "Ya existe un envío con el trackingCode PED-3" }],
       errors: [
         { rowNumber: 4, trackingCode: "PED-4", message: "customerId no es un identificador válido: x" },
         { rowNumber: 5, trackingCode: "PED-5", message: "No se pudo contactar a delivery-service" },
         { rowNumber: 6, message: "Faltan datos obligatorios" },
       ],
+      reviewRows: [],
     });
   });
 
@@ -94,5 +96,35 @@ describe("importShipmentRows (HU-08)", () => {
     };
     const summary = await importShipmentRows([row(2)], [], api, "x");
     expect(summary.errors).toEqual([{ rowNumber: 2, trackingCode: "PED-2", message: "delivery-service respondió 503" }]);
+  });
+
+  it("informa los locales que quedaron por revisar al geocodificar (HU-09)", async () => {
+    const api = new FakeDeliveryApi();
+    const geocoding: DeliveryApi = {
+      upsertCustomer: async (p) => {
+        const { id } = await api.upsertCustomer(p);
+        if (p.externalCode === "LOC-3") return { id, geocodeStatus: "REVIEW", latitude: -33.45, longitude: -70.6 };
+        if (p.externalCode === "LOC-4") return { id, geocodeStatus: "REVIEW", latitude: null, longitude: null };
+        return { id, geocodeStatus: "GEOCODED", latitude: -33.4, longitude: -70.5 };
+      },
+      createShipment: (p) => (p.trackingCode === "PED-5" ? Promise.reject(httpError(400, "inválido")) : api.createShipment(p)),
+    };
+
+    const summary = await importShipmentRows(
+      [row(2), row(3), row(4), row(5, { externalCode: "LOC-3" })],
+      [],
+      geocoding,
+      "x"
+    );
+
+    expect(summary).toMatchObject({ created: 3, failed: 1, toReview: 2 });
+    expect(summary.reviewRows).toEqual([
+      { rowNumber: 3, trackingCode: "PED-3", message: "Ubicación aproximada: revisa el local en el mapa" },
+      {
+        rowNumber: 4,
+        trackingCode: "PED-4",
+        message: "Dirección no encontrada: el local quedó sin ubicación, agrega latitud y longitud",
+      },
+    ]);
   });
 });

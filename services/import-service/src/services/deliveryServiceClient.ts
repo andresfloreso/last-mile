@@ -15,6 +15,15 @@ export interface CustomerPayload {
   declaredWindowEnd?: string;
 }
 
+/** Lo que el orquestador usa de la respuesta de delivery-service al crear o reutilizar un local. */
+export interface UpsertedCustomer {
+  id: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  /** HU-09: PROVIDED | GEOCODED | REVIEW */
+  geocodeStatus?: string;
+}
+
 export interface ShipmentPayload {
   trackingCode: string;
   customerId: string;
@@ -30,7 +39,7 @@ export class DeliveryServiceClient {
     return { Authorization: `Bearer ${this.bearerToken}`, "Content-Type": "application/json" };
   }
 
-  async upsertCustomer(payload: CustomerPayload): Promise<{ id: string }> {
+  async upsertCustomer(payload: CustomerPayload): Promise<UpsertedCustomer> {
     const { data } = await axios.post(`${DELIVERY_SERVICE_URL}/api/shipments/customers`, payload, {
       headers: this.headers,
     });

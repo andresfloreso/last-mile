@@ -46,25 +46,32 @@ public class ShipmentService {
                 Customer customer = existing.get();
                 if (businessType != null) customer.setBusinessType(businessType);
                 if (!declaredWindow.isEmpty()) customer.applyDeclaredWindow(declaredWindow);
+                // Un local "por revisar" se corrige reimportando la fila con latitud/longitud.
+                if (customer.needsGeocodeReview() && req.latitude() != null && req.longitude() != null) {
+                    customer.relocate(req.latitude(), req.longitude());
+                }
                 return CustomerResponse.from(customer);
             }
         }
 
-        // Prioridad de precisión: si el frontend ya mandó lat/lng exactas (el
-        // usuario las fijó con el pin en el mapa Leaflet), se usan tal cual y
-        // NUNCA se sobreescriben. Sólo se geocodifica cuando faltan — típico
-        // de una importación masiva desde planilla sin columnas de coordenadas.
+        // Prioridad de precisión: si la fila o el pin del mapa trae lat/lng, se
+        // usan tal cual y NUNCA se sobreescriben. Solo se geocodifica cuando
+        // faltan (HU-09); un resultado aproximado o vacío deja el local "por revisar".
         Double latitude = req.latitude();
         Double longitude = req.longitude();
+        Customer.GeocodeStatus geocodeStatus = Customer.GeocodeStatus.PROVIDED;
 
         if (latitude == null || longitude == null) {
             var geocoded = geocodingService.geocode(req.address(), req.commune());
-            if (geocoded.isPresent()) {
-                latitude = geocoded.get().latitude();
-                longitude = geocoded.get().longitude();
-                log.info("Dirección '{}' geocodificada con confianza {}", req.address(), geocoded.get().confidence());
-            } else {
-                log.warn("No se pudo geocodificar '{}': el cliente quedará sin coordenadas", req.address());
+            latitude = geocoded.map(GeocodingService.GeoPoint::latitude).orElse(null);
+            longitude = geocoded.map(GeocodingService.GeoPoint::longitude).orElse(null);
+            geocodeStatus = geocoded.filter(GeocodingService.GeoPoint::precise).isPresent()
+                    ? Customer.GeocodeStatus.GEOCODED
+                    : Customer.GeocodeStatus.REVIEW;
+            if (geocoded.isEmpty()) {
+                log.warn("No se pudo geocodificar '{}': el local queda sin coordenadas y por revisar", req.address());
+            } else if (geocodeStatus == Customer.GeocodeStatus.REVIEW) {
+                log.info("Dirección '{}' geocodificada de forma aproximada: queda por revisar", req.address());
             }
         }
 
@@ -75,6 +82,7 @@ public class ShipmentService {
                 .commune(req.commune())
                 .latitude(latitude)
                 .longitude(longitude)
+                .geocodeStatus(geocodeStatus)
                 .externalCode(req.externalCode())
                 .businessType(businessType)
                 .build();
