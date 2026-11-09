@@ -152,8 +152,8 @@ class ErrorHandlingIT {
 
     @Test
     void parametroFaltanteOInvalidoResponde400() throws Exception {
-        assertThat(call(get("/api/shipments"), 400).get("message").asText())
-                .isEqualTo("Falta el parámetro obligatorio 'date'");
+        assertThat(call(post("/api/shipments/" + UUID.randomUUID() + "/duplicate"), 400).get("message").asText())
+                .isEqualTo("Falta el parámetro obligatorio 'newTrackingCode'");
         assertThat(call(get("/api/shipments").param("date", "mañana"), 400).get("message").asText())
                 .isEqualTo("El parámetro 'date' tiene un formato inválido");
     }

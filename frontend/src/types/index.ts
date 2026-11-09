@@ -91,3 +91,58 @@ export interface ImportSummary {
 
 /** Origen de las coordenadas de un local (HU-09). REVIEW = aproximada o no encontrada: revisar. */
 export type GeocodeStatus = "PROVIDED" | "GEOCODED" | "REVIEW";
+
+/** Estados de un envío en delivery-service. */
+export type ShipmentStatus = "PENDING" | "ROUTED" | "OUT_FOR_DELIVERY" | "DELIVERED" | "REJECTED" | "RESCHEDULED";
+
+export type BusinessType = "BOTILLERIA" | "MINIMARKET" | "BAR" | "RESTAURANT" | "OTRO";
+
+/** Una página de resultados (GET /api/shipments, HU-10). */
+export interface Page<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/** Envío tal como lo devuelve GET /api/shipments, con su local embebido. */
+export interface Shipment {
+  id: string;
+  trackingCode: string;
+  scheduledDate: string;
+  status: ShipmentStatus;
+  source?: string | null;
+  notes?: string | null;
+  routePosition?: number | null;
+  stopType: StopType;
+  packageCount: number;
+  orderPreference: OrderPreference;
+  label?: string | null;
+  createdAt: string;
+  customer: {
+    id: string;
+    fullName: string;
+    phone?: string | null;
+    address: string;
+    commune?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    externalCode?: string | null;
+    businessType?: BusinessType | null;
+    declaredWindow?: { start: string; end: string; start2?: string | null; end2?: string | null } | null;
+    geocodeStatus?: GeocodeStatus;
+  };
+}
+
+/** Filtros de GET /api/shipments. Todos opcionales. */
+export interface ShipmentQuery {
+  date?: string;
+  from?: string;
+  to?: string;
+  status?: ShipmentStatus[];
+  commune?: string;
+  q?: string;
+  page?: number;
+  size?: number;
+}

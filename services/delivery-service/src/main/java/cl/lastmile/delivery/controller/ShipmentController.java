@@ -1,10 +1,18 @@
 package cl.lastmile.delivery.controller;
 
 import cl.lastmile.delivery.dto.DeliveryDtos.*;
+import cl.lastmile.delivery.service.ShipmentFilter;
 import cl.lastmile.delivery.service.ShipmentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +24,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/shipments")
 @RequiredArgsConstructor
+@Tag(name = "Envíos", description = "Envíos programados a los locales")
+@SecurityRequirement(name = "bearerAuth")
 public class ShipmentController {
 
     private final ShipmentService shipmentService;
@@ -37,10 +47,35 @@ public class ShipmentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'OPERATOR')")
     @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN, DISPATCHER u OPERATOR)")
     @GetMapping
-    public ResponseEntity<List<ShipmentResponse>> listByDate(
-            @RequestParam("date") @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate date
+    @Operation(
+            summary = "Lista y filtra envíos (paginado)",
+            description = """
+                    Todos los filtros son opcionales y se combinan. Orden: fecha más reciente primero; \
+                    dentro de un día, por posición en la ruta y luego por tracking. \
+                    La comuna y la búsqueda no distinguen mayúsculas ni tildes ("nunoa" encuentra "Ñuñoa").""")
+    @ApiResponse(responseCode = "200", description = "Página de envíos, cada uno con su local")
+    @ApiResponse(responseCode = "400", description = "Fecha o estado inválido, 'date' combinado con 'from'/'to', rango invertido, o page/size fuera de rango")
+    public ResponseEntity<PageResponse<ShipmentResponse>> list(
+            @Parameter(description = "Un solo día programado (atajo de from = to = date)", example = "2026-12-15")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Desde este día programado (inclusive)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @Parameter(description = "Hasta este día programado (inclusive)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @Parameter(description = "Uno o más estados (status=PENDING&status=ROUTED o status=PENDING,ROUTED)",
+                    array = @ArraySchema(schema = @Schema(allowableValues = {
+                            "PENDING", "ROUTED", "OUT_FOR_DELIVERY", "DELIVERED", "REJECTED", "RESCHEDULED"})))
+            @RequestParam(required = false) List<String> status,
+            @Parameter(description = "Comuna del local", example = "Providencia")
+            @RequestParam(required = false) String commune,
+            @Parameter(description = "Busca en el nombre del local, su dirección, el tracking o el código externo", example = "roble")
+            @RequestParam(required = false) String q,
+            @Parameter(description = "Página, desde 0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Tamaño de página, de 1 a " + ShipmentService.MAX_PAGE_SIZE)
+            @RequestParam(defaultValue = "20") int size
     ) {
-        return ResponseEntity.ok(shipmentService.findByDate(date));
+        ShipmentFilter filter = ShipmentFilter.of(date, from, to, status, commune, q);
+        return ResponseEntity.ok(shipmentService.search(filter, page, size));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'OPERATOR', 'DRIVER')")

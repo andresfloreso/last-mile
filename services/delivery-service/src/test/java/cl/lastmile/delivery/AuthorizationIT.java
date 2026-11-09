@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -66,6 +67,8 @@ class AuthorizationIT {
                 Arguments.of("POST", "/api/shipments", """
                         {"trackingCode":"AUTH-1","customerId":"%s","scheduledDate":"2026-12-01"}""".formatted(ID)),
                 Arguments.of("GET", "/api/shipments?date=2026-12-01", null),
+                // HU-10: listado paginado con filtros (mismo endpoint, mismos roles)
+                Arguments.of("GET", "/api/shipments?status=PENDING&commune=Providencia&q=roble&page=0&size=5", null),
                 Arguments.of("POST", "/api/shipments/attempts", """
                         {"shipmentId":"%s","customerId":"%s","outcome":"ACCEPTED"}""".formatted(ID, ID)),
                 Arguments.of("PATCH", "/api/shipments/" + ID, "{\"label\":\"x\"}"),
@@ -111,6 +114,12 @@ class AuthorizationIT {
         } else {
             assertThat(status).isEqualTo(403);
         }
+    }
+
+    @ParameterizedTest(name = "{0} → GET /api/shipments paginado")
+    @ValueSource(strings = {"ADMIN", "DISPATCHER", "OPERATOR"})
+    void elListadoPaginadoEsParaLosRolesDeOficina(String role) throws Exception {
+        assertThat(status(role, "GET", "/api/shipments?status=PENDING&page=0&size=5", null)).isEqualTo(200);
     }
 
     @ParameterizedTest(name = "OPERATOR → {0} {1}")
