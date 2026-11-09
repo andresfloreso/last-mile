@@ -1,0 +1,22 @@
+# Override de DESARROLLO (versionado). docker compose lo aplica automáticamente
+# sobre docker-compose.yml cuando corres `docker compose up` en la raíz del repo.
+#
+# Activa el perfil "seed" (datos de ejemplo con contraseñas públicas, ver
+# infra/seed/README.md) en auth-service y delivery-service y monta los scripts.
+#
+# Para levantar SIN este override (como en staging/producción):
+#   docker compose -f docker-compose.yml up --build
+# Para usarlo pero sin datos de ejemplo:
+#   SPRING_PROFILES_ACTIVE=default docker compose up --build
+services:
+  auth-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-seed}
+    volumes:
+      - ./infra/seed/auth:/seed:ro
+
+  delivery-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-seed}
+    volumes:
+      - ./infra/seed/delivery:/seed:ro

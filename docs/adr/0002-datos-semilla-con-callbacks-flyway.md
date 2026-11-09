@@ -36,8 +36,10 @@ Se adopta la **opción C**.
 - `infra/seed/auth/afterMigrate.sql` y `infra/seed/delivery/afterMigrate.sql`.
 - Cada servicio trae un `application-seed.yml` que agrega
   `filesystem:${SEED_LOCATION:/seed}` a `spring.flyway.locations`.
-- `docker-compose.yml` monta `./infra/seed/<servicio>` en `/seed` (solo lectura)
-  y activa `SPRING_PROFILES_ACTIVE=seed` por defecto en desarrollo.
+- `docker-compose.override.yml` (versionado, solo desarrollo) monta
+  `./infra/seed/<servicio>` en `/seed` (solo lectura) y activa
+  `SPRING_PROFILES_ACTIVE=seed`. `docker-compose.yml` no lo activa
+  (actualizado en Sprint 2, #25: antes venía activo por defecto).
 - Idempotencia: UUIDs fijos o derivados con `md5(...)::uuid`, `ON CONFLICT DO
   NOTHING` y el historial se genera solo si los clientes semilla no tienen
   intentos. Los envíos del día usan tracking `SEED-<yyyymmdd>-<nn>`.

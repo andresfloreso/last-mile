@@ -3,8 +3,14 @@
 > Solo para desarrollo y demo. Nunca actives el perfil `seed` en producción.
 
 Flyway ejecuta `afterMigrate.sql` de cada carpeta después de cada `migrate`,
-cuando el servicio corre con `SPRING_PROFILES_ACTIVE=seed` (por defecto en
-`docker-compose.yml`). Los scripts son idempotentes. La decisión está en
+cuando el servicio corre con `SPRING_PROFILES_ACTIVE=seed`. Los scripts son
+idempotentes.
+
+`docker-compose.yml` **no** activa el perfil. Lo activa el
+`docker-compose.override.yml` de la raíz, que está versionado y que
+`docker compose up` aplica automáticamente en desarrollo: pone
+`SPRING_PROFILES_ACTIVE=seed` y monta `infra/seed/<servicio>` en `/seed`
+(solo lectura) en auth-service y delivery-service. La decisión está en
 [ADR 0002](../../docs/adr/0002-datos-semilla-con-callbacks-flyway.md).
 
 ```
@@ -79,5 +85,9 @@ docker compose down -v && docker compose up --build
 ## Levantar sin datos semilla
 
 ```bash
+# con el override de desarrollo, pero sin datos de ejemplo
 SPRING_PROFILES_ACTIVE=default docker compose up --build
+
+# sin el override (como en staging/producción)
+docker compose -f docker-compose.yml up --build
 ```
