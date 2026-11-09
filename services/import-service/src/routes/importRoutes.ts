@@ -5,6 +5,7 @@ import { AuthenticatedRequest, jwtAuth, requireRole } from "../middleware/jwtAut
 import { parseShipmentsExcel } from "../services/excelParser";
 import { parseShipmentsCsv } from "../services/csvParser";
 import { importShipmentRows } from "../services/importOrchestrator";
+import { DeliveryServiceClient } from "../services/deliveryServiceClient";
 import { TEMPLATE_FILENAME, buildImportTemplate } from "../services/template";
 
 const upload = multer({
@@ -54,30 +55,37 @@ router.post(
     const bearerToken = (req.headers.authorization as string).substring(7);
     const ext = path.extname(req.file.originalname).toLowerCase();
 
+    let parseResult;
     try {
-      const parseResult =
+      parseResult =
         ext === ".csv"
           ? parseShipmentsCsv(req.file.buffer.toString("utf-8"))
           : await parseShipmentsExcel(req.file.buffer);
+    } catch (err) {
+      console.error("No se pudo leer la planilla", err);
+      res.status(422).json({ error: "No se pudo leer el archivo. Verifica que sea un .xlsx o .csv válido." });
+      return;
+    }
 
-      if (parseResult.rows.length === 0 && parseResult.errors.length > 0) {
-        res.status(422).json({
-          error: "No se pudo procesar el archivo",
-          details: parseResult.errors,
-        });
-        return;
-      }
+    // Problema del archivo completo (sin hojas o faltan columnas): no hay filas que resumir.
+    const fileError = parseResult.errors.find((e) => e.rowNumber <= 1);
+    if (parseResult.rows.length === 0 && fileError) {
+      res.status(422).json({ error: fileError.message, details: parseResult.errors });
+      return;
+    }
 
+    try {
       const summary = await importShipmentRows(
         parseResult.rows,
         parseResult.errors,
-        bearerToken,
+        new DeliveryServiceClient(bearerToken),
         `import:${req.file.originalname}`
       );
-
-      res.status(201).json(summary);
-    } catch (err: any) {
-      res.status(500).json({ error: "Error procesando la importación", message: err.message });
+      // 200 aunque algunas filas fallen: el resumen informa creados, omitidos y errores por fila.
+      res.status(200).json(summary);
+    } catch (err) {
+      console.error("Error procesando la importación", err);
+      res.status(500).json({ error: "Error procesando la importación" });
     }
   }
 );

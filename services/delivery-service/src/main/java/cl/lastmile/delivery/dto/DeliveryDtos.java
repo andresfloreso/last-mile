@@ -55,6 +55,12 @@ public class DeliveryDtos {
         }
     }
 
+    /** Coordenadas fijadas a mano para un local (resuelve la marca "revisar" de HU-09). */
+    public record LocationRequest(
+            @NotNull @Schema(example = "-33.4263") Double latitude,
+            @NotNull @Schema(example = "-70.6105") Double longitude
+    ) {}
+
     public record ShipmentRequest(
             @NotBlank String trackingCode,
             @NotNull String customerId,
@@ -114,12 +120,16 @@ public class DeliveryDtos {
             String externalCode,
             String businessType,
             @Schema(description = "Modulación declarada; null si el local no declaró horario")
-            DeclaredWindowResponse declaredWindow
+            DeclaredWindowResponse declaredWindow,
+            @Schema(description = "Origen de las coordenadas: PROVIDED (usuario), GEOCODED (Nominatim, precisa) o REVIEW (aproximada o no encontrada: revisar)",
+                    allowableValues = {"PROVIDED", "GEOCODED", "REVIEW"})
+            String geocodeStatus
     ) {
         public static CustomerResponse from(Customer c) {
             return new CustomerResponse(c.getId(), c.getFullName(), c.getPhone(), c.getAddress(),
                     c.getCommune(), c.getLatitude(), c.getLongitude(), c.getExternalCode(),
-                    name(c.getBusinessType()), DeclaredWindowResponse.from(c.declaredWindow()));
+                    name(c.getBusinessType()), DeclaredWindowResponse.from(c.declaredWindow()),
+                    name(c.getGeocodeStatus()));
         }
     }
 

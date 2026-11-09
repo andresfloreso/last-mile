@@ -32,6 +32,16 @@ geocoding:
   # Nominatim (OpenStreetMap) — mismo dataset que usa Leaflet en el frontend,
   # para que el pin del mapa y la dirección geocodificada coincidan siempre.
   nominatim-url: ${NOMINATIM_URL:https://nominatim.openstreetmap.org}
+  # La política de Nominatim exige un User-Agent que identifique la app y un contacto.
+  user-agent: ${NOMINATIM_USER_AGENT:LastMilePlatform/1.0 (contacto@lastmile.cl)}
+  # HU-09: máximo 1 request por segundo (política del servidor público).
+  # Con una instancia propia de Nominatim se puede bajar.
+  min-interval: ${GEOCODING_MIN_INTERVAL:1s}
+  # place_rank mínimo para considerar preciso un resultado: 28 = número de calle,
+  # 30 = edificio. Por debajo (calle, barrio, comuna) el local queda "revisar".
+  min-place-rank: ${GEOCODING_MIN_PLACE_RANK:28}
+  # Direcciones en la caché en memoria (una dirección repetida no vuelve a consultar).
+  cache-size: 10000
 
 routing:
   # OSRM (Open Source Routing Machine) — distancias reales por calle en vez

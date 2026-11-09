@@ -42,6 +42,7 @@ código y es la fuente de verdad, así que no se edita a mano.
 | POST | `/api/shipments/customers` | Autenticado | Crea un local o devuelve el existente con el mismo `externalCode`. Acepta `businessType`, `declaredWindowStart`/`End` y el segundo tramo `declaredWindow2Start`/`End`; si el local ya existía y la request trae tipo o modulación, los actualiza |
 | GET | `/api/customers/{id}` | Autenticado | Detalle del local, con su tipo y su modulación |
 | PUT | `/api/customers/{id}/declared-window` | `ADMIN`, `DISPATCHER`, `OPERATOR` | Reemplaza la modulación (uno o dos tramos); todo en `null` la elimina |
+| PUT | `/api/customers/{id}/location` | `ADMIN`, `DISPATCHER`, `OPERATOR` | Fija `latitude`/`longitude` a mano y quita la marca "revisar" (HU-09) |
 
 ```json
 { "start": "09:00", "end": "12:00", "start2": "16:00", "end2": "18:00" }
@@ -65,6 +66,32 @@ Respuesta (`CustomerResponse`):
 | 403 | Rol sin permiso para editar |
 | 404 | El local no existe |
 
+### Geocodificación al importar (HU-09)
+
+Si la fila (o el formulario) no trae `latitude` y `longitude`, delivery-service
+busca la dirección en [Nominatim](https://nominatim.org/release-docs/latest/api/Search/)
+(`direccion, comuna, Chile`). `CustomerResponse.geocodeStatus` dice de dónde
+salieron las coordenadas:
+
+| `geocodeStatus` | Significado |
+|---|---|
+| `PROVIDED` | Las entregó el usuario (planilla con latitud/longitud, pin en el mapa o `PUT .../location`). Nunca se sobrescriben |
+| `GEOCODED` | Nominatim ubicó el número de calle o el edificio (`place_rank` ≥ 28) |
+| `REVIEW` | Ubicación aproximada (solo la calle, el barrio o la comuna) o dirección no encontrada (sin coordenadas). El mapa la marca "Revisar" |
+
+- **1 request por segundo:** las consultas van de a una y entre el fin de una y el
+  inicio de la siguiente pasa al menos `GEOCODING_MIN_INTERVAL` (1 s por defecto,
+  como exige el servidor público). Una planilla de 300 direcciones nuevas tarda
+  unos 5 minutos.
+- **Caché por dirección:** en memoria, normalizada (mayúsculas y espacios no
+  cuentan). Una dirección repetida no vuelve a consultar Nominatim; tampoco una
+  sin resultados. Los errores de red no se cachean.
+- Un local `REVIEW` se corrige con `PUT /api/customers/{id}/location` o
+  reimportando la fila con latitud y longitud.
+- Variables: `NOMINATIM_URL`, `NOMINATIM_USER_AGENT` (la política de Nominatim
+  exige identificar la app y un contacto), `GEOCODING_MIN_INTERVAL` y
+  `GEOCODING_MIN_PLACE_RANK` (ver `.env.example`).
+
 ## Planilla de importación (import-service)
 
 `GET /api/import/template` (`ADMIN`, `DISPATCHER`, `OPERATOR`) descarga la
@@ -78,3 +105,24 @@ plantilla `.xlsx`, con una hoja "Envíos" y otra "Instrucciones". Columnas:
 otro. La modulación se escribe en HH:mm (también acepta `9`, `9:30` o una celda
 con formato de hora de Excel). Si una fila trae un tipo o una modulación
 inválidos, se informa con su número de fila y no se importa.
+
+### Resumen de importación (HU-08)
+
+`POST /api/import/shipments` (multipart, campo `file`) responde **200** con el
+resumen, aunque algunas filas fallen:
+
+```json
+{
+  "totalRows": 4, "created": 2, "skipped": 1, "failed": 1, "toReview": 1,
+  "skippedRows": [{ "rowNumber": 3, "trackingCode": "PED-2", "message": "Ya existe un envío con el trackingCode PED-2" }],
+  "errors":      [{ "rowNumber": 5, "trackingCode": "PED-4", "message": "tipo_local inválido: \"kiosco\" (...)" }],
+  "reviewRows":  [{ "rowNumber": 2, "trackingCode": "PED-1", "message": "Ubicación aproximada: revisa el local en el mapa" }]
+}
+```
+
+- **Omitidas** (`skippedRows`): el envío ya existía (mismo `tracking`). Reimportar la misma planilla no duplica envíos ni
+  locales (los locales se reutilizan por `codigo_externo`).
+- **Errores** (`errors`): fila inválida en la planilla o rechazada por delivery-service, con su número de fila y el motivo.
+- **Por revisar** (`toReview`, `reviewRows`, HU-09): filas sin coordenadas cuyo local quedó con ubicación aproximada o
+  sin ubicación. El envío se crea igual; el motivo dice cuál de los dos casos es.
+- **422**: problema del archivo completo (no se puede leer, no tiene hojas o faltan columnas obligatorias).

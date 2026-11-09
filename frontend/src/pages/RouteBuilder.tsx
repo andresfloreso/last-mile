@@ -2,9 +2,47 @@ import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import AddressSearch from "@/components/AddressSearch";
 import StopEditor from "@/components/StopEditor";
-import RouteMap from "@/components/RouteMap";
+import RouteMap, { REVIEW_COLOR } from "@/components/RouteMap";
 import { routesApi, shipmentsApi } from "@/api/endpoints";
-import type { DraftStop, GeocodeResult, RouteStop } from "@/types";
+import type { DraftStop, GeocodeResult, GeocodeStatus, OrderPreference, RouteStop, StopType } from "@/types";
+
+/** Envío tal como lo devuelve GET /api/shipments (solo los campos que usa la pantalla). */
+interface ShipmentListItem {
+  id: string;
+  stopType: StopType;
+  packageCount: number;
+  orderPreference: OrderPreference;
+  label?: string | null;
+  notes?: string | null;
+  customer: {
+    fullName: string;
+    address: string;
+    commune?: string | null;
+    phone?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    geocodeStatus?: GeocodeStatus;
+  };
+}
+
+function toDraftStop(s: ShipmentListItem): DraftStop {
+  return {
+    tempId: s.id,
+    shipmentId: s.id,
+    customerName: s.customer.fullName,
+    address: s.customer.address,
+    commune: s.customer.commune ?? undefined,
+    phone: s.customer.phone ?? undefined,
+    latitude: s.customer.latitude ?? undefined,
+    longitude: s.customer.longitude ?? undefined,
+    stopType: s.stopType,
+    packageCount: s.packageCount,
+    orderPreference: s.orderPreference,
+    label: s.label ?? "Default",
+    notes: s.notes ?? "",
+    needsReview: s.customer.geocodeStatus === "REVIEW",
+  };
+}
 
 function newTempId() {
   return `tmp_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
@@ -46,6 +84,26 @@ export default function RouteBuilder() {
     );
   }, []);
 
+  // Envíos ya cargados para la fecha (por ejemplo, desde una importación): se
+  // muestran en la lista y en el mapa, con los locales "por revisar" marcados (HU-09).
+  // Las paradas aún no guardadas se conservan al cambiar de fecha.
+  useEffect(() => {
+    let cancelled = false;
+    shipmentsApi
+      .listByDate(scheduledDate)
+      .then((data: ShipmentListItem[]) => {
+        if (cancelled) return;
+        setOptimizedRoute([]);
+        // Los locales por revisar van primero para que el despachador los vea sin buscarlos.
+        const loaded = data.map(toDraftStop).sort((a, b) => Number(!!b.needsReview) - Number(!!a.needsReview));
+        setStops((prev) => [...loaded, ...prev.filter((s) => !s.shipmentId)]);
+      })
+      .catch(() => !cancelled && setError("No se pudieron cargar los envíos de la fecha"));
+    return () => {
+      cancelled = true;
+    };
+  }, [scheduledDate]);
+
   function addStopFromSearch(address: string, geocode: GeocodeResult | null) {
     const stop: DraftStop = {
       tempId: newTempId(),
@@ -53,6 +111,7 @@ export default function RouteBuilder() {
       address,
       latitude: geocode?.latitude,
       longitude: geocode?.longitude,
+      needsReview: geocode?.needsReview ?? false,
       stopType: "DELIVERY",
       packageCount: 1,
       orderPreference: "AUTO",
@@ -222,7 +281,18 @@ export default function RouteBuilder() {
                           {position ?? "•"}
                         </span>
                         <div>
-                          <p className="text-sm font-medium">{stop.customerName}</p>
+                          <p className="text-sm font-medium">
+                            {stop.customerName}
+                            {stop.needsReview && (
+                              <span
+                                className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold text-white align-middle"
+                                style={{ backgroundColor: REVIEW_COLOR }}
+                                title="Ubicación aproximada: confirma la dirección"
+                              >
+                                Revisar
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-slate-400">{stop.address}</p>
                         </div>
                       </div>

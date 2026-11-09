@@ -38,7 +38,7 @@ class SchemaMigrationIT {
     @Test
     void aplicaLasMigracionesYHibernateValidaElEsquema() {
         // V1 baseline (HU-02) + V2 modulación y tipo de local (HU-25).
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
         assertThat(flyway.info().pending()).isEmpty();
     }
 
