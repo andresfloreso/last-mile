@@ -4,7 +4,7 @@ import type L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { TimeWindow } from "@/types";
 import type { StopView } from "@/lib/routeView";
-import { DEPOT, TILE_ATTRIBUTION, TILE_URL } from "@/lib/config";
+import { DEPOT, TILE_ATTRIBUTION, TILE_MAX_NATIVE_ZOOM, TILE_URL } from "@/lib/config";
 import type { Theme } from "@/store/themeStore";
 import StopMarker from "@/components/StopMarker";
 import { depotIcon } from "@/lib/markerIcons";
@@ -121,7 +121,14 @@ export default function RouteMap(props: Props) {
         zoomControl={false}
         className="h-full w-full"
       >
-        <TileLayer key={theme} url={TILE_URL[theme]} attribution={TILE_ATTRIBUTION} subdomains="abcd" maxZoom={19} />
+        <TileLayer
+          key={theme}
+          url={TILE_URL[theme]}
+          attribution={TILE_ATTRIBUTION}
+          subdomains="abcd"
+          maxZoom={19}
+          maxNativeZoom={TILE_MAX_NATIVE_ZOOM}
+        />
         {polyline.length > 1 && <Polyline positions={polyline} pathOptions={{ color, weight: 5, opacity: 0.9 }} />}
         <Marker position={[DEPOT.lat, DEPOT.lng]} icon={depotIcon()} title="Bodega" alt="Bodega" keyboard={false} />
         {ordered.map((s) => (
