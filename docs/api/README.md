@@ -40,7 +40,7 @@ código y es la fuente de verdad, así que no se edita a mano.
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
 | POST | `/api/shipments/customers` | Autenticado | Crea un local o devuelve el existente con el mismo `externalCode`. Acepta `businessType`, `declaredWindowStart`/`End` y el segundo tramo `declaredWindow2Start`/`End`; si el local ya existía y la request trae tipo o modulación, los actualiza |
-| GET | `/api/customers/{id}` | Autenticado | Detalle del local, con su tipo y su modulación |
+| GET | `/api/customers/{id}` | `ADMIN`, `DISPATCHER`, `OPERATOR`, `DRIVER` | Detalle del local, con su tipo y su modulación. `CLIENT` recibe 403 (#38) |
 | PUT | `/api/customers/{id}/declared-window` | `ADMIN`, `DISPATCHER`, `OPERATOR` | Reemplaza la modulación (uno o dos tramos); todo en `null` la elimina |
 | PUT | `/api/customers/{id}/location` | `ADMIN`, `DISPATCHER`, `OPERATOR` | Fija `latitude`/`longitude` a mano y quita la marca "revisar" (HU-09) |
 
@@ -63,7 +63,7 @@ Respuesta (`CustomerResponse`):
 | Código | Cuándo |
 |---|---|
 | 400 | Tramo incompleto, inicio posterior al término, segundo tramo solapado, hora con formato inválido o `businessType` desconocido |
-| 403 | Rol sin permiso para editar |
+| 403 | Rol sin permiso: `CLIENT` en el detalle; `DRIVER` o `CLIENT` al editar |
 | 404 | El local no existe |
 
 ### Geocodificación al importar (HU-09)
