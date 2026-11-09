@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,6 +76,19 @@ class TimeWindowApiIT {
 
     private JsonNode call(MockHttpServletRequestBuilder req, int expectedStatus) throws Exception {
         return call("DISPATCHER", req, expectedStatus);
+    }
+
+    /**
+     * Este IT comparte contexto (y base) con SeedDataIT, que cuenta exactamente los intentos de la
+     * semilla: se borra todo lo que crean estos tests (prefijo HU11-).
+     */
+    @AfterEach
+    void borraLoCreadoPorEstosTests() {
+        jdbc.update("""
+                DELETE FROM delivery_attempts WHERE shipment_id IN
+                  (SELECT id FROM shipments WHERE tracking_code LIKE 'HU11-%')""");
+        jdbc.update("DELETE FROM shipments WHERE tracking_code LIKE 'HU11-%'");
+        jdbc.update("DELETE FROM customers WHERE external_code LIKE 'HU11-%'");
     }
 
     private JsonNode timeWindow(String customerId) throws Exception {
