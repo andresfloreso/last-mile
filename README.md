@@ -47,7 +47,8 @@ el orden óptimo de entrega de la ruta del camión.
 │   ├── adr/                  # Architecture Decision Records
 │   ├── api/                  # Documentación de APIs
 │   └── plan/                 # Plan de trabajo, sprints y hallazgos
-└── docker-compose.yml
+├── docker-compose.yml
+└── docker-compose.override.yml  # Solo desarrollo: activa el perfil seed
 ```
 
 Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
@@ -106,14 +107,23 @@ docker compose up --build
 arrancar el siguiente servicio (Postgres/Redis → auth y delivery → import →
 gateway → frontend). Para ver el estado: `docker compose ps`.
 
-En desarrollo los servicios arrancan con el perfil **`seed`**, que carga datos
-de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
+`docker-compose.yml` **no** activa datos de ejemplo. En desarrollo, el
+`docker-compose.override.yml` versionado (que `docker compose` aplica solo
+cuando corres `docker compose up` en la raíz) activa el perfil **`seed`**, que
+carga datos de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
 
 - un usuario por rol (`admin@`, `despacho@`, `conductor@`, `operador@` y `cliente@lastmile.cl`), todos con la contraseña `lastmile123`;
 - 30 clientes en comunas de Santiago con 60 días de historial de entregas con patrones conocidos;
 - 50 envíos para la fecha de hoy.
 
-Para levantar sin datos semilla: `SPRING_PROFILES_ACTIVE=default docker compose up --build`.
+| Quiero… | Comando |
+|---|---|
+| Desarrollo con datos semilla | `docker compose up --build` (usa el override) |
+| Desarrollo sin datos semilla | `SPRING_PROFILES_ACTIVE=default docker compose up --build` |
+| Como en staging/producción (sin override) | `docker compose -f docker-compose.yml up --build` |
+
+> Las contraseñas semilla son públicas. Fuera de tu máquina usa siempre
+> `-f docker-compose.yml` (o un override propio), nunca el de desarrollo.
 
 ## Flujo típico de uso (vía gateway, puerto 8080)
 
