@@ -1,6 +1,10 @@
 package cl.lastmile.delivery.service;
 
+import cl.lastmile.delivery.algorithm.TimeWindowLearningService;
+import cl.lastmile.delivery.algorithm.TimeWindowLearningService.CustomerTimeWindowProfile;
 import cl.lastmile.delivery.dto.DeliveryDtos.CustomerResponse;
+import cl.lastmile.delivery.dto.DeliveryDtos.TimeWindowResponse;
+import cl.lastmile.delivery.repository.DeliveryAttemptRepository;
 import cl.lastmile.delivery.dto.DeliveryDtos.DeclaredWindowRequest;
 import cl.lastmile.delivery.dto.DeliveryDtos.LocationRequest;
 import cl.lastmile.delivery.exception.BadRequestException;
@@ -17,10 +21,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final DeliveryAttemptRepository deliveryAttemptRepository;
+    private final TimeWindowLearningService learningService;
 
     @Transactional(readOnly = true)
     public CustomerResponse get(String customerId) {
         return CustomerResponse.from(find(customerId));
+    }
+
+    /**
+     * Modulación vs. ventana real (HU-11). La ventana sale de {@link TimeWindowLearningService#learn},
+     * el mismo cálculo que usa la ruta, así que la pantalla y la ruta no pueden diferir.
+     */
+    @Transactional(readOnly = true)
+    public TimeWindowResponse timeWindow(String customerId) {
+        Customer customer = find(customerId);
+        CustomerTimeWindowProfile profile = learningService.learn(customer.getId(), deliveryAttemptRepository);
+        return TimeWindowResponse.from(customer, profile, TimeWindowSummary.of(profile));
     }
 
     /** Reemplaza la modulación completa del local; todo en null la elimina. */

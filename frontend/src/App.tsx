@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import Login from "@/pages/Login";
 import RouteBuilder from "@/pages/RouteBuilder";
 import Import from "@/pages/Import";
+import LocalDetail from "@/pages/LocalDetail";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -34,6 +35,14 @@ export default function App() {
         element={
           <RequireAuth>
             <Import />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/locales/:customerId"
+        element={
+          <RequireAuth>
+            <LocalDetail />
           </RequireAuth>
         }
       />

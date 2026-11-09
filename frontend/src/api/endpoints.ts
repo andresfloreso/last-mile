@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { AuthResponse, RouteStop, ImportSummary, DraftStop, GeocodeResult } from "@/types";
+import type { AuthResponse, RouteStop, ImportSummary, DraftStop, GeocodeResult, TimeWindow, Customer } from "@/types";
 
 export const authApi = {
   login: (email: string, password: string) =>
@@ -96,4 +96,12 @@ export const shipmentsApi = {
   remove: (shipmentId: string) => apiClient.delete(`/api/shipments/${shipmentId}`),
 
   listByDate: (date: string) => apiClient.get(`/api/shipments`, { params: { date } }).then((r) => r.data),
+};
+
+export const customersApi = {
+  get: (customerId: string) => apiClient.get<Customer>(`/api/customers/${customerId}`).then((r) => r.data),
+
+  /** Modulación declarada vs. ventana real aprendida (HU-11). */
+  timeWindow: (customerId: string) =>
+    apiClient.get<TimeWindow>(`/api/customers/${customerId}/time-window`).then((r) => r.data),
 };

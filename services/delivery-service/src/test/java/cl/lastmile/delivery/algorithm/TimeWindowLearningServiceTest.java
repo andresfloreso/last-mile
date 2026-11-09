@@ -136,4 +136,67 @@ class TimeWindowLearningServiceTest {
         assertThat(profile.recommendedStartHour()).isIn(15, 16);
         assertThat(profile.confidence()).isEqualTo(1.0);
     }
+
+    // ---- HU-11: histograma y "X de Y visitas" (mismo cálculo que la ventana) ----
+
+    @Test
+    void elHistogramaCuentaLasVisitasAceptadasYNoAceptadasPorHora() {
+        List<DeliveryAttempt> attempts = new ArrayList<>();
+        attempts.addAll(repeat(3, 9, REJECTED_NOT_HOME));
+        attempts.addAll(repeat(2, 10, REJECTED_REFUSED));
+        attempts.addAll(repeat(3, 17, ACCEPTED));
+        attempts.add(at(17, AttemptOutcome.RESCHEDULED_BY_CUSTOMER));
+        attempts.addAll(repeat(3, 18, ACCEPTED));
+
+        CustomerTimeWindowProfile profile = service.learn(customerId, attempts);
+
+        assertThat(profile.histogram()).hasSize(24);
+        assertThat(profile.histogram()).extracting(TimeWindowLearningService.HourBucket::hour)
+                .containsExactlyElementsOf(java.util.stream.IntStream.range(0, 24).boxed().toList());
+        assertThat(profile.histogram().get(9)).isEqualTo(new TimeWindowLearningService.HourBucket(9, 0, 3));
+        assertThat(profile.histogram().get(10)).isEqualTo(new TimeWindowLearningService.HourBucket(10, 0, 2));
+        assertThat(profile.histogram().get(17)).isEqualTo(new TimeWindowLearningService.HourBucket(17, 3, 1));
+        assertThat(profile.histogram().get(18)).isEqualTo(new TimeWindowLearningService.HourBucket(18, 3, 0));
+        assertThat(profile.histogram().stream().mapToInt(TimeWindowLearningService.HourBucket::attempts).sum())
+                .isEqualTo(profile.sampleSize());
+    }
+
+    @Test
+    void cuentaXDeYVisitasDentroDeLaVentanaRecomendada() {
+        List<DeliveryAttempt> attempts = new ArrayList<>();
+        attempts.addAll(repeat(3, 9, REJECTED_NOT_HOME));
+        attempts.addAll(repeat(5, 17, ACCEPTED));
+        attempts.add(at(17, REJECTED_NOT_HOME));
+        attempts.addAll(repeat(3, 18, ACCEPTED));
+        attempts.add(at(19, ACCEPTED)); // fuera de la ventana 17–19
+
+        CustomerTimeWindowProfile profile = service.learn(customerId, attempts);
+
+        assertThat(profile.recommendedStartHour()).isEqualTo(17);
+        assertThat(profile.recommendedEndHour()).isEqualTo(19);
+        assertThat(profile.acceptedInWindow()).isEqualTo(8);  // 5 + 3
+        assertThat(profile.attemptsInWindow()).isEqualTo(9);  // 6 + 3
+        assertThat(profile.learned()).isTrue();
+    }
+
+    @Test
+    void unaVentanaSinVisitasCuentaCeroDeCero() {
+        // Solo rechazos: gana un bloque sin visitas (puntaje 0), que no tiene nada que contar.
+        CustomerTimeWindowProfile profile = service.learn(customerId, repeat(4, 12, REJECTED_NOT_HOME));
+
+        assertThat(profile.recommendedStartHour()).isEqualTo(8);
+        assertThat(profile.acceptedInWindow()).isZero();
+        assertThat(profile.attemptsInWindow()).isZero();
+        assertThat(profile.histogram().get(12).rejected()).isEqualTo(4);
+    }
+
+    @Test
+    void sinHistorialElHistogramaEstaVacioYNoEsAprendido() {
+        CustomerTimeWindowProfile profile = service.learn(customerId, List.of());
+
+        assertThat(profile.learned()).isFalse();
+        assertThat(profile.histogram()).hasSize(24).allMatch(b -> b.attempts() == 0);
+        assertThat(profile.acceptedInWindow()).isZero();
+        assertThat(profile.attemptsInWindow()).isZero();
+    }
 }

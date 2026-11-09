@@ -40,11 +40,14 @@ public class TimeWindowLearningService {
     public CustomerTimeWindowProfile learn(UUID customerId, List<DeliveryAttempt> attempts) {
         double[] hourScore = new double[24];
         int[] hourSamples = new int[24];
+        int[] hourAccepted = new int[24];
 
         for (DeliveryAttempt attempt : attempts) {
             int hour = ZonedDateTime.ofInstant(attempt.getAttemptedAt(), ZONE).getHour();
             hourSamples[hour]++;
-            hourScore[hour] += attempt.getOutcome() == AttemptOutcome.ACCEPTED ? ACCEPT_WEIGHT : REJECT_WEIGHT;
+            boolean accepted = attempt.getOutcome() == AttemptOutcome.ACCEPTED;
+            if (accepted) hourAccepted[hour]++;
+            hourScore[hour] += accepted ? ACCEPT_WEIGHT : REJECT_WEIGHT;
         }
 
         if (attempts.isEmpty()) {
@@ -70,27 +73,69 @@ public class TimeWindowLearningService {
 
         double confidence = Math.min(1.0, attempts.size() / 5.0); // 5+ intentos => confianza máxima
 
+        // HU-11: la explicación de la ventana sale de los mismos conteos con los que se eligió.
+        List<HourBucket> histogram = IntStream.range(0, 24)
+                .mapToObj(h -> new HourBucket(h, hourAccepted[h], hourSamples[h] - hourAccepted[h]))
+                .toList();
+        int windowAttempts = 0;
+        int windowAccepted = 0;
+        for (int h = bestStartHour; h < bestStartHour + 2; h++) {
+            windowAttempts += hourSamples[h];
+            windowAccepted += hourAccepted[h];
+        }
+
         return new CustomerTimeWindowProfile(
                 customerId,
                 bestStartHour,
                 bestStartHour + 2,
                 avoidHours,
                 attempts.size(),
-                confidence
+                confidence,
+                histogram,
+                windowAccepted,
+                windowAttempts
         );
     }
 
+    /**
+     * Perfil horario de un local. Es la única fuente de la ventana real: la ruta
+     * (RouteOptimizationService) y la pantalla del local (HU-11) leen este mismo objeto.
+     *
+     * @param histogram          24 casilleros (0 a 23 h, hora de Santiago) con las visitas aceptadas y no aceptadas
+     * @param acceptedInWindow   visitas aceptadas dentro de la ventana recomendada (la "X" de "X de Y visitas")
+     * @param attemptsInWindow   visitas dentro de la ventana recomendada (la "Y")
+     */
     public record CustomerTimeWindowProfile(
             UUID customerId,
             int recommendedStartHour,
             int recommendedEndHour,
             List<Integer> hoursToAvoid,
             int sampleSize,
-            double confidence
+            double confidence,
+            List<HourBucket> histogram,
+            int acceptedInWindow,
+            int attemptsInWindow
     ) {
         static CustomerTimeWindowProfile unknown(UUID customerId) {
             // Sin historial: se asume ventana comercial estándar y confianza cero.
-            return new CustomerTimeWindowProfile(customerId, 9, 18, List.of(), 0, 0.0);
+            List<HourBucket> empty = IntStream.range(0, 24).mapToObj(h -> new HourBucket(h, 0, 0)).toList();
+            return new CustomerTimeWindowProfile(customerId, 9, 18, List.of(), 0, 0.0, empty, 0, 0);
+        }
+
+        /** true si la ventana sale de intentos reales; false si es la ventana comercial por defecto. */
+        public boolean learned() {
+            return sampleSize > 0;
+        }
+    }
+
+    /**
+     * Visitas de un local en una hora del día.
+     *
+     * @param rejected intentos no aceptados: local cerrado, rechazo o pidió otro horario
+     */
+    public record HourBucket(int hour, int accepted, int rejected) {
+        public int attempts() {
+            return accepted + rejected;
         }
     }
 }
