@@ -3,6 +3,15 @@ import express from "express";
 
 import helmet from "helmet";
 import importRoutes from "./routes/importRoutes";
+import { jwtSecret } from "./config";
+
+// Falla al arrancar, con un mensaje claro, si JWT_SECRET falta o es corto.
+try {
+  jwtSecret();
+} catch (err) {
+  console.error(`[import-service] ${(err as Error).message}`);
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 8083;

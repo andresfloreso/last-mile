@@ -1,5 +1,6 @@
 package cl.lastmile.gateway.filter;
 
+import cl.lastmile.gateway.security.JwtSecrets;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -39,7 +40,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private final SecretKey signingKey;
 
     public JwtAuthenticationFilter(@Value("${jwt.secret}") String secret) {
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.signingKey = Keys.hmacShaKeyFor(JwtSecrets.require(secret).getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
