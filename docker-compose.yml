@@ -96,6 +96,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env (ver .env.example)}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (mínimo 32 caracteres, ver .env.example)}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+      NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-LastMilePlatform/1.0 (contacto@lastmile.cl)}
+      GEOCODING_MIN_INTERVAL: ${GEOCODING_MIN_INTERVAL:-1s}
+      GEOCODING_MIN_PLACE_RANK: ${GEOCODING_MIN_PLACE_RANK:-28}
     ports:
       - "8082:8082"
     healthcheck:

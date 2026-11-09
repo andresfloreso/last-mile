@@ -14,10 +14,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-function numberedIcon(position: number, color: string) {
+/** Color de los locales con ubicación aproximada (HU-09: "revisar"). */
+export const REVIEW_COLOR = "#7c3aed";
+
+function numberedIcon(position: number, color: string, needsReview = false) {
+  // Un local "por revisar" lleva borde punteado y un "!" para distinguirlo sin depender solo del color.
+  const border = needsReview ? "2px dashed white" : "2px solid white";
+  const badge = needsReview
+    ? `<span style="position:absolute;top:-6px;right:-6px;background:#fff;color:${REVIEW_COLOR};width:14px;height:14px;border-radius:50%;font-size:11px;line-height:14px;text-align:center;font-weight:800">!</span>`
+    : "";
   return L.divIcon({
     className: "custom-numbered-marker",
-    html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)">${position}</div>`,
+    html: `<div style="position:relative;background:${color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;border:${border};box-shadow:0 1px 4px rgba(0,0,0,0.4)">${position}${badge}</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
@@ -61,13 +69,15 @@ export default function RouteMap({ stops, orderedPositions, currentLocation }: R
   const defaultCenter: [number, number] = points[0] ?? [-33.4489, -70.6693]; // Santiago, Chile
 
   // Si hay orden calculado, se dibuja la polilínea siguiendo ese orden.
-  const orderedGeolocated = orderedPositions
+  // Sin orden calculado no se dibuja la línea: unir las paradas en el orden de la lista no representa una ruta.
+  const hasOrder = orderedPositions != null && Object.keys(orderedPositions).length > 0;
+  const orderedGeolocated = hasOrder
     ? [...geolocated].sort(
         (a, b) =>
           (orderedPositions[a.shipmentId ?? a.tempId] ?? 999) -
           (orderedPositions[b.shipmentId ?? b.tempId] ?? 999)
       )
-    : geolocated;
+    : [];
 
   const polylinePoints: [number, number][] = [];
   if (currentLocation) polylinePoints.push([currentLocation.lat, currentLocation.lng]);
@@ -93,12 +103,12 @@ export default function RouteMap({ stops, orderedPositions, currentLocation }: R
       {geolocated.map((stop) => {
         const key = stop.shipmentId ?? stop.tempId;
         const position = orderedPositions?.[key];
-        const color = stop.stopType === "PICKUP" ? "#f59e0b" : "#0d6efd";
+        const color = stop.needsReview ? REVIEW_COLOR : stop.stopType === "PICKUP" ? "#f59e0b" : "#0d6efd";
         return (
           <Marker
             key={key}
             position={[stop.latitude!, stop.longitude!]}
-            icon={position ? numberedIcon(position, color) : numberedIcon(0, color)}
+            icon={numberedIcon(position ?? 0, color, stop.needsReview)}
           >
             <Popup>
               <strong>{stop.customerName}</strong>
@@ -108,6 +118,14 @@ export default function RouteMap({ stops, orderedPositions, currentLocation }: R
               <span className="text-xs text-slate-500">
                 {stop.stopType === "PICKUP" ? "Recogida" : "Entrega"} · {stop.packageCount} paquete(s)
               </span>
+              {stop.needsReview && (
+                <>
+                  <br />
+                  <span style={{ color: REVIEW_COLOR, fontWeight: 600 }}>
+                    Revisar: ubicación aproximada, confirma la dirección
+                  </span>
+                </>
+              )}
             </Popup>
           </Marker>
         );

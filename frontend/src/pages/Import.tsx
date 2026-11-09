@@ -103,21 +103,35 @@ function Stat({ value, label, className }: { value: number; label: string; class
   );
 }
 
-/** Resumen de la importación (HU-08): totales y, por fila, qué se omitió o falló y por qué. */
+type IssueKind = "error" | "skipped" | "review";
+
+const ISSUE_BADGE: Record<IssueKind, { label: string; className: string }> = {
+  error: { label: "Error", className: "bg-red-50 text-red-600" },
+  skipped: { label: "Omitido", className: "bg-amber-50 text-amber-700" },
+  review: { label: "Revisar", className: "bg-violet-50 text-violet-700" },
+};
+
+/**
+ * Resumen de la importación (HU-08): totales y, por fila, qué se omitió o
+ * falló y por qué. HU-09: también las filas cuyo local quedó "por revisar"
+ * porque la geocodificación fue aproximada o no encontró la dirección.
+ */
 function ImportResult({ summary }: { summary: ImportSummary }) {
-  const issues: (ImportRowIssue & { kind: "error" | "skipped" })[] = [
+  const issues: (ImportRowIssue & { kind: IssueKind })[] = [
     ...summary.errors.map((e) => ({ ...e, kind: "error" as const })),
     ...summary.skippedRows.map((e) => ({ ...e, kind: "skipped" as const })),
+    ...(summary.reviewRows ?? []).map((e) => ({ ...e, kind: "review" as const })),
   ].sort((a, b) => a.rowNumber - b.rowNumber);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <h3 className="font-semibold text-slate-800 mb-3">Resultado de la importación</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center mb-4">
         <Stat value={summary.totalRows} label="Filas leídas" className="bg-slate-50 text-slate-800" />
         <Stat value={summary.created} label="Envíos creados" className="bg-green-50 text-green-700" />
         <Stat value={summary.skipped} label="Omitidos (ya existían)" className="bg-amber-50 text-amber-700" />
         <Stat value={summary.failed} label="Con error" className="bg-red-50 text-red-600" />
+        <Stat value={summary.toReview ?? 0} label="Ubicación por revisar" className="bg-violet-50 text-violet-700" />
       </div>
 
       {issues.length === 0 ? (
@@ -126,7 +140,8 @@ function ImportResult({ summary }: { summary: ImportSummary }) {
         <>
           <p className="text-xs text-slate-500 mb-2">
             Corrige las filas con error en la planilla y vuelve a importarla: las filas ya creadas se omiten, no se
-            duplican.
+            duplican. Las marcadas "Revisar" se crearon, pero su ubicación es aproximada: verifícalas en el mapa o
+            agrega latitud y longitud a la fila.
           </p>
           <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-md">
             <table className="w-full text-xs">
@@ -144,11 +159,9 @@ function ImportResult({ summary }: { summary: ImportSummary }) {
                     <td className="px-3 py-2 font-mono">{issue.rowNumber}</td>
                     <td className="px-3 py-2 font-mono text-slate-600">{issue.trackingCode ?? "—"}</td>
                     <td className="px-3 py-2">
-                      {issue.kind === "error" ? (
-                        <span className="rounded bg-red-50 px-2 py-0.5 font-semibold text-red-600">Error</span>
-                      ) : (
-                        <span className="rounded bg-amber-50 px-2 py-0.5 font-semibold text-amber-700">Omitido</span>
-                      )}
+                      <span className={`rounded px-2 py-0.5 font-semibold ${ISSUE_BADGE[issue.kind].className}`}>
+                        {ISSUE_BADGE[issue.kind].label}
+                      </span>
                     </td>
                     <td className="px-3 py-2 text-slate-700">{issue.message}</td>
                   </tr>

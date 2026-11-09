@@ -26,9 +26,10 @@ class GeocodingController {
     public List<GeocodeResult> search(@RequestParam String q, @RequestParam(required = false) String commune) {
         Optional<GeocodingService.GeoPoint> result = geocodingService.geocode(q, commune);
         return result
-                .map(p -> List.of(new GeocodeResult(q, p.latitude(), p.longitude(), p.confidence())))
+                .map(p -> List.of(new GeocodeResult(q, p.latitude(), p.longitude(), p.confidence(), !p.precise())))
                 .orElseGet(List::of);
     }
 
-    public record GeocodeResult(String address, double latitude, double longitude, double confidence) {}
+    /** needsReview: Nominatim no ubicó el número de calle; el pin es aproximado (HU-09). */
+    public record GeocodeResult(String address, double latitude, double longitude, double confidence, boolean needsReview) {}
 }

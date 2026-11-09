@@ -44,6 +44,9 @@ export interface ImportSummary {
   skipped: number;
   /** Filas con error (datos inválidos o rechazadas por delivery-service). */
   failed: number;
+  /** Locales con ubicación aproximada o no encontrada al geocodificar (HU-09). */
+  toReview: number;
   skippedRows: RowIssue[];
   errors: RowIssue[];
+  reviewRows: RowIssue[];
 }
