@@ -48,6 +48,10 @@ routing:
   # de línea recta. Se puede apuntar a un servidor propio en producción para
   # no depender del límite de tasa del demo público.
   osrm-url: ${OSRM_URL:https://router.project-osrm.org}
+  # HU-14: hora estimada por parada.
+  default-departure: "08:00"   # salida del depósito si la request no la indica
+  stop-minutes: 10             # minutos de entrega en cada local
+  fallback-speed-kmh: 25       # velocidad urbana para estimar tramos cuando OSRM no responde
 
 management:
   endpoints:

@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,8 +31,14 @@ public class OsrmRoutingClient {
     private final WebClient webClient;
 
     public OsrmRoutingClient(@Value("${routing.osrm-url:https://router.project-osrm.org}") String baseUrl) {
-        this.webClient = WebClient.builder().baseUrl(baseUrl).build();
+        this.webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                // /route con la geometría de cada paso pesa ~1 MB para 50 paradas; el límite por defecto es 256 KB.
+                .codecs(c -> c.defaultCodecs().maxInMemorySize(MAX_RESPONSE_BYTES))
+                .build();
     }
+
+    static final int MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
 
     /**
      * @param points lista de coordenadas (lat, lng) en el orden en que se quiere la matriz;
@@ -77,6 +84,62 @@ public class OsrmRoutingClient {
 
         } catch (Exception ex) {
             log.warn("Error inesperado consultando OSRM: {}", ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /** Un tramo de la ruta entre dos puntos consecutivos. {@code path} va como pares (lat, lng). */
+    public record Leg(double durationSeconds, double distanceMeters, List<double[]> path) {}
+
+    /**
+     * Ruta por calle que pasa por los puntos en el orden dado (servicio "route" de OSRM),
+     * con un tramo por cada par de puntos consecutivos (HU-14: hora estimada y polilínea).
+     *
+     * @param points coordenadas (lat, lng) en el orden de la ruta; el índice 0 es el depósito
+     * @return los {@code points.size() - 1} tramos, o Optional.empty() si OSRM no está disponible
+     */
+    public Optional<List<Leg>> route(List<double[]> points) {
+        if (points.size() < 2) {
+            return Optional.of(List.of());
+        }
+        String coordinates = points.stream()
+                .map(p -> p[1] + "," + p[0]) // OSRM espera lon,lat
+                .collect(Collectors.joining(";"));
+        try {
+            JsonNode response = webClient.get()
+                    .uri("/route/v1/driving/" + coordinates + "?overview=false&steps=true&geometries=geojson")
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .timeout(Duration.ofSeconds(8))
+                    .onErrorResume(ex -> {
+                        log.warn("OSRM /route no disponible, se estimarán los tiempos: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .block();
+
+            if (response == null || !"Ok".equals(response.path("code").asText())) {
+                return Optional.empty();
+            }
+            JsonNode legsNode = response.path("routes").path(0).path("legs");
+            if (!legsNode.isArray() || legsNode.size() != points.size() - 1) {
+                log.warn("OSRM /route devolvió {} tramos para {} puntos", legsNode.size(), points.size());
+                return Optional.empty();
+            }
+            List<Leg> legs = new ArrayList<>();
+            for (JsonNode leg : legsNode) {
+                List<double[]> path = new ArrayList<>();
+                for (JsonNode step : leg.path("steps")) {
+                    for (JsonNode coord : step.path("geometry").path("coordinates")) {
+                        double[] point = {coord.get(1).asDouble(), coord.get(0).asDouble()}; // a (lat, lng)
+                        double[] last = path.isEmpty() ? null : path.get(path.size() - 1);
+                        if (last == null || last[0] != point[0] || last[1] != point[1]) path.add(point);
+                    }
+                }
+                legs.add(new Leg(leg.path("duration").asDouble(), leg.path("distance").asDouble(), path));
+            }
+            return Optional.of(legs);
+        } catch (Exception ex) {
+            log.warn("Error inesperado consultando OSRM /route: {}", ex.getMessage());
             return Optional.empty();
         }
     }

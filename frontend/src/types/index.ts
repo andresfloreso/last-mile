@@ -31,6 +31,25 @@ export interface RouteStop {
   label?: string;
   latitude?: number;
   longitude?: number;
+  // ---- HU-14: hora estimada por parada ----
+  /** Llegada estimada del camión (HH:mm). */
+  estimatedArrival: string;
+  /** Inicio de la entrega: la llegada, o la apertura de la ventana real si llega antes (HH:mm). */
+  serviceStart: string;
+  /** Salida del local (HH:mm). */
+  estimatedDeparture: string;
+  /** Minutos esperando a que abra la ventana real. */
+  waitMinutes: number;
+  /** Minutos de viaje desde la parada anterior; null si el local no tiene coordenadas. */
+  travelMinutes: number | null;
+  legDistanceMeters: number | null;
+  /** La entrega empezaría cuando la ventana real ya cerró. */
+  outsideWindow: boolean;
+  /** Tramo desde la parada anterior, como pares [lat, lng]. */
+  path: [number, number][];
+  timingSource: "OSRM" | "ESTIMATED" | "NO_LOCATION";
+  /** 1 si la ruta no alcanza en el día y la llegada es al día siguiente. */
+  dayOffset: number;
 }
 
 /** Parada tal como la ve/edita el usuario antes de optimizar — igual al panel de detalle de la app de referencia. */
