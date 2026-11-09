@@ -25,9 +25,16 @@ import java.util.List;
  * cortar tráfico no autenticado antes de que llegue a los microservicios,
  * y propaga el userId/rol como headers internos (X-User-Id, X-User-Role)
  * para que los servicios downstream no tengan que re-parsear el token.
+ *
+ * Esos headers solo los escribe el gateway: los que manda el cliente se
+ * eliminan siempre, también en las rutas públicas (#9). Así nadie puede
+ * suplantar a otro usuario o rol enviándolos a mano.
  */
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
+
+    public static final String USER_ID_HEADER = "X-User-Id";
+    public static final String USER_ROLE_HEADER = "X-User-Role";
 
     private static final List<String> PUBLIC_PATHS = List.of(
             "/api/auth/register",
@@ -44,7 +51,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    public Mono<Void> filter(ServerWebExchange incoming, GatewayFilterChain chain) {
+        // HttpHeaders no distingue mayúsculas: también elimina x-user-id, X-USER-ROLE, etc.
+        ServerWebExchange exchange = incoming.mutate()
+                .request(incoming.getRequest().mutate()
+                        .headers(headers -> {
+                            headers.remove(USER_ID_HEADER);
+                            headers.remove(USER_ROLE_HEADER);
+                        })
+                        .build())
+                .build();
         String path = exchange.getRequest().getURI().getPath();
 
         if (isPublic(path)) {
@@ -68,9 +84,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 return unauthorized(exchange, "Tipo de token inválido");
             }
 
+            String role = claims.get("role", String.class);
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                    .header("X-User-Id", claims.getSubject())
-                    .header("X-User-Role", claims.get("role", String.class))
+                    .headers(headers -> {
+                        headers.set(USER_ID_HEADER, claims.getSubject());
+                        if (role != null) headers.set(USER_ROLE_HEADER, role);
+                    })
                     .build();
 
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
