@@ -1,5 +1,8 @@
-import { useState } from "react";
-import type { DraftStop, OrderPreference, StopType } from "@/types";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { customersApi } from "@/api/endpoints";
+import { windowLine } from "@/lib/timeWindow";
+import type { DraftStop, OrderPreference, StopType, TimeWindow } from "@/types";
 import { STOP_LABELS } from "@/types";
 
 interface StopEditorProps {
@@ -12,6 +15,20 @@ interface StopEditorProps {
 
 export default function StopEditor({ stop, onChange, onDuplicate, onDelete, onClose }: StopEditorProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [timeWindow, setTimeWindow] = useState<TimeWindow | null>(null);
+
+  // HU-11: modulación vs. ventana real del local, si la parada ya tiene un local guardado.
+  useEffect(() => {
+    if (!stop.customerId) return;
+    let cancelled = false;
+    customersApi
+      .timeWindow(stop.customerId)
+      .then((tw) => !cancelled && setTimeWindow(tw))
+      .catch(() => !cancelled && setTimeWindow(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [stop.customerId]);
 
   return (
     <div className="fixed inset-0 z-30 flex items-end sm:items-center sm:justify-center bg-black/50">
@@ -27,6 +44,17 @@ export default function StopEditor({ stop, onChange, onDuplicate, onDelete, onCl
           <div>
             <h2 className="text-xl font-bold">{stop.customerName || "Nueva parada"}</h2>
             <p className="text-sm text-slate-400">{stop.address}</p>
+            {timeWindow && (
+              <div className="mt-3 rounded-lg bg-slate-800 px-3 py-2">
+                <p className="text-sm font-medium text-slate-100">{windowLine(timeWindow)}</p>
+                <Link
+                  to={`/locales/${timeWindow.customerId}`}
+                  className="text-xs text-brand-100 hover:underline"
+                >
+                  Ver detalle del local →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Etiquetas de color, igual a "Default" / "Afternoon Pickup" de la app de referencia */}

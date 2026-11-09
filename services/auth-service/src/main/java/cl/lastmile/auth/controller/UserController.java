@@ -34,7 +34,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Crear un usuario con cualquier rol",
-            description = "Solo un ADMIN puede asignar roles. El registro público (/api/auth/register) siempre crea CLIENT.")
+            description = "Solo un ADMIN crea usuarios y asigna roles. El registro público está desactivado por defecto (#44).")
     @ApiResponse(responseCode = "201", description = "Usuario creado")
     @ApiResponse(responseCode = "400", description = "Datos inválidos")
     @ApiResponse(responseCode = "401", description = "Sin token o token inválido")

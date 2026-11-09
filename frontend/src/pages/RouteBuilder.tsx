@@ -16,6 +16,7 @@ interface ShipmentListItem {
   label?: string | null;
   notes?: string | null;
   customer: {
+    id: string;
     fullName: string;
     address: string;
     commune?: string | null;
@@ -30,6 +31,7 @@ function toDraftStop(s: ShipmentListItem): DraftStop {
   return {
     tempId: s.id,
     shipmentId: s.id,
+    customerId: s.customer.id,
     customerName: s.customer.fullName,
     address: s.customer.address,
     commune: s.customer.commune ?? undefined,

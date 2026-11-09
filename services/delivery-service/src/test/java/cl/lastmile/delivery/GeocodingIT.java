@@ -110,9 +110,9 @@ class GeocodingIT {
                 {"trackingCode":"%s","customerId":"%s","scheduledDate":"2026-12-02","source":"import:test.xlsx"}"""
                 .formatted(tracking, local.get("id").asText())), 201);
 
-        JsonNode shipments = call(get("/api/shipments").param("date", "2026-12-02"), 200);
+        JsonNode shipments = call(get("/api/shipments").param("date", "2026-12-02").param("q", tracking), 200);
         JsonNode shipment = null;
-        for (JsonNode s : shipments) {
+        for (JsonNode s : shipments.get("content")) {
             if (s.get("trackingCode").asText().equals(tracking)) shipment = s;
         }
         assertThat(shipment).isNotNull();

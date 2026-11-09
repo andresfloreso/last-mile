@@ -1,5 +1,6 @@
 package cl.lastmile.delivery.dto;
 
+import cl.lastmile.delivery.algorithm.TimeWindowLearningService.CustomerTimeWindowProfile;
 import cl.lastmile.delivery.algorithm.RouteOptimizationService;
 import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.model.DeclaredWindow;
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.Page;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -204,6 +206,68 @@ public class DeliveryDtos {
         }
     }
 
+    @Schema(description = "Modulación declarada vs. ventana real aprendida de un local (HU-11)")
+    public record TimeWindowResponse(
+            UUID customerId,
+            String customerName,
+            @Schema(description = "Modulación declarada; null si el local no declaró horario")
+            DeclaredWindowResponse declaredWindow,
+            @Schema(description = "Ventana real que usa la ruta para ordenar este local")
+            RealWindowResponse realWindow,
+            @Schema(description = "Explicación en una frase", example = "Recibió 8 de 10 visitas entre 12:00 y 14:00")
+            String summary,
+            @Schema(description = "Intentos de entrega registrados", example = "25") int totalAttempts,
+            @Schema(description = "Intentos aceptados", example = "20") int acceptedAttempts,
+            @Schema(description = "Intentos no aceptados (cerrado, rechazo o pidió otro horario)", example = "5") int rejectedAttempts,
+            @Schema(description = "Horas (8 a 19) en que el local rechaza más de lo que recibe", example = "[9, 10]")
+            List<Integer> hoursToAvoid,
+            @Schema(description = "24 casilleros, de 0 a 23 h (hora de Santiago)")
+            List<HourBucketResponse> histogram
+    ) {
+        public static TimeWindowResponse from(Customer customer, CustomerTimeWindowProfile profile, String summary) {
+            List<HourBucketResponse> histogram = profile.histogram().stream()
+                    .map(b -> new HourBucketResponse(b.hour(), b.accepted(), b.rejected()))
+                    .toList();
+            int accepted = histogram.stream().mapToInt(HourBucketResponse::accepted).sum();
+            return new TimeWindowResponse(
+                    customer.getId(),
+                    customer.getFullName(),
+                    DeclaredWindowResponse.from(customer.declaredWindow()),
+                    new RealWindowResponse(
+                            LocalTime.of(profile.recommendedStartHour(), 0),
+                            LocalTime.of(profile.recommendedEndHour(), 0),
+                            profile.acceptedInWindow(),
+                            profile.attemptsInWindow(),
+                            profile.learned() ? "LEARNED" : "DEFAULT"),
+                    summary,
+                    profile.sampleSize(),
+                    accepted,
+                    profile.sampleSize() - accepted,
+                    profile.hoursToAvoid(),
+                    histogram);
+        }
+    }
+
+    public record RealWindowResponse(
+            @JsonFormat(pattern = "HH:mm") @Schema(type = "string", example = "12:00") LocalTime start,
+            @JsonFormat(pattern = "HH:mm") @Schema(type = "string", example = "14:00") LocalTime end,
+            @Schema(description = "Visitas aceptadas dentro de la ventana (la X de \"X de Y visitas\")", example = "8")
+            int acceptedVisits,
+            @Schema(description = "Visitas dentro de la ventana (la Y)", example = "10")
+            int visits,
+            @Schema(description = "LEARNED: aprendida de los intentos; DEFAULT: sin intentos, horario comercial por defecto",
+                    allowableValues = {"LEARNED", "DEFAULT"})
+            String basis
+    ) {
+    }
+
+    public record HourBucketResponse(
+            @Schema(description = "Hora del día, 0 a 23", example = "12") int hour,
+            @Schema(description = "Visitas aceptadas en esa hora", example = "4") int accepted,
+            @Schema(description = "Visitas no aceptadas en esa hora", example = "1") int rejected
+    ) {
+    }
+
     public record ShipmentResponse(
             UUID id,
             String trackingCode,
@@ -249,6 +313,20 @@ public class DeliveryDtos {
         public static DeliveryAttemptResponse from(DeliveryAttempt a) {
             return new DeliveryAttemptResponse(a.getId(), a.getShipment().getId(), a.getCustomer().getId(),
                     a.getAttemptedAt(), name(a.getOutcome()), a.getRejectionReason());
+        }
+    }
+
+    @Schema(description = "Una página de resultados")
+    public record PageResponse<T>(
+            @Schema(description = "Elementos de esta página") List<T> content,
+            @Schema(description = "Número de página, desde 0", example = "0") int page,
+            @Schema(description = "Tamaño de página pedido", example = "20") int size,
+            @Schema(description = "Total de elementos que cumplen los filtros", example = "57") long totalElements,
+            @Schema(description = "Total de páginas", example = "3") int totalPages
+    ) {
+        public static <T> PageResponse<T> from(Page<T> page) {
+            return new PageResponse<>(page.getContent(), page.getNumber(), page.getSize(),
+                    page.getTotalElements(), page.getTotalPages());
         }
     }
 

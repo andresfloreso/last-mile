@@ -3,6 +3,7 @@ package cl.lastmile.delivery.controller;
 import cl.lastmile.delivery.dto.DeliveryDtos.CustomerResponse;
 import cl.lastmile.delivery.dto.DeliveryDtos.DeclaredWindowRequest;
 import cl.lastmile.delivery.dto.DeliveryDtos.LocationRequest;
+import cl.lastmile.delivery.dto.DeliveryDtos.TimeWindowResponse;
 import cl.lastmile.delivery.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,12 +26,30 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @GetMapping("/{customerId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'OPERATOR', 'DRIVER')")
     @Operation(summary = "Detalle de un local", description = "Incluye el tipo de local y su modulación declarada.")
     @ApiResponse(responseCode = "200", description = "Local encontrado")
     @ApiResponse(responseCode = "400", description = "customerId no es un identificador válido")
+    @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN, DISPATCHER, OPERATOR o DRIVER)")
     @ApiResponse(responseCode = "404", description = "El local no existe")
     public ResponseEntity<CustomerResponse> get(@Parameter(description = "Id del local") @PathVariable String customerId) {
         return ResponseEntity.ok(customerService.get(customerId));
+    }
+
+    @GetMapping("/{customerId}/time-window")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'OPERATOR', 'DRIVER')")
+    @Operation(
+            summary = "Modulación vs. ventana real de un local",
+            description = """
+                    Devuelve la modulación declarada, la ventana real que usa la ruta para ordenar el local, \
+                    el histograma de intentos por hora (0 a 23, hora de Santiago) y el conteo "X de Y visitas" \
+                    dentro de esa ventana. La ventana sale del mismo cálculo que usa POST /api/routes/build.""")
+    @ApiResponse(responseCode = "200", description = "Perfil horario del local")
+    @ApiResponse(responseCode = "400", description = "customerId no es un identificador válido")
+    @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN, DISPATCHER, OPERATOR o DRIVER)")
+    @ApiResponse(responseCode = "404", description = "El local no existe")
+    public ResponseEntity<TimeWindowResponse> timeWindow(@Parameter(description = "Id del local") @PathVariable String customerId) {
+        return ResponseEntity.ok(customerService.timeWindow(customerId));
     }
 
     @PutMapping("/{customerId}/declared-window")
