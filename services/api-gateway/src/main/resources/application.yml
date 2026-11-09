@@ -20,6 +20,11 @@ spring:
           uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
           predicates:
             - Path=/api/shipments/**
+        # Locales (HU-25): detalle y modulación declarada.
+        - id: delivery-service-customers
+          uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/customers/**
         - id: delivery-service-routes
           uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
           predicates:

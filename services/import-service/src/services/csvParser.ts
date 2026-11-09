@@ -1,16 +1,6 @@
 import Papa from "papaparse";
 import { ParseResult, ParsedShipmentRow, RowError } from "../types/shipment";
-
-const REQUIRED_HEADERS = ["cliente", "direccion", "tracking", "fecha_entrega"];
-
-function normalizeHeader(raw: string): string {
-  return raw
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "_");
-}
+import { REQUIRED_HEADERS, normalizeHeader, parseBusinessType, parseModulation } from "./columns";
 
 function toNumber(value?: string): number | undefined {
   if (!value) return undefined;
@@ -60,9 +50,18 @@ export function parseShipmentsCsv(fileContent: string): ParseResult {
       return;
     }
 
+    const businessType = parseBusinessType(record["tipo_local"]);
+    const modulation = parseModulation(record["modulacion_desde"], record["modulacion_hasta"]);
+    if (!businessType.ok || !modulation.ok) {
+      errors.push({ rowNumber, message: !businessType.ok ? businessType.error : (modulation as { error: string }).error });
+      return;
+    }
+
     rows.push({
       rowNumber,
       customerName,
+      businessType: businessType.value,
+      ...modulation.value,
       phone: record["telefono"]?.trim() || undefined,
       address,
       commune: record["comuna"]?.trim() || undefined,

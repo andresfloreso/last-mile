@@ -26,6 +26,17 @@ export const importApi = {
       })
       .then((r) => r.data);
   },
+
+  /** Descarga la plantilla .xlsx con las columnas esperadas (incluye tipo de local y modulación). */
+  downloadTemplate: async () => {
+    const { data } = await apiClient.get<Blob>("/api/import/template", { responseType: "blob" });
+    const url = URL.createObjectURL(data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "plantilla-envios-lastmile.xlsx";
+    link.click();
+    URL.revokeObjectURL(url);
+  },
 };
 
 export const trackingApi = {

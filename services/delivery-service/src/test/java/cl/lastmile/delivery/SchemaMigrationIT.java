@@ -36,8 +36,9 @@ class SchemaMigrationIT {
     @Autowired DeliveryAttemptRepository attempts;
 
     @Test
-    void aplicaBaselineYHibernateValidaElEsquema() {
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
+    void aplicaLasMigracionesYHibernateValidaElEsquema() {
+        // V1 baseline (HU-02) + V2 modulación y tipo de local (HU-25).
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
         assertThat(flyway.info().pending()).isEmpty();
     }
 

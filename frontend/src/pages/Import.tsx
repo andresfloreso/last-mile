@@ -8,6 +8,16 @@ export default function Import() {
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templateError, setTemplateError] = useState<string | null>(null);
+
+  async function handleTemplate() {
+    setTemplateError(null);
+    try {
+      await importApi.downloadTemplate();
+    } catch {
+      setTemplateError("No se pudo descargar la plantilla");
+    }
+  }
 
   async function handleUpload() {
     if (!file) return;
@@ -28,13 +38,37 @@ export default function Import() {
     <Layout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h2 className="font-semibold text-slate-800 mb-1">Importar planilla de envíos</h2>
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <h2 className="font-semibold text-slate-800">Importar planilla de envíos</h2>
+            <button
+              type="button"
+              onClick={handleTemplate}
+              className="shrink-0 rounded-md border border-brand-600 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-50"
+            >
+              Descargar plantilla (.xlsx)
+            </button>
+          </div>
+          {templateError && <p className="text-sm text-red-600 mb-2">{templateError}</p>}
           <p className="text-sm text-slate-500 mb-4">
             Acepta archivos <code>.xlsx</code>, <code>.xls</code> o <code>.csv</code> con las columnas:
             <code className="block bg-slate-50 rounded-md p-2 mt-2 text-xs">
-              cliente, telefono, direccion, comuna, latitud, longitud, codigo_externo, tracking, fecha_entrega, notas
+              cliente, tipo_local, telefono, direccion, comuna, latitud, longitud, codigo_externo, modulacion_desde,
+              modulacion_hasta, tracking, fecha_entrega, notas
             </code>
           </p>
+          <ul className="text-xs text-slate-500 mb-4 space-y-1 list-disc pl-5">
+            <li>
+              <strong>Obligatorias:</strong> cliente (nombre del local), direccion, tracking y fecha_entrega.
+            </li>
+            <li>
+              <strong>tipo_local:</strong> botillería, minimarket, bar, restaurant u otro.
+            </li>
+            <li>
+              <strong>Modulación:</strong> horario en que el local declara que recibe, con{" "}
+              <code>modulacion_desde</code> y <code>modulacion_hasta</code> en formato HH:mm (por ejemplo 09:00 y
+              12:00). LastMile aprende además su ventana real con cada intento de entrega.
+            </li>
+          </ul>
 
           <input
             type="file"

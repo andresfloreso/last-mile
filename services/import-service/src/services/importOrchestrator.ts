@@ -23,6 +23,9 @@ export async function importShipmentRows(
         latitude: row.latitude,
         longitude: row.longitude,
         externalCode: row.externalCode,
+        businessType: row.businessType,
+        declaredWindowStart: row.declaredWindowStart,
+        declaredWindowEnd: row.declaredWindowEnd,
       });
 
       await client.createShipment({

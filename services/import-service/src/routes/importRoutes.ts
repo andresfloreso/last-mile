@@ -5,6 +5,7 @@ import { AuthenticatedRequest, jwtAuth, requireRole } from "../middleware/jwtAut
 import { parseShipmentsExcel } from "../services/excelParser";
 import { parseShipmentsCsv } from "../services/csvParser";
 import { importShipmentRows } from "../services/importOrchestrator";
+import { TEMPLATE_FILENAME, buildImportTemplate } from "../services/template";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -20,6 +21,23 @@ const upload = multer({
 });
 
 const router = Router();
+
+// Plantilla .xlsx con las columnas esperadas, incluida la modulación (HU-25).
+router.get(
+  "/template",
+  jwtAuth,
+  requireRole("ADMIN", "DISPATCHER", "OPERATOR"),
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const buffer = await buildImportTemplate();
+    res
+      .status(200)
+      .set({
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${TEMPLATE_FILENAME}"`,
+      })
+      .send(buffer);
+  }
+);
 
 // Sólo roles operativos pueden cargar planillas masivas de envíos.
 router.post(

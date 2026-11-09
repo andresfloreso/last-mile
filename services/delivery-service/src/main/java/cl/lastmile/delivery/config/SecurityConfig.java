@@ -32,6 +32,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/tracking/**").permitAll() // seguimiento público por trackingCode
                 .requestMatchers("/api/geocoding/**").authenticated() // buscador de direcciones del frontend
                 .requestMatchers("/api/routes/**").hasAnyRole("ADMIN", "DISPATCHER")
