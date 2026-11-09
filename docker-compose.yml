@@ -74,11 +74,9 @@ services:
       # ADMIN inicial (HU-05): solo se crea si no existe ningún ADMIN.
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
-      # Datos semilla (HU-01): perfil "seed" por defecto en desarrollo.
-      # Para levantar sin datos de ejemplo: SPRING_PROFILES_ACTIVE=default
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-seed}
-    volumes:
-      - ./infra/seed/auth:/seed:ro
+      # Sin perfil "seed": los datos de ejemplo solo se cargan en desarrollo,
+      # con docker-compose.override.yml (ver infra/seed/README.md).
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
     ports:
       - "8081:8081"
     healthcheck:
@@ -97,9 +95,7 @@ services:
       SPRING_DATASOURCE_USERNAME: lastmile
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env (ver .env.example)}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (mínimo 32 caracteres, ver .env.example)}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-seed}
-    volumes:
-      - ./infra/seed/delivery:/seed:ro
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
     ports:
       - "8082:8082"
     healthcheck:
