@@ -1,5 +1,7 @@
 package cl.lastmile.delivery.service;
 
+import cl.lastmile.delivery.exception.BadRequestException;
+import cl.lastmile.delivery.exception.ConflictException;
 import cl.lastmile.delivery.dto.DeliveryDtos.*;
 import cl.lastmile.delivery.geo.GeocodingService;
 import cl.lastmile.delivery.model.Customer;
@@ -69,7 +71,8 @@ public class ShipmentService {
 
     @Transactional
     public ShipmentResponse createShipment(ShipmentRequest req) {
-        Customer customer = customerRepository.findById(UUID.fromString(req.customerId()))
+        requireUniqueTrackingCode(req.trackingCode());
+        Customer customer = customerRepository.findById(RequestValues.uuid(req.customerId(), "customerId"))
                 .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado: " + req.customerId()));
 
         Shipment shipment = Shipment.builder()
@@ -78,10 +81,10 @@ public class ShipmentService {
                 .scheduledDate(req.scheduledDate())
                 .source(req.source())
                 .notes(req.notes())
-                .stopType(req.stopType() != null ? Shipment.StopType.valueOf(req.stopType()) : Shipment.StopType.DELIVERY)
+                .stopType(req.stopType() != null ? RequestValues.enumValue(Shipment.StopType.class, req.stopType(), "stopType") : Shipment.StopType.DELIVERY)
                 .packageCount(req.packageCount() != null ? req.packageCount() : 1)
                 .orderPreference(req.orderPreference() != null
-                        ? Shipment.OrderPreference.valueOf(req.orderPreference())
+                        ? RequestValues.enumValue(Shipment.OrderPreference.class, req.orderPreference(), "orderPreference")
                         : Shipment.OrderPreference.AUTO)
                 .label(req.label())
                 .build();
@@ -96,12 +99,12 @@ public class ShipmentService {
 
     @Transactional
     public ShipmentResponse updateShipment(String shipmentId, ShipmentUpdateRequest req) {
-        Shipment shipment = shipmentRepository.findById(UUID.fromString(shipmentId))
+        Shipment shipment = shipmentRepository.findById(RequestValues.uuid(shipmentId, "shipmentId"))
                 .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
 
-        if (req.stopType() != null) shipment.setStopType(Shipment.StopType.valueOf(req.stopType()));
+        if (req.stopType() != null) shipment.setStopType(RequestValues.enumValue(Shipment.StopType.class, req.stopType(), "stopType"));
         if (req.packageCount() != null) shipment.setPackageCount(req.packageCount());
-        if (req.orderPreference() != null) shipment.setOrderPreference(Shipment.OrderPreference.valueOf(req.orderPreference()));
+        if (req.orderPreference() != null) shipment.setOrderPreference(RequestValues.enumValue(Shipment.OrderPreference.class, req.orderPreference(), "orderPreference"));
         if (req.label() != null) shipment.setLabel(req.label());
         if (req.notes() != null) shipment.setNotes(req.notes());
 
@@ -110,8 +113,10 @@ public class ShipmentService {
 
     @Transactional
     public ShipmentResponse duplicateShipment(String shipmentId, String newTrackingCode) {
-        Shipment original = shipmentRepository.findById(UUID.fromString(shipmentId))
+        Shipment original = shipmentRepository.findById(RequestValues.uuid(shipmentId, "shipmentId"))
                 .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
+
+        requireUniqueTrackingCode(newTrackingCode);
 
         Shipment copy = Shipment.builder()
                 .trackingCode(newTrackingCode)
@@ -130,7 +135,7 @@ public class ShipmentService {
 
     @Transactional
     public void deleteShipment(String shipmentId) {
-        Shipment shipment = shipmentRepository.findById(UUID.fromString(shipmentId))
+        Shipment shipment = shipmentRepository.findById(RequestValues.uuid(shipmentId, "shipmentId"))
                 .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
         shipmentRepository.delete(shipment);
     }
@@ -143,12 +148,12 @@ public class ShipmentService {
 
     @Transactional
     public DeliveryAttemptResponse registerAttempt(DeliveryAttemptRequest req) {
-        Shipment shipment = shipmentRepository.findById(UUID.fromString(req.shipmentId()))
+        Shipment shipment = shipmentRepository.findById(RequestValues.uuid(req.shipmentId(), "shipmentId"))
                 .orElseThrow(() -> new EntityNotFoundException("Envío no encontrado"));
-        Customer customer = customerRepository.findById(UUID.fromString(req.customerId()))
+        Customer customer = customerRepository.findById(RequestValues.uuid(req.customerId(), "customerId"))
                 .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
 
-        DeliveryAttempt.AttemptOutcome outcome = DeliveryAttempt.AttemptOutcome.valueOf(req.outcome());
+        DeliveryAttempt.AttemptOutcome outcome = RequestValues.enumValue(DeliveryAttempt.AttemptOutcome.class, req.outcome(), "outcome");
 
         DeliveryAttempt attempt = DeliveryAttempt.builder()
                 .shipment(shipment)
@@ -166,5 +171,14 @@ public class ShipmentService {
         shipmentRepository.save(shipment);
 
         return DeliveryAttemptResponse.from(attempt);
+    }
+
+    private void requireUniqueTrackingCode(String trackingCode) {
+        if (trackingCode == null || trackingCode.isBlank()) {
+            throw new BadRequestException("trackingCode es obligatorio");
+        }
+        if (shipmentRepository.existsByTrackingCode(trackingCode)) {
+            throw new ConflictException("Ya existe un envío con el trackingCode " + trackingCode);
+        }
     }
 }
