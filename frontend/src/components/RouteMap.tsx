@@ -148,7 +148,8 @@ export default function RouteMap({ stops, orderedPositions, plannedRoute, curren
                 <>
                   <br />
                   <span>
-                    Llega {hhmm(plan.estimatedArrival)}
+                    Entrega {hhmm(plan.serviceStart)}
+                    {plan.waitMinutes > 0 ? ` (llega ${hhmm(plan.estimatedArrival)}, espera ${plan.waitMinutes} min)` : ""}
                     {plan.dayOffset > 0 ? " (día siguiente)" : ""} · ventana real {hhmm(plan.windowStart)}–
                     {hhmm(plan.windowEnd)}
                   </span>

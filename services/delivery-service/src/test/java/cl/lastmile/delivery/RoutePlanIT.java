@@ -87,7 +87,9 @@ class RoutePlanIT {
     @Test
     void cadaParadaTieneUnaHoraEstimadaCoherenteConLaAnterior() throws Exception {
         JsonNode route = build("");
-        assertThat(route.size()).isEqualTo(50);
+        // Tantas paradas como envíos del día (50 con la semilla de HU-25; 24 con la de #52).
+        assertThat(route.size()).isEqualTo(jdbc.queryForObject(
+                "SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE", Integer.class)).isPositive();
 
         int clock = 8 * 60; // salida por defecto, 08:00
         int totalMeters = 0;

@@ -111,13 +111,16 @@ nuevos:
 |---|---|
 | `estimatedArrival` | Llegada del camión: salida anterior + tramo |
 | `serviceStart` | Inicio de la entrega: la llegada, o la apertura de la ventana real si llega antes |
-| `waitMinutes` | Espera hasta que abre la ventana real |
+| `waitMinutes` | Espera hasta que abre la ventana real. Llegar antes y esperar cuenta como dentro de ventana (lo realista en B2B) |
 | `estimatedDeparture` | `serviceStart` + `stopMinutes` |
 | `travelMinutes`, `legDistanceMeters` | Tramo desde la parada anterior (o el depósito) |
 | `outsideWindow` | La entrega empezaría cuando la ventana real ya cerró |
 | `dayOffset` | 1 si la ruta no alcanza en el día y la llegada es al día siguiente |
 | `path` | Tramo como pares `[lat, lng]`, para la polilínea |
 | `timingSource` | `OSRM` (por calle), `ESTIMATED` (OSRM no respondió: línea recta × 1,3 a `routing.fallback-speed-kmh`, 25 km/h) o `NO_LOCATION` (local sin coordenadas) |
+
+La **hora estimada** que muestra la pantalla es `serviceStart` (llegada +
+espera), con "espera N min" debajo cuando corresponde.
 
 El orden lo decide `RouteOptimizationService`, sin cambios: las paradas
 Primera y Última quedan en los extremos. La hora estimada es una capa aparte

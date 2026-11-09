@@ -62,11 +62,10 @@ export default function RouteSchedule({ route, departureTime }: { route: RouteSt
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sticky top-0">
             <tr>
               <th className="px-4 py-2">#</th>
-              <th className="px-4 py-2">Llega</th>
+              <th className="px-4 py-2">Hora estimada</th>
               <th className="px-4 py-2">Local</th>
               <th className="px-4 py-2">Ventana real</th>
               <th className="px-4 py-2 text-right">Viaje</th>
-              <th className="px-4 py-2 text-right">Espera</th>
               <th className="px-4 py-2">Estado</th>
             </tr>
           </thead>
@@ -74,9 +73,15 @@ export default function RouteSchedule({ route, departureTime }: { route: RouteSt
             {route.map((r) => (
               <tr key={r.shipmentId} className={r.outsideWindow ? "bg-red-50/60" : undefined}>
                 <td className="px-4 py-2 tabular-nums text-slate-500">{r.position}</td>
-                <td className="px-4 py-2 tabular-nums font-medium text-slate-800 whitespace-nowrap">
-                  {hhmm(r.estimatedArrival)}
+                <td className="px-4 py-2 tabular-nums whitespace-nowrap">
+                  {/* La hora estimada es el inicio de la entrega: llegada + espera hasta que abre la ventana. */}
+                  <span className="font-medium text-slate-800">{hhmm(r.serviceStart)}</span>
                   {r.dayOffset > 0 && <span className="ml-1 text-xs text-red-700">+1 día</span>}
+                  {r.waitMinutes > 0 && (
+                    <div className="text-xs text-slate-500">
+                      llega {hhmm(r.estimatedArrival)} · espera {r.waitMinutes} min
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-2">
                   <div className="text-slate-800">{r.customerName}</div>
@@ -91,9 +96,6 @@ export default function RouteSchedule({ route, departureTime }: { route: RouteSt
                 </td>
                 <td className="px-4 py-2 tabular-nums text-right text-slate-600">
                   {r.travelMinutes == null ? "—" : `${r.travelMinutes} min`}
-                </td>
-                <td className="px-4 py-2 tabular-nums text-right text-slate-600">
-                  {r.waitMinutes > 0 ? `${r.waitMinutes} min` : "—"}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   {r.outsideWindow ? (
