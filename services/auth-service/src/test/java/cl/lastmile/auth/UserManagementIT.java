@@ -41,10 +41,14 @@ class UserManagementIT {
         return prefix + "-" + UUID.randomUUID().toString().substring(0, 8) + "@lastmile.cl";
     }
 
-    private String register(String email) throws Exception {
-        String body = mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"fullName":"Usuario Prueba","email":"%s","password":"clave12345"}""".formatted(email)))
-                .andExpect(status().isCreated())
+    /** Un CLIENT ya no se registra solo (#44): lo crea el ADMIN y luego inicia sesión. */
+    private String clientToken(String email) throws Exception {
+        mvc.perform(post("/api/users").header("Authorization", "Bearer " + loginAsBootstrapAdmin())
+                        .contentType(MediaType.APPLICATION_JSON).content(createUserBody(email, "CLIENT")))
+                .andExpect(status().isCreated());
+        String body = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"email":"%s","password":"clave12345"}""".formatted(email)))
+                .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return json.readTree(body).get("accessToken").asText();
     }
@@ -65,15 +69,14 @@ class UserManagementIT {
     }
 
     @Test
-    void registroConRoleAdminQuedaComoClient() throws Exception {
+    void elRegistroPublicoEstaDesactivadoPorDefecto() throws Exception {
         String email = uniqueEmail("intruso");
 
         mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                         {"fullName":"Intruso","email":"%s","password":"clave12345","role":"ADMIN"}""".formatted(email)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.user.role").value("CLIENT"));
+                .andExpect(status().isNotFound());
 
-        assertThat(users.findByEmail(email)).get().extracting(User::getRole).isEqualTo(User.Role.CLIENT);
+        assertThat(users.findByEmail(email)).isEmpty();
     }
 
     @Test
@@ -93,7 +96,7 @@ class UserManagementIT {
 
     @Test
     void crearUsuarioConTokenNoAdminDevuelve403() throws Exception {
-        String clientToken = register(uniqueEmail("cliente"));
+        String clientToken = clientToken(uniqueEmail("cliente"));
         String email = uniqueEmail("escalada");
 
         mvc.perform(post("/api/users").header("Authorization", "Bearer " + clientToken)
