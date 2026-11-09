@@ -166,7 +166,7 @@ export default function RoutePage() {
             <button
               type="button"
               aria-label="Cerrar panel de paradas"
-              className="absolute inset-0 h-full w-full cursor-default bg-ink/40"
+              className="absolute inset-0 h-full w-full cursor-default bg-ink opacity-40"
               onClick={() => setDrawerOpen(false)}
             />
             <div className="absolute inset-y-0 left-0 w-[400px] max-w-[90vw] border-r border-line">
@@ -212,8 +212,11 @@ export default function RoutePage() {
               }
             />
             {state === "loading" && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-page/60" aria-live="polite">
-                <p className="rounded-lg border border-line bg-float px-4 py-2 text-13 text-muted">Armando la ruta del día…</p>
+              <div className="absolute inset-0 z-20 flex items-center justify-center" aria-live="polite">
+                <div className="absolute inset-0 bg-page opacity-60" aria-hidden="true" />
+                <p className="relative rounded-lg border border-line bg-float px-4 py-2 text-13 text-muted">
+                  Armando la ruta del día…
+                </p>
               </div>
             )}
           </div>
