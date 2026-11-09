@@ -1,182 +1,195 @@
-import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
-import L from "leaflet";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, Marker, Polyline, TileLayer } from "react-leaflet";
+import type L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { DraftStop, RouteStop } from "@/types";
+import type { TimeWindow } from "@/types";
+import type { StopView } from "@/lib/routeView";
+import { DEPOT, TILE_ATTRIBUTION, TILE_MAX_NATIVE_ZOOM, TILE_URL } from "@/lib/config";
+import type { Theme } from "@/store/themeStore";
+import StopMarker from "@/components/StopMarker";
+import { depotIcon } from "@/lib/markerIcons";
+import StopDetailCard from "@/components/StopDetailCard";
+import WindowLegend from "@/components/WindowLegend";
+import type { DeclaredWindowPayload } from "@/lib/declaredWindow";
+import { MinusIcon, PlusIcon } from "@/components/icons";
 
-// Los iconos por defecto de Leaflet no cargan bien con bundlers (Vite) porque
-// referencian rutas relativas a los assets del paquete; se reconstruyen
-// explícitamente aquí para que los pines se vean correctamente.
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
-/** Color de los locales con ubicación aproximada (HU-09: "revisar"). */
-export const REVIEW_COLOR = "#7c3aed";
-
-/** Paradas cuya hora estimada cae fuera de su ventana real (HU-14). */
-export const OUTSIDE_WINDOW_COLOR = "#dc2626";
-
-function hhmm(t: string) {
-  return t.substring(0, 5);
+interface Props {
+  stops: StopView[];
+  theme: Theme;
+  selectedId: string | null;
+  /** Cambia cada vez que la lista pide centrar la parada seleccionada. */
+  centerKey: number;
+  relocatingId: string | null;
+  timeWindow: TimeWindow | undefined;
+  onSelect: (shipmentId: string) => void;
+  onCloseCard: () => void;
+  onSaveDeclared: (payload: DeclaredWindowPayload) => Promise<void>;
+  onStartRelocate: () => void;
+  onRelocated: (lat: number, lng: number) => void;
+  /** Botón para abrir el panel en tablet (se dibuja bajo la leyenda). */
+  leftAction?: React.ReactNode;
 }
 
-function numberedIcon(position: number, color: string, needsReview = false, outsideWindow = false) {
-  // Un local "por revisar" lleva borde punteado y un "!" para distinguirlo sin depender solo del color.
-  // Una parada fuera de su ventana real lleva un reloj (HU-14), también además del color.
-  const border = needsReview ? "2px dashed white" : "2px solid white";
-  const badge = needsReview
-    ? `<span style="position:absolute;top:-6px;right:-6px;background:#fff;color:${REVIEW_COLOR};width:14px;height:14px;border-radius:50%;font-size:11px;line-height:14px;text-align:center;font-weight:800">!</span>`
-    : outsideWindow
-      ? `<span style="position:absolute;top:-7px;right:-7px;background:#fff;width:15px;height:15px;border-radius:50%;font-size:10px;line-height:15px;text-align:center">⏰</span>`
-      : "";
-  return L.divIcon({
-    className: "custom-numbered-marker",
-    html: `<div style="position:relative;background:${color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;border:${border};box-shadow:0 1px 4px rgba(0,0,0,0.4)">${position}${badge}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
+/** Margen alrededor de la tarjeta dentro del cual un marcador se considera tapado. */
+const COVER_MARGIN = 24;
+
+/** Ruta en el color de la polilínea del tema (token --color-route). */
+function routeColor(): string {
+  return getComputedStyle(document.documentElement).getPropertyValue("--color-route").trim();
 }
 
-function currentLocationIcon() {
-  return L.divIcon({
-    className: "current-location-marker",
-    html: `<div style="background:#0d6efd;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 4px rgba(13,110,253,0.25)"></div>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-  });
-}
+export default function RouteMap(props: Props) {
+  const { stops, theme, selectedId, centerKey, relocatingId, timeWindow, onSelect, onCloseCard } = props;
+  const [map, setMap] = useState<L.Map | null>(null);
+  const wrapper = useRef<HTMLDivElement>(null);
+  const card = useRef<HTMLDivElement>(null);
+  const [, setTick] = useState(0);
+  const [color, setColor] = useState(routeColor);
 
-/** Recentra el mapa automáticamente cuando cambia el conjunto de puntos a mostrar. */
-function FitBounds({ points }: { points: [number, number][] }) {
-  const map = useMap();
+  const selected = stops.find((s) => s.shipmentId === selectedId) ?? null;
+  const ordered = useMemo(() => [...stops].sort((a, b) => a.position - b.position), [stops]);
+  const polyline = useMemo(() => ordered.flatMap((s) => s.path), [ordered]);
+  const located = useMemo(
+    () => ordered.filter((s) => s.latitude != null && s.longitude != null).map((s) => [s.latitude!, s.longitude!] as [number, number]),
+    [ordered]
+  );
+  const stopsKey = ordered.map((s) => s.shipmentId).join(",");
+
+  // El color de la polilínea sigue al tema (los tokens cambian al cambiar la clase "dark").
+  useEffect(() => setColor(routeColor()), [theme]);
+
+  // Encuadra la ruta completa (con la bodega) al cargar una ruta nueva.
   useEffect(() => {
-    if (points.length === 0) return;
-    if (points.length === 1) {
-      map.setView(points[0], 15);
-    } else {
-      map.fitBounds(points, { padding: [40, 40] });
-    }
-  }, [points, map]);
-  return null;
-}
+    if (!map || located.length === 0) return;
+    map.fitBounds([[DEPOT.lat, DEPOT.lng], ...located], { paddingTopLeft: [40, 80], paddingBottomRight: [360, 40] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, stopsKey]);
 
-interface RouteMapProps {
-  stops: DraftStop[];
-  orderedPositions?: Record<string, number>; // tempId/shipmentId -> posición óptima (post-optimización)
-  /** Ruta optimizada con hora estimada y tramos por calle (HU-14). */
-  plannedRoute?: RouteStop[];
-  currentLocation?: { lat: number; lng: number } | null;
-}
+  // Redibuja la línea guía cuando el mapa se mueve.
+  useEffect(() => {
+    if (!map) return;
+    const bump = () => setTick((t) => t + 1);
+    map.on("move zoom resize", bump);
+    return () => {
+      map.off("move zoom resize", bump);
+    };
+  }, [map]);
 
-export default function RouteMap({ stops, orderedPositions, plannedRoute, currentLocation }: RouteMapProps) {
-  const planByShipment = new Map((plannedRoute ?? []).map((r) => [r.shipmentId, r]));
-  const geolocated = stops.filter((s) => s.latitude != null && s.longitude != null);
+  // Desde la lista: centrar la parada seleccionada.
+  useEffect(() => {
+    if (!map || !selected || selected.latitude == null || selected.longitude == null || centerKey === 0) return;
+    map.panTo([selected.latitude, selected.longitude]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, centerKey]);
 
-  const points: [number, number][] = geolocated.map((s) => [s.latitude!, s.longitude!]);
-  if (currentLocation) points.push([currentLocation.lat, currentLocation.lng]);
+  // La tarjeta nunca tapa el marcador seleccionado: si lo haría, el mapa se corre a la izquierda.
+  useLayoutEffect(() => {
+    if (!map || !selected || !card.current || selected.latitude == null || selected.longitude == null) return;
+    const check = () => {
+      if (!card.current) return;
+      const p = map.latLngToContainerPoint([selected.latitude!, selected.longitude!]);
+      const r = card.current.getBoundingClientRect();
+      const w = wrapper.current!.getBoundingClientRect();
+      const left = r.left - w.left - COVER_MARGIN;
+      const bottom = r.bottom - w.top + COVER_MARGIN;
+      if (p.x > left && p.y < bottom) map.panBy([p.x - left + 32, 0], { animate: true });
+    };
+    map.once("moveend", check);
+    check();
+    return () => {
+      map.off("moveend", check);
+    };
+  }, [map, selected]);
 
-  const defaultCenter: [number, number] = points[0] ?? [-33.4489, -70.6693]; // Santiago, Chile
-
-  // Si hay orden calculado, se dibuja la polilínea siguiendo ese orden.
-  // Sin orden calculado no se dibuja la línea: unir las paradas en el orden de la lista no representa una ruta.
-  const hasOrder = orderedPositions != null && Object.keys(orderedPositions).length > 0;
-  const orderedGeolocated = hasOrder
-    ? [...geolocated].sort(
-        (a, b) =>
-          (orderedPositions[a.shipmentId ?? a.tempId] ?? 999) -
-          (orderedPositions[b.shipmentId ?? b.tempId] ?? 999)
-      )
-    : [];
-
-  // Con la ruta del backend, la polilínea sigue las calles (tramos de OSRM); si no, une las paradas en orden.
-  const polylinePoints: [number, number][] = [];
-  if (plannedRoute && plannedRoute.some((r) => r.path.length > 0)) {
-    plannedRoute.forEach((r) => polylinePoints.push(...r.path));
-  } else {
-    if (currentLocation) polylinePoints.push([currentLocation.lat, currentLocation.lng]);
-    orderedGeolocated.forEach((s) => polylinePoints.push([s.latitude!, s.longitude!]));
-  }
+  const guide = (() => {
+    if (!map || !selected || !card.current || !wrapper.current || selected.latitude == null) return null;
+    const p = map.latLngToContainerPoint([selected.latitude, selected.longitude!]);
+    const r = card.current.getBoundingClientRect();
+    const w = wrapper.current.getBoundingClientRect();
+    const x1 = r.left - w.left;
+    const y1 = Math.min(Math.max(p.y, r.top - w.top + 24), r.bottom - w.top - 24);
+    if (p.x < 0 || p.y < 0 || p.x > w.width || p.y > w.height) return null;
+    return { x1, y1, x2: p.x, y2: p.y };
+  })();
 
   return (
-    <MapContainer center={defaultCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
-      {/* Tiles de OpenStreetMap — mismo dataset que usa Nominatim para geocodificar,
-          así el pin y el mapa base siempre están alineados a la misma fuente. */}
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <div ref={wrapper} className="relative h-full w-full" role="region" aria-label="Mapa de la ruta del día">
+      <MapContainer
+        ref={setMap}
+        center={[DEPOT.lat, DEPOT.lng]}
+        zoom={13}
+        zoomControl={false}
+        className="h-full w-full"
+      >
+        <TileLayer
+          key={theme}
+          url={TILE_URL[theme]}
+          attribution={TILE_ATTRIBUTION}
+          subdomains="abcd"
+          maxZoom={19}
+          maxNativeZoom={TILE_MAX_NATIVE_ZOOM}
+        />
+        {polyline.length > 1 && <Polyline positions={polyline} pathOptions={{ color, weight: 5, opacity: 0.9 }} />}
+        <Marker position={[DEPOT.lat, DEPOT.lng]} icon={depotIcon()} title="Bodega" alt="Bodega" keyboard={false} />
+        {ordered.map((s) => (
+          <StopMarker
+            key={s.shipmentId}
+            stop={s}
+            selected={s.shipmentId === selectedId}
+            draggable={s.shipmentId === relocatingId}
+            onSelect={() => onSelect(s.shipmentId)}
+            onDragEnd={props.onRelocated}
+          />
+        ))}
+      </MapContainer>
 
-      <FitBounds points={points} />
+      {/* Capas sobre el mapa. El mapa tiene su propio contexto de apilamiento (index.css). */}
+      <div className="pointer-events-none absolute inset-0 z-10">
+        <div className="pointer-events-auto absolute left-4 top-4 flex max-w-[calc(100%-120px)] flex-col items-start gap-2">
+          <WindowLegend />
+          {props.leftAction}
+        </div>
 
-      {currentLocation && (
-        <Marker position={[currentLocation.lat, currentLocation.lng]} icon={currentLocationIcon()}>
-          <Popup>Tu ubicación actual</Popup>
-        </Marker>
-      )}
-
-      {geolocated.map((stop) => {
-        const key = stop.shipmentId ?? stop.tempId;
-        const position = orderedPositions?.[key];
-        const plan = stop.shipmentId ? planByShipment.get(stop.shipmentId) : undefined;
-        const outside = plan?.outsideWindow ?? false;
-        const color = stop.needsReview
-          ? REVIEW_COLOR
-          : outside
-            ? OUTSIDE_WINDOW_COLOR
-            : stop.stopType === "PICKUP"
-              ? "#f59e0b"
-              : "#0d6efd";
-        return (
-          <Marker
-            key={key}
-            position={[stop.latitude!, stop.longitude!]}
-            icon={numberedIcon(position ?? 0, color, stop.needsReview, outside)}
+        <div className="pointer-events-auto absolute right-4 top-4 flex flex-col gap-2">
+          <button
+            type="button"
+            aria-label="Acercar el mapa"
+            onClick={() => map?.zoomIn()}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-float text-ink hover:bg-tile"
           >
-            <Popup>
-              <strong>{stop.customerName}</strong>
-              <br />
-              {stop.address}
-              <br />
-              <span className="text-xs text-slate-500">
-                {stop.stopType === "PICKUP" ? "Recogida" : "Entrega"} · {stop.packageCount} paquete(s)
-              </span>
-              {plan && (
-                <>
-                  <br />
-                  <span>
-                    Entrega {hhmm(plan.serviceStart)}
-                    {plan.waitMinutes > 0 ? ` (llega ${hhmm(plan.estimatedArrival)}, espera ${plan.waitMinutes} min)` : ""}
-                    {plan.dayOffset > 0 ? " (día siguiente)" : ""} · ventana real {hhmm(plan.windowStart)}–
-                    {hhmm(plan.windowEnd)}
-                  </span>
-                  {outside && (
-                    <>
-                      <br />
-                      <span style={{ color: OUTSIDE_WINDOW_COLOR, fontWeight: 600 }}>Fuera de su ventana real</span>
-                    </>
-                  )}
-                </>
-              )}
-              {stop.needsReview && (
-                <>
-                  <br />
-                  <span style={{ color: REVIEW_COLOR, fontWeight: 600 }}>
-                    Revisar: ubicación aproximada, confirma la dirección
-                  </span>
-                </>
-              )}
-            </Popup>
-          </Marker>
-        );
-      })}
+            <PlusIcon />
+          </button>
+          <button
+            type="button"
+            aria-label="Alejar el mapa"
+            onClick={() => map?.zoomOut()}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-float text-ink hover:bg-tile"
+          >
+            <MinusIcon />
+          </button>
+        </div>
 
-      {polylinePoints.length > 1 && (
-        <Polyline positions={polylinePoints} pathOptions={{ color: "#0d6efd", weight: 4, opacity: 0.7 }} />
-      )}
-    </MapContainer>
+        {guide && (
+          <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
+            <line x1={guide.x1} y1={guide.y1} x2={guide.x2} y2={guide.y2} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="3 3" />
+          </svg>
+        )}
+
+        {selected && (
+          <div className="pointer-events-auto absolute right-4 top-[120px] max-h-[calc(100%-136px)] overflow-y-auto">
+            <StopDetailCard
+              ref={card}
+              key={selected.shipmentId}
+              stop={selected}
+              timeWindow={timeWindow}
+              relocating={relocatingId === selected.shipmentId}
+              onClose={onCloseCard}
+              onSaveDeclared={props.onSaveDeclared}
+              onStartRelocate={props.onStartRelocate}
+            />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

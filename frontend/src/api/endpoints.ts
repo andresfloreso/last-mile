@@ -120,4 +120,14 @@ export const customersApi = {
   /** Modulación declarada vs. ventana real aprendida (HU-11). */
   timeWindow: (customerId: string) =>
     apiClient.get<TimeWindow>(`/api/customers/${customerId}/time-window`).then((r) => r.data),
+
+  /** Reemplaza la modulación (HU-25); todo en null la elimina. */
+  updateDeclaredWindow: (
+    customerId: string,
+    body: { start: string | null; end: string | null; start2: string | null; end2: string | null }
+  ) => apiClient.put<Customer>(`/api/customers/${customerId}/declared-window`, body).then((r) => r.data),
+
+  /** Fija la ubicación a mano y quita la marca "revisar" (HU-09). */
+  updateLocation: (customerId: string, latitude: number, longitude: number) =>
+    apiClient.put<Customer>(`/api/customers/${customerId}/location`, { latitude, longitude }).then((r) => r.data),
 };

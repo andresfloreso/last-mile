@@ -37,26 +37,26 @@ export default function Import() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-panel rounded-xl shadow-sm border border-line p-6">
           <div className="flex items-start justify-between gap-4 mb-1">
-            <h2 className="font-semibold text-slate-800">Importar planilla de envíos</h2>
+            <h2 className="font-semibold text-ink">Importar planilla de envíos</h2>
             <button
               type="button"
               onClick={handleTemplate}
-              className="shrink-0 rounded-md border border-brand-600 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-50"
+              className="shrink-0 rounded-md border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-tile"
             >
               Descargar plantilla (.xlsx)
             </button>
           </div>
-          {templateError && <p className="text-sm text-red-600 mb-2">{templateError}</p>}
-          <p className="text-sm text-slate-500 mb-4">
+          {templateError && <p className="text-sm text-reject mb-2">{templateError}</p>}
+          <p className="text-sm text-muted mb-4">
             Acepta archivos <code>.xlsx</code>, <code>.xls</code> o <code>.csv</code> con las columnas:
-            <code className="block bg-slate-50 rounded-md p-2 mt-2 text-xs">
+            <code className="block bg-tile rounded-md p-2 mt-2 text-xs">
               cliente, tipo_local, telefono, direccion, comuna, latitud, longitud, codigo_externo, modulacion_desde,
               modulacion_hasta, tracking, fecha_entrega, notas
             </code>
           </p>
-          <ul className="text-xs text-slate-500 mb-4 space-y-1 list-disc pl-5">
+          <ul className="text-xs text-muted mb-4 space-y-1 list-disc pl-5">
             <li>
               <strong>Obligatorias:</strong> cliente (nombre del local), direccion, tracking y fecha_entrega.
             </li>
@@ -74,18 +74,18 @@ export default function Import() {
             type="file"
             accept=".xlsx,.xls,.csv"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
+            className="block w-full text-sm text-muted file:mr-4 file:rounded-md file:border-0 file:bg-tile file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-tile"
           />
 
           <button
             onClick={handleUpload}
             disabled={!file || loading}
-            className="mt-4 bg-brand-600 hover:bg-brand-700 text-white rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60"
+            className="mt-4 bg-primary hover:opacity-90 text-primary-ink rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60"
           >
             {loading ? "Procesando..." : "Subir e importar"}
           </button>
 
-          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+          {error && <p className="text-sm text-reject mt-3">{error}</p>}
         </div>
 
         {summary && <ImportResult summary={summary} />}
@@ -98,7 +98,7 @@ function Stat({ value, label, className }: { value: number; label: string; class
   return (
     <div className={`rounded-md p-3 ${className}`}>
       <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs text-slate-500">{label}</div>
+      <div className="text-xs text-muted">{label}</div>
     </div>
   );
 }
@@ -106,9 +106,9 @@ function Stat({ value, label, className }: { value: number; label: string; class
 type IssueKind = "error" | "skipped" | "review";
 
 const ISSUE_BADGE: Record<IssueKind, { label: string; className: string }> = {
-  error: { label: "Error", className: "bg-red-50 text-red-600" },
-  skipped: { label: "Omitido", className: "bg-amber-50 text-amber-700" },
-  review: { label: "Revisar", className: "bg-violet-50 text-violet-700" },
+  error: { label: "Error", className: "bg-tile text-reject" },
+  skipped: { label: "Omitido", className: "bg-warning-bg text-warning-ink" },
+  review: { label: "Revisar", className: "bg-band-night-bg text-band-night-ink" },
 };
 
 /**
@@ -124,28 +124,28 @@ function ImportResult({ summary }: { summary: ImportSummary }) {
   ].sort((a, b) => a.rowNumber - b.rowNumber);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <h3 className="font-semibold text-slate-800 mb-3">Resultado de la importación</h3>
+    <div className="bg-panel rounded-xl shadow-sm border border-line p-6">
+      <h3 className="font-semibold text-ink mb-3">Resultado de la importación</h3>
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center mb-4">
-        <Stat value={summary.totalRows} label="Filas leídas" className="bg-slate-50 text-slate-800" />
-        <Stat value={summary.created} label="Envíos creados" className="bg-green-50 text-green-700" />
-        <Stat value={summary.skipped} label="Omitidos (ya existían)" className="bg-amber-50 text-amber-700" />
-        <Stat value={summary.failed} label="Con error" className="bg-red-50 text-red-600" />
-        <Stat value={summary.toReview ?? 0} label="Ubicación por revisar" className="bg-violet-50 text-violet-700" />
+        <Stat value={summary.totalRows} label="Filas leídas" className="bg-tile text-ink" />
+        <Stat value={summary.created} label="Envíos creados" className="bg-band-midday-bg text-band-midday-ink" />
+        <Stat value={summary.skipped} label="Omitidos (ya existían)" className="bg-warning-bg text-warning-ink" />
+        <Stat value={summary.failed} label="Con error" className="bg-tile text-reject" />
+        <Stat value={summary.toReview ?? 0} label="Ubicación por revisar" className="bg-band-night-bg text-band-night-ink" />
       </div>
 
       {issues.length === 0 ? (
-        <p className="text-sm text-green-700">Todas las filas se importaron sin problemas.</p>
+        <p className="text-sm text-band-midday-ink">Todas las filas se importaron sin problemas.</p>
       ) : (
         <>
-          <p className="text-xs text-slate-500 mb-2">
+          <p className="text-xs text-muted mb-2">
             Corrige las filas con error en la planilla y vuelve a importarla: las filas ya creadas se omiten, no se
             duplican. Las marcadas "Revisar" se crearon, pero su ubicación es aproximada: verifícalas en el mapa o
             agrega latitud y longitud a la fila.
           </p>
-          <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-md">
+          <div className="max-h-72 overflow-y-auto border border-line rounded-md">
             <table className="w-full text-xs">
-              <thead className="bg-slate-50 text-slate-500 sticky top-0">
+              <thead className="bg-tile text-muted sticky top-0">
                 <tr>
                   <th className="text-left font-semibold px-3 py-2 w-14">Fila</th>
                   <th className="text-left font-semibold px-3 py-2 w-28">Tracking</th>
@@ -155,15 +155,15 @@ function ImportResult({ summary }: { summary: ImportSummary }) {
               </thead>
               <tbody>
                 {issues.map((issue) => (
-                  <tr key={`${issue.kind}-${issue.rowNumber}`} className="border-t border-slate-100">
+                  <tr key={`${issue.kind}-${issue.rowNumber}`} className="border-t border-line">
                     <td className="px-3 py-2 font-mono">{issue.rowNumber}</td>
-                    <td className="px-3 py-2 font-mono text-slate-600">{issue.trackingCode ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-muted">{issue.trackingCode ?? "—"}</td>
                     <td className="px-3 py-2">
                       <span className={`rounded px-2 py-0.5 font-semibold ${ISSUE_BADGE[issue.kind].className}`}>
                         {ISSUE_BADGE[issue.kind].label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-slate-700">{issue.message}</td>
+                    <td className="px-3 py-2 text-ink">{issue.message}</td>
                   </tr>
                 ))}
               </tbody>
