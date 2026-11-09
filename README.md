@@ -47,10 +47,12 @@ el orden óptimo de entrega de la ruta del camión.
 │   ├── adr/                  # Architecture Decision Records
 │   ├── api/                  # Documentación de APIs
 │   └── plan/                 # Plan de trabajo, sprints y hallazgos
+├── CLAUDE.md                 # Reglas del proyecto para sesiones de Claude Code / agentes
 └── docker-compose.yml
 ```
 
-Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
+Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/). Las reglas
+de trabajo (ramas, commits, PRs, issues) están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Servicios
 
