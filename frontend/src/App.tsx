@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import Login from "@/pages/Login";
@@ -13,12 +12,6 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
-
-  useEffect(() => {
-    hydrateFromStorage();
-  }, [hydrateFromStorage]);
-
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

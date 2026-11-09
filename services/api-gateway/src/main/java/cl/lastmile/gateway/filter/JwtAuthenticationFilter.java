@@ -1,9 +1,12 @@
 package cl.lastmile.gateway.filter;
 
 import cl.lastmile.gateway.security.JwtSecrets;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -32,6 +35,8 @@ import java.util.List;
  */
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     public static final String USER_ID_HEADER = "X-User-Id";
     public static final String USER_ROLE_HEADER = "X-User-Role";
@@ -94,8 +99,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
+        } catch (ExpiredJwtException e) {
+            log.info("JWT vencido en {}: {}", path, e.getMessage());
+            return unauthorized(exchange, "Token expirado");
         } catch (JwtException | IllegalArgumentException e) {
-            return unauthorized(exchange, "Token inválido: " + e.getMessage());
+            // El mensaje de jjwt (causa de la falla, hora del servidor) queda solo en el log (#36).
+            log.info("JWT rechazado en {}: {}", path, e.toString());
+            return unauthorized(exchange, "Token inválido");
         }
     }
 

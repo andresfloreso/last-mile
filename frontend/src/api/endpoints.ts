@@ -2,13 +2,9 @@ import { apiClient } from "./client";
 import type { AuthResponse, RouteStop, ImportSummary, DraftStop, GeocodeResult, Page, Shipment, ShipmentQuery } from "@/types";
 
 export const authApi = {
+  // Sin registro: las cuentas las crea un ADMIN (#44).
   login: (email: string, password: string) =>
     apiClient.post<AuthResponse>("/api/auth/login", { email, password }).then((r) => r.data),
-
-  register: (fullName: string, email: string, password: string, role: string) =>
-    apiClient
-      .post<AuthResponse>("/api/auth/register", { fullName, email, password, role })
-      .then((r) => r.data),
 };
 
 export const routesApi = {

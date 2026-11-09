@@ -46,6 +46,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, "No tienes permisos para esta operación");
     }
 
+    /** Ruta inexistente (por ejemplo /api/auth/register con el registro público desactivado, #44). */
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, "Recurso no encontrado");
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException ex) {
         return build(HttpStatus.BAD_REQUEST, "Cuerpo de la solicitud inválido");
