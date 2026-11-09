@@ -63,7 +63,7 @@ de trabajo (ramas, commits, PRs, issues) están en [`CLAUDE.md`](CLAUDE.md).
 | `auth-service` | Java, Spring Boot, Spring Security | Registro/login, hash de contraseñas con **bcrypt**, emisión y refresh de **JWT** |
 | `delivery-service` | Java, Spring Boot, PostgreSQL | Clientes, envíos, registro de intentos de entrega; **`TimeWindowLearningService`** (aprendizaje de ventana horaria por cliente) y **`RouteOptimizationService`** (orden de entrega: ventana horaria + cercanía geográfica) |
 | `import-service` | Node.js, TypeScript, Express | Recibe planillas **.xlsx / .csv** (ExcelJS + PapaParse), las valida y crea los envíos en `delivery-service` |
-| `frontend` | React, Vite, TypeScript, Tailwind, Zustand | Login, carga de planillas, panel de ruta del día con la ventana horaria estimada por parada |
+| `frontend` | React, Vite, TypeScript, Tailwind, Zustand, react-leaflet | Login, envíos, importación y la pantalla de rutas (HU-27): panel de paradas, mapa, detalle del local (modulación vs. ventana real) y línea de tiempo, en modo claro y oscuro |
 
 ## Cómo funciona el aprendizaje de ventanas horarias
 
@@ -322,6 +322,19 @@ cd services/import-service && npm ci && npm run dev
 # frontend — requiere Node 20+
 cd frontend && npm ci && npm run dev
 ```
+
+#### Variables del frontend (opcionales, se leen al construir)
+
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `VITE_API_BASE_URL` | — | URL del gateway (por ejemplo `http://localhost:8080`) |
+| `VITE_TILE_URL_LIGHT` / `VITE_TILE_URL_DARK` | Esri Gray Canvas claro / oscuro | Mapa base. CARTO exige API key desde 2026: ver `frontend/src/lib/config.ts` |
+| `VITE_TILE_ATTRIBUTION` | Atribución de Esri y OpenStreetMap | Atribución del mapa base |
+| `VITE_DEPOT_LAT` / `VITE_DEPOT_LNG` | `-33.4489` / `-70.6693` | Bodega desde donde sale el camión |
+| `VITE_DEPARTURE_TIME` | `08:00` | Hora de salida para la hora estimada (HU-14) |
+
+El tema claro u oscuro se elige con el botón del header, se guarda en el
+navegador y, la primera vez, sigue la preferencia del sistema.
 
 ### Maven Wrapper
 
