@@ -7,7 +7,8 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/authdb}
     username: ${SPRING_DATASOURCE_USERNAME:lastmile}
-    password: ${SPRING_DATASOURCE_PASSWORD:lastmile_pw}
+    # Sin valor por defecto: se toma de SPRING_DATASOURCE_PASSWORD (POSTGRES_PASSWORD en compose).
+    password: ${SPRING_DATASOURCE_PASSWORD}
   flyway:
     # El esquema se versiona en src/main/resources/db/migration (HU-02).
     enabled: true
@@ -26,7 +27,9 @@ spring:
         format_sql: true
 
 jwt:
-  secret: ${JWT_SECRET:change_this_super_secret_key_min_32_chars_______}
+  # Sin valor por defecto: si falta o tiene menos de 32 caracteres, el servicio
+  # no arranca (ver JwtSecrets). En tests lo define src/test/resources/config/application.yml.
+  secret: ${JWT_SECRET:}
   access-expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
 

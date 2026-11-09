@@ -21,7 +21,7 @@ public class JwtValidator {
     private final SecretKey signingKey;
 
     public JwtValidator(@Value("${jwt.secret}") String secret) {
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.signingKey = Keys.hmacShaKeyFor(JwtSecrets.require(secret).getBytes(StandardCharsets.UTF_8));
     }
 
     public boolean isValid(String token) {

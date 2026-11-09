@@ -45,7 +45,9 @@ spring:
             allowCredentials: true
 
 jwt:
-  secret: ${JWT_SECRET:change_this_super_secret_key_min_32_chars_______}
+  # Sin valor por defecto: si falta o tiene menos de 32 caracteres, el servicio
+  # no arranca (ver JwtSecrets). En tests lo define src/test/resources/config/application.yml.
+  secret: ${JWT_SECRET:}
 
 management:
   endpoints:

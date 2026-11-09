@@ -47,10 +47,13 @@ el orden óptimo de entrega de la ruta del camión.
 │   ├── adr/                  # Architecture Decision Records
 │   ├── api/                  # Documentación de APIs
 │   └── plan/                 # Plan de trabajo, sprints y hallazgos
-└── docker-compose.yml
+├── CLAUDE.md                 # Reglas del proyecto para sesiones de Claude Code / agentes
+├── docker-compose.yml
+└── docker-compose.override.yml  # Solo desarrollo: activa el perfil seed
 ```
 
-Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/).
+Las decisiones de arquitectura se registran en [`docs/adr/`](docs/adr/). Las reglas
+de trabajo (ramas, commits, PRs, issues) están en [`CLAUDE.md`](CLAUDE.md).
 
 ## Servicios
 
@@ -106,14 +109,23 @@ docker compose up --build
 arrancar el siguiente servicio (Postgres/Redis → auth y delivery → import →
 gateway → frontend). Para ver el estado: `docker compose ps`.
 
-En desarrollo los servicios arrancan con el perfil **`seed`**, que carga datos
-de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
+`docker-compose.yml` **no** activa datos de ejemplo. En desarrollo, el
+`docker-compose.override.yml` versionado (que `docker compose` aplica solo
+cuando corres `docker compose up` en la raíz) activa el perfil **`seed`**, que
+carga datos de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
 
 - un usuario por rol (`admin@`, `despacho@`, `conductor@`, `operador@` y `cliente@lastmile.cl`), todos con la contraseña `lastmile123`;
 - 30 clientes en comunas de Santiago con 60 días de historial de entregas con patrones conocidos;
 - 50 envíos para la fecha de hoy.
 
-Para levantar sin datos semilla: `SPRING_PROFILES_ACTIVE=default docker compose up --build`.
+| Quiero… | Comando |
+|---|---|
+| Desarrollo con datos semilla | `docker compose up --build` (usa el override) |
+| Desarrollo sin datos semilla | `SPRING_PROFILES_ACTIVE=default docker compose up --build` |
+| Como en staging/producción (sin override) | `docker compose -f docker-compose.yml up --build` |
+
+> Las contraseñas semilla son públicas. Fuera de tu máquina usa siempre
+> `-f docker-compose.yml` (o un override propio), nunca el de desarrollo.
 
 ## Flujo típico de uso (vía gateway, puerto 8080)
 
@@ -171,6 +183,11 @@ curl http://localhost:8080/api/tracking/ABC123
   defecto. `JWT_SECRET`, `POSTGRES_PASSWORD` y `REDIS_PASSWORD` se leen de
   `.env` (ver `.env.example`) y compose falla con un mensaje claro si falta
   alguna.
+- Tampoco hay secretos por defecto en el código: si `JWT_SECRET` falta o tiene
+  menos de 32 caracteres, los 4 servicios **no arrancan** y lo dicen
+  (`APPLICATION FAILED TO START … JWT_SECRET no está definido`). La contraseña
+  del datasource no tiene default. Los únicos valores fijos están en los
+  tests (`src/test/resources/config/application.yml`).
 - *Secret scanning*: el workflow `secret-scan.yml` corre
   [gitleaks](https://github.com/gitleaks/gitleaks) sobre todo el historial en
   cada PR. Las exclusiones (placeholders `reemplaza_...` y la semilla de demo)
@@ -222,7 +239,7 @@ cd services/delivery-service && ./mvnw verify
 | Job | Qué hace |
 |---|---|
 | `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `./mvnw -B verify` (unit + integración con Testcontainers) |
-| `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm run build` |
+| `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm test` (si existe; vitest en import-service), `npm run build` |
 | `docker-build (×5)` | Construye las 5 imágenes del compose sin publicarlas |
 | `gitleaks` | Busca secretos en todo el historial de git (config en `.gitleaks.toml`) |
 
@@ -272,7 +289,10 @@ EOF
 ## Desarrollo local (sin Docker)
 
 ```bash
-# Backend Java — requiere solo JDK 21 (JAVA_HOME); Maven lo trae el wrapper
+# Backend Java — requiere solo JDK 21 (JAVA_HOME); Maven lo trae el wrapper.
+# Sin valores por defecto: exporta antes las variables de tu .env
+set -a && . ./.env && set +a
+export SPRING_DATASOURCE_PASSWORD="$POSTGRES_PASSWORD"
 cd services/auth-service && ./mvnw spring-boot:run
 cd services/delivery-service && ./mvnw spring-boot:run
 cd services/api-gateway && ./mvnw spring-boot:run
