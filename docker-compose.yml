@@ -74,6 +74,8 @@ services:
       # ADMIN inicial (HU-05): solo se crea si no existe ningún ADMIN.
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      # #44: B2B, sin registro público. Con true, POST /api/auth/register crea CLIENT.
+      PUBLIC_REGISTRATION_ENABLED: ${PUBLIC_REGISTRATION_ENABLED:-false}
       # Sin perfil "seed": los datos de ejemplo solo se cargan en desarrollo,
       # con docker-compose.override.yml (ver infra/seed/README.md).
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
