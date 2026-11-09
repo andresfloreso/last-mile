@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "change_this_super_secret_key_min_32_chars_______";
+import { jwtSecret } from "../config";
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -33,7 +32,7 @@ export function jwtAuth(req: AuthenticatedRequest, res: Response, next: NextFunc
   const token = header.substring(7);
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as AccessTokenPayload;
+    const payload = jwt.verify(token, jwtSecret()) as AccessTokenPayload;
 
     if (payload.type !== "access") {
       res.status(401).json({ error: "Tipo de token inválido" });

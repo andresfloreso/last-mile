@@ -24,7 +24,7 @@ public class JwtUtil {
             @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs
     ) {
         // La clave debe tener al menos 256 bits (32 bytes) para HS256
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.signingKey = Keys.hmacShaKeyFor(JwtSecrets.require(secret).getBytes(StandardCharsets.UTF_8));
         this.accessExpirationMs = accessExpirationMs;
         this.refreshExpirationMs = refreshExpirationMs;
     }

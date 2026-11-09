@@ -1,0 +1,10 @@
+# Solo para tests: Spring Boot carga classpath:/config/application.yml además
+# del application.yml principal (y con más prioridad). Nunca uses estos valores
+# fuera de los tests.
+jwt:
+  secret: solo-para-tests-no-usar-en-ningun-ambiente
+spring:
+  datasource:
+    # Testcontainers (@ServiceConnection) entrega la conexión real; este valor
+    # solo evita que el placeholder sin default quede sin resolver.
+    password: test

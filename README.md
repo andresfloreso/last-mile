@@ -183,6 +183,11 @@ curl http://localhost:8080/api/tracking/ABC123
   defecto. `JWT_SECRET`, `POSTGRES_PASSWORD` y `REDIS_PASSWORD` se leen de
   `.env` (ver `.env.example`) y compose falla con un mensaje claro si falta
   alguna.
+- Tampoco hay secretos por defecto en el código: si `JWT_SECRET` falta o tiene
+  menos de 32 caracteres, los 4 servicios **no arrancan** y lo dicen
+  (`APPLICATION FAILED TO START … JWT_SECRET no está definido`). La contraseña
+  del datasource no tiene default. Los únicos valores fijos están en los
+  tests (`src/test/resources/config/application.yml`).
 - *Secret scanning*: el workflow `secret-scan.yml` corre
   [gitleaks](https://github.com/gitleaks/gitleaks) sobre todo el historial en
   cada PR. Las exclusiones (placeholders `reemplaza_...` y la semilla de demo)
@@ -234,7 +239,7 @@ cd services/delivery-service && ./mvnw verify
 | Job | Qué hace |
 |---|---|
 | `java (api-gateway \| auth-service \| delivery-service)` | JDK 21 con caché Maven, `./mvnw -B verify` (unit + integración con Testcontainers) |
-| `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm run build` |
+| `node (services/import-service \| frontend)` | Node 20 con caché npm, `npm ci`, `npm run lint`, `npm test` (si existe; vitest en import-service), `npm run build` |
 | `docker-build (×5)` | Construye las 5 imágenes del compose sin publicarlas |
 | `gitleaks` | Busca secretos en todo el historial de git (config en `.gitleaks.toml`) |
 
@@ -284,7 +289,10 @@ EOF
 ## Desarrollo local (sin Docker)
 
 ```bash
-# Backend Java — requiere solo JDK 21 (JAVA_HOME); Maven lo trae el wrapper
+# Backend Java — requiere solo JDK 21 (JAVA_HOME); Maven lo trae el wrapper.
+# Sin valores por defecto: exporta antes las variables de tu .env
+set -a && . ./.env && set +a
+export SPRING_DATASOURCE_PASSWORD="$POSTGRES_PASSWORD"
 cd services/auth-service && ./mvnw spring-boot:run
 cd services/delivery-service && ./mvnw spring-boot:run
 cd services/api-gateway && ./mvnw spring-boot:run
