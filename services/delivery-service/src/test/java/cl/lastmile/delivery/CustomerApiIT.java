@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -149,8 +151,22 @@ class CustomerApiIT {
         String id = createLocal(code(), "").get("id").asText();
         call("DRIVER", put("/api/customers/" + id + "/declared-window").content("{\"start\":\"09:00\",\"end\":\"12:00\"}"), 403);
         call("OPERATOR", put("/api/customers/" + id + "/declared-window").content("{\"start\":\"09:00\",\"end\":\"12:00\"}"), 200);
-        // Cualquier usuario autenticado puede ver el detalle.
-        call("DRIVER", get("/api/customers/" + id), 200);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ADMIN", "DISPATCHER", "OPERATOR", "DRIVER"})
+    void losRolesInternosVenElDetalleDelLocal(String role) throws Exception {
+        String id = createLocal(code(), "").get("id").asText();
+        assertThat(call(role, get("/api/customers/" + id), 200).get("id").asText()).isEqualTo(id);
+    }
+
+    /** #38: CLIENT es el rol del registro público; no debe leer el detalle de los locales. */
+    @Test
+    void unClienteNoVeElDetalleDelLocal() throws Exception {
+        String id = createLocal(code(), "").get("id").asText();
+        call("CLIENT", get("/api/customers/" + id), 403);
+        // Tampoco distingue un local inexistente de uno existente.
+        call("CLIENT", get("/api/customers/" + UUID.randomUUID()), 403);
     }
 
     @Test
