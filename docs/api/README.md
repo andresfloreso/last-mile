@@ -92,6 +92,37 @@ salieron las coordenadas:
   exige identificar la app y un contacto), `GEOCODING_MIN_INTERVAL` y
   `GEOCODING_MIN_PLACE_RANK` (ver `.env.example`).
 
+## Listado de envíos (HU-10)
+
+`GET /api/shipments` (autenticado) devuelve una página de envíos, cada uno con
+su local embebido. Todos los filtros son opcionales y se combinan con AND.
+
+| Parámetro | Ejemplo | Descripción |
+|---|---|---|
+| `date` | `2026-12-15` | Un solo día programado. No se combina con `from`/`to` |
+| `from`, `to` | `2026-12-01`, `2026-12-15` | Rango de días, inclusive. Se puede usar solo uno de los dos |
+| `status` | `PENDING` | Uno o más estados: `status=PENDING&status=ROUTED` o `status=PENDING,ROUTED` |
+| `commune` | `nunoa` | Comuna del local, exacta, sin distinguir mayúsculas ni tildes |
+| `q` | `roble` | Busca en el nombre del local, su dirección, el tracking y el código externo |
+| `page` | `0` | Página, desde 0 (por defecto 0) |
+| `size` | `20` | De 1 a 500 (por defecto 20). 500 alcanza para la ruta completa de un día |
+
+Orden: fecha más reciente primero; dentro de un día, por posición en la ruta
+(los que no tienen posición van al final) y luego por tracking.
+
+```json
+{
+  "content": [ { "trackingCode": "SEED-20261109-01", "status": "PENDING", "customer": { "fullName": "Minimarket Don Lucho", "...": "..." }, "...": "..." } ],
+  "page": 0, "size": 20, "totalElements": 50, "totalPages": 3
+}
+```
+
+Responde 400 si una fecha o un estado son inválidos, si se combina `date` con
+`from`/`to`, si `from` es posterior a `to` o si `page`/`size` están fuera de rango.
+
+> Hasta el Sprint 2 este endpoint exigía `date` y devolvía un arreglo. La
+> pantalla de rutas usa ahora `size=500` y lee `content`.
+
 ## Planilla de importación (import-service)
 
 `GET /api/import/template` (`ADMIN`, `DISPATCHER`, `OPERATOR`) descarga la

@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import Login from "@/pages/Login";
 import RouteBuilder from "@/pages/RouteBuilder";
 import Import from "@/pages/Import";
+import Shipments from "@/pages/Shipments";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -26,6 +27,14 @@ export default function App() {
         element={
           <RequireAuth>
             <RouteBuilder />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/envios"
+        element={
+          <RequireAuth>
+            <Shipments />
           </RequireAuth>
         }
       />
