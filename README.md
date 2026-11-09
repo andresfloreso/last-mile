@@ -142,7 +142,7 @@ curl -X POST http://localhost:8080/api/users \
   -d '{"fullName":"Ana Torres","email":"ana@lastmile.cl","password":"clave12345","role":"DISPATCHER"}'
 
 #    Login del despachador -> usa su accessToken en los pasos siguientes
-#    (el registro público /api/auth/register siempre crea CLIENT, aunque el body traiga "role")
+#    (no hay registro público: toda cuenta la crea un ADMIN, #44)
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"ana@lastmile.cl","password":"clave12345"}'
@@ -167,9 +167,14 @@ curl http://localhost:8080/api/tracking/ABC123
 
 - Contraseñas: **bcrypt** (factor de trabajo 12), nunca se persisten en texto plano.
 - Autenticación: **JWT** (HS256) con access token (1h) + refresh token (7 días).
-- Roles: el registro público (`POST /api/auth/register`) **siempre** crea
-  `CLIENT`. Solo un `ADMIN` puede crear usuarios con otro rol
-  (`POST /api/users`). El primer ADMIN se crea al arrancar desde
+- Cuentas: LastMile es B2B y **no hay registro público** (#44).
+  `POST /api/auth/register` responde 404 salvo que
+  `PUBLIC_REGISTRATION_ENABLED=true`, y aun así solo crea `CLIENT`. Las
+  cuentas las crea un `ADMIN` con `POST /api/users`.
+- Permisos: "denegar por defecto". En `delivery-service` e `import-service`
+  todo lo no público exige un rol interno (`ADMIN`, `DISPATCHER`, `OPERATOR`
+  o `DRIVER`); `CLIENT` solo accede al seguimiento público y a health. Tabla
+  completa en [`docs/api/README.md`](docs/api/README.md#permisos-44-denegar-por-defecto). El primer ADMIN se crea al arrancar desde
   `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`, únicamente si no existe
   ninguno.
 - El `JWT_SECRET` se comparte entre `auth-service`, `delivery-service`,
