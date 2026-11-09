@@ -101,7 +101,9 @@ class TimeWindowApiIT {
         LocalDate today = jdbc.queryForObject("SELECT CURRENT_DATE", LocalDate.class);
         JsonNode route = call(post("/api/routes/build").content("""
                 {"date":"%s","depotLat":-33.45,"depotLng":-70.66}""".formatted(today)), 200);
-        assertThat(route.size()).isEqualTo(50);
+        // Tantas paradas como envíos del día (50 con la semilla de HU-25; 24 con la de #52).
+        assertThat(route.size()).isEqualTo(jdbc.queryForObject(
+                "SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE", Integer.class)).isPositive();
 
         for (JsonNode stop : route) {
             String customerId = jdbc.queryForObject("SELECT customer_id::text FROM shipments WHERE id = ?::uuid",
