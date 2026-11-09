@@ -5,6 +5,7 @@ import cl.lastmile.delivery.exception.ConflictException;
 import cl.lastmile.delivery.dto.DeliveryDtos.*;
 import cl.lastmile.delivery.geo.GeocodingService;
 import cl.lastmile.delivery.model.Customer;
+import cl.lastmile.delivery.model.DeclaredWindow;
 import cl.lastmile.delivery.model.DeliveryAttempt;
 import cl.lastmile.delivery.model.Shipment;
 import cl.lastmile.delivery.repository.CustomerRepository;
@@ -32,10 +33,20 @@ public class ShipmentService {
 
     @Transactional
     public CustomerResponse createOrGetCustomer(CustomerRequest req) {
+        Customer.BusinessType businessType = req.businessType() == null || req.businessType().isBlank()
+                ? null
+                : RequestValues.enumValue(Customer.BusinessType.class, req.businessType(), "businessType");
+        DeclaredWindow declaredWindow = req.declaredWindow().validate();
+
         if (req.externalCode() != null) {
             var existing = customerRepository.findByExternalCode(req.externalCode());
             if (existing.isPresent()) {
-                return CustomerResponse.from(existing.get());
+                // Reimportar la planilla actualiza el tipo y la modulación si vienen informados;
+                // si la fila no los trae, se conservan los que ya tenía el local.
+                Customer customer = existing.get();
+                if (businessType != null) customer.setBusinessType(businessType);
+                if (!declaredWindow.isEmpty()) customer.applyDeclaredWindow(declaredWindow);
+                return CustomerResponse.from(customer);
             }
         }
 
@@ -65,7 +76,9 @@ public class ShipmentService {
                 .latitude(latitude)
                 .longitude(longitude)
                 .externalCode(req.externalCode())
+                .businessType(businessType)
                 .build();
+        customer.applyDeclaredWindow(declaredWindow);
         return CustomerResponse.from(customerRepository.save(customer));
     }
 

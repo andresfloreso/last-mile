@@ -7,6 +7,11 @@ export interface ParsedShipmentRow {
   latitude?: number;
   longitude?: number;
   externalCode?: string;
+  /** Tipo de local (HU-25): BOTILLERIA | MINIMARKET | BAR | RESTAURANT | OTRO */
+  businessType?: string;
+  /** Modulación (HU-25): horario de recepción declarado, "HH:mm" */
+  declaredWindowStart?: string;
+  declaredWindowEnd?: string;
   trackingCode: string;
   scheduledDate: string; // ISO yyyy-MM-dd
   notes?: string;

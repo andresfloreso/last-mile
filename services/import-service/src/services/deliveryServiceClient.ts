@@ -10,6 +10,9 @@ export interface CustomerPayload {
   latitude?: number;
   longitude?: number;
   externalCode?: string;
+  businessType?: string;
+  declaredWindowStart?: string;
+  declaredWindowEnd?: string;
 }
 
 export interface ShipmentPayload {

@@ -1,23 +1,16 @@
 import ExcelJS from "exceljs";
 import { ParseResult, ParsedShipmentRow, RowError } from "../types/shipment";
+import { REQUIRED_HEADERS, normalizeHeader, parseBusinessType, parseModulation } from "./columns";
 
 /**
  * Columnas esperadas en la planilla (fila 1 = encabezados, sin distinguir
- * mayúsculas/acentos exactos gracias a normalizeHeader):
- *
- *  cliente | telefono | direccion | comuna | latitud | longitud |
- *  codigo_externo | tracking | fecha_entrega (yyyy-mm-dd) | notas
+ * mayúsculas ni tildes): ver IMPORT_COLUMNS en columns.ts.
  */
-const REQUIRED_HEADERS = ["cliente", "direccion", "tracking", "fecha_entrega"];
 
-function normalizeHeader(raw: string): string {
-  return raw
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // quita tildes
-    .replace(/\s+/g, "_");
+/** Valor crudo de una celda de hora: Date o número tal cual (los convierte parseTimeOfDay). */
+function cellToTimeRaw(value: ExcelJS.CellValue): unknown {
+  if (value instanceof Date || typeof value === "number") return value;
+  return cellToString(value);
 }
 
 function cellToString(value: ExcelJS.CellValue): string | undefined {
@@ -98,9 +91,18 @@ export async function parseShipmentsExcel(buffer: Buffer): Promise<ParseResult> 
       return;
     }
 
+    const businessType = parseBusinessType(cellToString(get("tipo_local")));
+    const modulation = parseModulation(cellToTimeRaw(get("modulacion_desde")), cellToTimeRaw(get("modulacion_hasta")));
+    if (!businessType.ok || !modulation.ok) {
+      errors.push({ rowNumber, message: !businessType.ok ? businessType.error : (modulation as { error: string }).error });
+      return;
+    }
+
     rows.push({
       rowNumber,
       customerName,
+      businessType: businessType.value,
+      ...modulation.value,
       phone: cellToString(get("telefono")),
       address,
       commune: cellToString(get("comuna")),

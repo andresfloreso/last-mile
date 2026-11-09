@@ -113,7 +113,7 @@ cuando corres `docker compose up` en la raíz) activa el perfil **`seed`**, que
 carga datos de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
 
 - un usuario por rol (`admin@`, `despacho@`, `conductor@`, `operador@` y `cliente@lastmile.cl`), todos con la contraseña `lastmile123`;
-- 30 clientes en comunas de Santiago con 60 días de historial de entregas con patrones conocidos;
+- 30 locales comerciales de Santiago (botillerías, minimarkets, bares y restaurantes) con tipo, modulación declarada y 60 días de historial de intentos; 11 declaran un horario distinto de su ventana real;
 - 50 envíos para la fecha de hoy.
 
 | Quiero… | Comando |
@@ -197,6 +197,7 @@ curl http://localhost:8080/api/tracking/ABC123
 | Servicio | OpenAPI JSON | Swagger UI |
 |---|---|---|
 | auth-service | http://localhost:8081/v3/api-docs | http://localhost:8081/swagger-ui.html |
+| delivery-service | http://localhost:8082/v3/api-docs | http://localhost:8082/swagger-ui.html |
 
 Más detalle en [`docs/api/`](docs/api/).
 

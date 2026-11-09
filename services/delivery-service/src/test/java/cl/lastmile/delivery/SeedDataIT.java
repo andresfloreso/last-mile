@@ -1,6 +1,7 @@
 package cl.lastmile.delivery;
 
 import cl.lastmile.delivery.algorithm.TimeWindowLearningService;
+import cl.lastmile.delivery.model.DeclaredWindow;
 import cl.lastmile.delivery.repository.DeliveryAttemptRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,9 +34,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * HU-01: carga la semilla real de infra/seed/delivery (perfil "seed") sobre un
- * PostgreSQL vacío y verifica volumen, patrones e idempotencia; luego arma la
- * ruta del día vía HTTP y comprueba que los clientes de mañana van primero.
+ * HU-01 / HU-25: carga la semilla real de infra/seed/delivery (perfil "seed")
+ * sobre un PostgreSQL vacío y verifica volumen, patrones, modulación e
+ * idempotencia; luego arma la ruta del día vía HTTP y comprueba que los
+ * locales que reciben en la mañana van primero.
  *
  * OSRM apunta a un puerto cerrado: la ruta usa el fallback Haversine, sin red.
  */
@@ -85,6 +87,65 @@ class SeedDataIT {
     }
 
     @Test
+    void cargaTreintaLocalesComercialesConTipoYModulacion() {
+        Map<String, Integer> byType = jdbc.query(
+                        "SELECT business_type, count(*) FROM customers WHERE " + SEED_CUSTOMERS + " GROUP BY business_type",
+                        (rs, i) -> Map.entry(rs.getString(1), rs.getInt(2)))
+                .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        assertThat(byType).containsOnlyKeys("BOTILLERIA", "MINIMARKET", "BAR", "RESTAURANT");
+        assertThat(byType.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(30);
+
+        assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS
+                + " AND declared_window_start IS NOT NULL AND declared_window_end IS NOT NULL")).isEqualTo(30);
+        assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS
+                + " AND declared_window2_start IS NOT NULL")).isEqualTo(1);
+    }
+
+    @Test
+    void elMotorRecuperaLaVentanaRealYNoLaModulacionDeclarada() {
+        Map<String, String> patterns = patternByCustomerName();
+        Map<String, Integer> realStart = Map.of("MORNING", 9, "MIDDAY", 12, "AFTERNOON", 15, "EVENING", 18);
+
+        List<Map<String, Object>> locales = jdbc.queryForList("""
+                SELECT id, full_name, declared_window_start, declared_window_end,
+                       declared_window2_start, declared_window2_end
+                FROM customers WHERE %s""".formatted(SEED_CUSTOMERS));
+
+        int declaranOtroHorario = 0;
+        for (Map<String, Object> local : locales) {
+            String name = (String) local.get("full_name");
+            DeclaredWindow declared = new DeclaredWindow(
+                    time(local.get("declared_window_start")), time(local.get("declared_window_end")),
+                    time(local.get("declared_window2_start")), time(local.get("declared_window2_end")));
+
+            int learned = learning.learn((UUID) local.get("id"), attempts).recommendedStartHour();
+            // El motor aprende la ventana real, sin importar lo que el local declara.
+            assertThat(learned).as("ventana real aprendida para %s", name)
+                    .isEqualTo(realStart.get(patterns.get(name)));
+
+            if (!declared.contains(LocalTime.of(learned, 0))) {
+                declaranOtroHorario++;
+            }
+        }
+
+        // Al menos un tercio de los locales declara una modulación que no coincide con su ventana real.
+        assertThat(declaranOtroHorario).isGreaterThanOrEqualTo(10);
+
+        // Local B (Bar La Esquina de Ñuñoa): declara 09–12, pero recibe después de las 19 h.
+        Map<String, Object> barB = jdbc.queryForMap(
+                "SELECT declared_window_start, declared_window_end FROM customers WHERE id = ?",
+                UUID.fromString("5eed0000-0000-4000-8000-000000000004"));
+        assertThat(time(barB.get("declared_window_start"))).isEqualTo(LocalTime.of(9, 0));
+        assertThat(time(barB.get("declared_window_end"))).isEqualTo(LocalTime.of(12, 0));
+        assertThat(learning.learn(UUID.fromString("5eed0000-0000-4000-8000-000000000004"), attempts)
+                .recommendedStartHour()).isEqualTo(18);
+    }
+
+    private static LocalTime time(Object sqlTime) {
+        return sqlTime == null ? null : ((java.sql.Time) sqlTime).toLocalTime();
+    }
+
+    @Test
     void cargaTreintaClientesConCoordenadasEnSantiago() {
         assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(30);
         assertThat(count("SELECT count(DISTINCT commune) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(30);
@@ -121,7 +182,7 @@ class SeedDataIT {
             assertThat(profile.confidence()).isEqualTo(1.0);
         }
 
-        // Cliente A (mañana) evita la tarde; cliente B (noche) evita el día.
+        // Local A (minimarket, mañana) evita la tarde; local B (bar, noche) evita el día.
         UUID clienteA = UUID.fromString("5eed0000-0000-4000-8000-000000000001");
         UUID clienteB = UUID.fromString("5eed0000-0000-4000-8000-000000000004");
         assertThat(learning.learn(clienteA, attempts).hoursToAvoid()).contains(14, 15, 16);
@@ -142,7 +203,7 @@ class SeedDataIT {
     }
 
     @Test
-    void laRutaDelDiaOrdenaPrimeroALosClientesDeManana() throws Exception {
+    void laRutaDelDiaOrdenaPrimeroALosLocalesDeLaManana() throws Exception {
         String body = mvc.perform(post("/api/routes/build")
                         .header("Authorization", "Bearer " + dispatcherToken())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -169,7 +230,7 @@ class SeedDataIT {
             }
         }
 
-        // Las primeras paradas son exactamente los envíos de clientes de mañana...
+        // Las primeras paradas son exactamente los envíos de locales que reciben en la mañana...
         assertThat(Set.copyOf(firstPatterns)).containsExactly("MORNING");
         assertThat(windowStarts.get(0)).isEqualTo(LocalTime.of(9, 0));
         // ...y el resto de la ruta respeta el orden de franjas (mediodía, tarde, noche).
