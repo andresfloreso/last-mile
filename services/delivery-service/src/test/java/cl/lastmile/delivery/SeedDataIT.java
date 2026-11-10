@@ -177,27 +177,34 @@ class SeedDataIT {
     }
 
     @Test
-    void cargaHistorialDeSesentaDiasYVeinticuatroEnviosDeHoy() {
+    void cargaHistorialDeSesentaDiasYVeinticuatroParadasDeHoy() {
         assertThat(count("SELECT count(*) FROM delivery_attempts")).isEqualTo(800);
         assertThat(count("""
                 SELECT (max(attempted_at)::date - min(attempted_at)::date) FROM delivery_attempts
                 """)).isBetween(55, 60);
         assertThat(count("SELECT count(*) FROM delivery_attempts WHERE attempted_at > now()")).isZero();
-        assertThat(count("SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE")).isEqualTo(24);
-        // Todos los envíos del día son de la zona, uno por local.
+        // HU-30: 26 envíos en 24 locales (los locales 1 y 4 reciben dos pedidos).
+        assertThat(count("SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE")).isEqualTo(26);
+        assertThat(count("""
+                SELECT count(*) FROM (SELECT customer_id FROM shipments WHERE scheduled_date = CURRENT_DATE
+                                      GROUP BY customer_id HAVING count(*) = 2) d""")).isEqualTo(2);
+        // Todos los envíos del día son de la zona.
         assertThat(count("""
                 SELECT count(DISTINCT s.customer_id) FROM shipments s JOIN customers c ON c.id = s.customer_id
                 WHERE s.scheduled_date = CURRENT_DATE AND c.commune IN """ + ZONE)).isEqualTo(24);
     }
 
-    /** HU-31: un día fijo con un pedido por local, más de lo que un camión entrega dentro de ventana. */
+    /**
+     * HU-31: un día fijo con una parada por local, más de lo que un camión entrega dentro de ventana.
+     * HU-30: 6 locales reciben dos pedidos (46 envíos, 40 paradas).
+     */
     @Test
-    void cargaElDiaCargadoConCuarentaEnviosDiezPorFranja() {
+    void cargaElDiaCargadoConCuarentaParadasDiezPorFranja() {
         String day = "scheduled_date = DATE '2027-01-04' AND tracking_code LIKE 'SEED-CARGA-20270104-%'";
-        assertThat(count("SELECT count(*) FROM shipments WHERE " + day)).isEqualTo(40);
+        assertThat(count("SELECT count(*) FROM shipments WHERE " + day)).isEqualTo(46);
         assertThat(count("SELECT count(DISTINCT customer_id) FROM shipments WHERE " + day)).isEqualTo(40);
         assertThat(jdbc.query("""
-                        SELECT substring(notes FROM 'patrón ([A-Z]+)'), count(*) FROM shipments
+                        SELECT substring(notes FROM 'patrón ([A-Z]+)'), count(DISTINCT customer_id) FROM shipments
                         WHERE %s GROUP BY 1""".formatted(day),
                 (rs, i) -> Map.entry(rs.getString(1), rs.getInt(2))))
                 .containsExactlyInAnyOrder(Map.entry("MORNING", 10), Map.entry("MIDDAY", 10),
@@ -285,11 +292,12 @@ class SeedDataIT {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
 
         JsonNode route = json.readTree(body);
-        assertThat(route).hasSize(count("SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE"));
+        // HU-30: una parada por local, aunque el local tenga dos envíos.
+        assertThat(route).hasSize(count("SELECT count(DISTINCT customer_id) FROM shipments WHERE scheduled_date = CURRENT_DATE"));
 
         Map<String, String> patterns = patternByCustomerName();
         int morningStops = count("""
-                SELECT count(*) FROM shipments
+                SELECT count(DISTINCT customer_id) FROM shipments
                 WHERE scheduled_date = CURRENT_DATE AND notes LIKE '%patrón MORNING%'""");
         assertThat(morningStops).isPositive();
 

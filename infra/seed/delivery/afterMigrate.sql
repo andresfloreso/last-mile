@@ -9,11 +9,12 @@
 --      Ñuñoa), en direcciones reales (HU-31).
 --   2. Historial de 60 días de intentos con patrones conocidos; se genera una
 --      sola vez por local (para los locales semilla que aún no tienen intentos).
---   3. 24 envíos para la fecha de HOY, uno por local salvo 6 locales, para que
+--   3. 26 envíos para la fecha de HOY en 24 paradas (los locales 1 y 4 reciben
+--      dos pedidos, HU-30), para que
 --      un camión alcance a hacer la ruta dentro del horario. En cada arranque
 --      se asegura que existan los del día (tracking SEED-<yyyymmdd>-<nn>).
---   4. Día cargado (HU-31): el lunes 2027-01-04, 40 envíos, uno por local
---      (10 por franja), más de los que un camión alcanza a entregar dentro de
+--   4. Día cargado (HU-31): el lunes 2027-01-04, 40 paradas (una por local,
+--      10 por franja; 46 envíos, HU-30), más de las que un camión alcanza a entregar dentro de
 --      ventana. Es la fecha fija con la que HU-28 compara optimizadores
 --      (tracking SEED-CARGA-20270104-<nn>).
 --
@@ -257,8 +258,21 @@ FROM (SELECT idx, row_number() OVER (ORDER BY idx) AS n
 JOIN seed_customer_v c USING (idx)
 ON CONFLICT (tracking_code) DO NOTHING;
 
+-- Segundo envío del día para los locales 1 y 4 (HU-30): el local recibe dos
+-- pedidos, pero la ruta lo visita una vez (una parada con "2 envíos").
+INSERT INTO shipments (id, tracking_code, customer_id, scheduled_date, status, source, notes,
+                       stop_type, package_count, order_preference, label, created_at)
+SELECT md5('seed-today-extra-' || CURRENT_DATE || '-' || c.idx)::uuid,
+       'SEED-' || to_char(CURRENT_DATE, 'YYYYMMDD') || '-' || (24 + row_number() OVER (ORDER BY c.idx)),
+       c.customer_id, CURRENT_DATE, 'PENDING', 'seed',
+       'Segundo envío de semilla (patrón ' || c.pattern || ')',
+       'DELIVERY', 2, 'AUTO', 'Default', now()
+FROM seed_customer_v c
+WHERE c.idx IN (1, 4)
+ON CONFLICT (tracking_code) DO NOTHING;
+
 -- ---------------------------------------------------------------------
--- 4. Día cargado (HU-31): 2027-01-04, 40 envíos, uno por local, 10 por franja.
+-- 4. Día cargado (HU-31): 2027-01-04, una parada por local (40, 10 por franja).
 --    Con un camión no caben todos dentro de su ventana real: sirve para
 --    comparar optimizadores (HU-28). Fecha fija, para que no se mezcle con
 --    los envíos de "hoy" cuando el ambiente sigue arriba al día siguiente.
@@ -271,6 +285,18 @@ SELECT md5('seed-carga-2027-01-04-' || c.idx)::uuid,
        'Día cargado de semilla (patrón ' || c.pattern || ')',
        'DELIVERY', 1 + c.idx % 3, 'AUTO', 'Default', now()
 FROM seed_customer_v c
+ON CONFLICT (tracking_code) DO NOTHING;
+
+-- Segundo envío en 6 locales del día cargado (HU-30): 46 envíos, 40 paradas.
+INSERT INTO shipments (id, tracking_code, customer_id, scheduled_date, status, source, notes,
+                       stop_type, package_count, order_preference, label, created_at)
+SELECT md5('seed-carga-2027-01-04-extra-' || c.idx)::uuid,
+       'SEED-CARGA-20270104-' || (40 + row_number() OVER (ORDER BY c.idx)),
+       c.customer_id, DATE '2027-01-04', 'PENDING', 'seed',
+       'Segundo envío del día cargado (patrón ' || c.pattern || ')',
+       'DELIVERY', 2, 'AUTO', 'Default', now()
+FROM seed_customer_v c
+WHERE c.idx IN (2, 5, 12, 19, 26, 33)
 ON CONFLICT (tracking_code) DO NOTHING;
 
 -- ---------------------------------------------------------------------

@@ -209,6 +209,24 @@ El orden lo decide `RouteOptimizationService`, sin cambios: las paradas
 Primera y Última quedan en los extremos. La hora estimada es una capa aparte
 (`RouteTimingService`) que no reordena.
 
+### Paradas consolidadas (HU-30)
+
+Los envíos del mismo local en la misma fecha forman **una sola parada**: el
+camión visita el local una vez y entrega todo. La respuesta trae una parada
+por local:
+
+| Campo | Significado |
+|---|---|
+| `shipmentId` | Envío representante de la parada (el que ve el optimizador) |
+| `shipmentIds` | Todos los envíos de la parada; el representante va primero |
+| `shipmentCount` | Cantidad de envíos de la parada |
+| `packageCount` | Suma de los bultos de sus envíos |
+
+El representante define la preferencia de orden de la parada: si algún envío
+pide **Primera**, la parada va primera; si no, si alguno pide **Última**, va
+última; si no, es automática. Todos los envíos de la parada quedan con la
+misma `routePosition`. Peso y volumen se suman en HU-29, cuando existan.
+
 ## Planilla de importación (import-service)
 
 `GET /api/import/template` (`ADMIN`, `DISPATCHER`, `OPERATOR`) descarga la

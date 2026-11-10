@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -178,5 +179,23 @@ class RouteTimingServiceTest {
     void unaRutaVaciaNoConsultaNada() {
         when(osrm.route(anyList())).thenReturn(Optional.of(List.of()));
         assertThat(timing.schedule(List.of(), DEPOT_LAT, DEPOT_LNG, LocalTime.of(8, 0), 10)).isEmpty();
+    }
+
+    /** HU-30: la parada consolidada informa sus envíos; una parada sin entrada tiene solo el suyo. */
+    @Test
+    void informaLosEnviosDeCadaParada() {
+        RouteStop consolidated = stop(1, "A", 9, 11, "AUTO", -33.40, -70.60);
+        RouteStop single = stop(2, "B", 9, 11, "AUTO", -33.41, -70.61);
+        UUID other = UUID.randomUUID();
+        when(osrm.route(anyList())).thenReturn(Optional.of(List.of(leg(10, 1), leg(10, 1))));
+
+        List<PlannedStopResponse> plan = timing.schedule(List.of(consolidated, single),
+                Map.of(consolidated.shipmentId(), List.of(consolidated.shipmentId(), other)),
+                DEPOT_LAT, DEPOT_LNG, LocalTime.of(8, 0), 10);
+
+        assertThat(plan.get(0).shipmentIds()).containsExactly(consolidated.shipmentId(), other);
+        assertThat(plan.get(0).shipmentCount()).isEqualTo(2);
+        assertThat(plan.get(1).shipmentIds()).containsExactly(single.shipmentId());
+        assertThat(plan.get(1).shipmentCount()).isEqualTo(1);
     }
 }

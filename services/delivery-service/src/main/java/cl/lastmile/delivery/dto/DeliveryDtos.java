@@ -134,18 +134,22 @@ public class DeliveryDtos {
                     allowableValues = {"OSRM", "ESTIMATED", "NO_LOCATION"})
             String timingSource,
             @Schema(description = "0 si la llegada es el día programado; 1 si la ruta no alcanza y llega al día siguiente", example = "0")
-            int dayOffset
+            int dayOffset,
+            @Schema(description = "Envíos de la parada (HU-30): todos los del mismo local en la fecha. El primero es shipmentId")
+            List<UUID> shipmentIds,
+            @Schema(description = "Cantidad de envíos de la parada (HU-30)", example = "2")
+            int shipmentCount
     ) {
         public static PlannedStopResponse of(RouteOptimizationService.RouteStop s,
                                              LocalTime arrival, LocalTime serviceStart, LocalTime departure,
                                              int waitMinutes, Integer travelMinutes, Integer legDistanceMeters,
                                              boolean outsideWindow, List<double[]> path, String timingSource,
-                                             int dayOffset) {
+                                             int dayOffset, List<UUID> shipmentIds) {
             return new PlannedStopResponse(s.shipmentId(), s.customerName(), s.address(), s.position(),
                     s.windowStart(), s.windowEnd(), s.confidence(), s.hoursToAvoid(), s.stopType(),
                     s.packageCount(), s.orderPreference(), s.label(), s.latitude(), s.longitude(),
                     arrival, serviceStart, departure, waitMinutes, travelMinutes, legDistanceMeters,
-                    outsideWindow, path, timingSource, dayOffset);
+                    outsideWindow, path, timingSource, dayOffset, List.copyOf(shipmentIds), shipmentIds.size());
         }
     }
 

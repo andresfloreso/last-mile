@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Hora estimada por parada (HU-14). Es una capa aparte del optimizador: recibe el
@@ -50,6 +52,16 @@ public class RouteTimingService {
 
     public List<PlannedStopResponse> schedule(List<RouteStop> route, double depotLat, double depotLng,
                                               LocalTime departure, int stopMinutes) {
+        return schedule(route, Map.of(), depotLat, depotLng, departure, stopMinutes);
+    }
+
+    /**
+     * Igual que {@link #schedule(List, double, double, LocalTime, int)}, con los envíos de cada parada
+     * consolidada (HU-30), por id del envío representante. Una parada sin entrada tiene un solo envío.
+     */
+    public List<PlannedStopResponse> schedule(List<RouteStop> route, Map<UUID, List<UUID>> shipmentsByStop,
+                                              double depotLat, double depotLng,
+                                              LocalTime departure, int stopMinutes) {
         // Solo las paradas con coordenadas entran al recorrido; las demás se informan sin tramo.
         List<double[]> points = new ArrayList<>();
         points.add(new double[]{depotLat, depotLng});
@@ -86,7 +98,8 @@ public class RouteTimingService {
                     serviceStart >= windowEnd,
                     leg == null ? List.of() : leg.path(),
                     leg == null ? "NO_LOCATION" : source,
-                    Math.floorDiv(arrival, DAY)));
+                    Math.floorDiv(arrival, DAY),
+                    shipmentsByStop.getOrDefault(stop.shipmentId(), List.of(stop.shipmentId()))));
             clock = leave;
         }
         return planned;
