@@ -75,7 +75,7 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
 
   | Patente | Vehículo | Capacidad | Jornada |
   |---|---|---|---|
-  | `KXPT-21` | Camión 3/4 | 3.500 kg, 18 m³ | 08:00–20:00 |
+  | `KXPT-21` | Camión 3/4 | 3.500 kg, 18 m³ | 08:00–21:00 (los bares reciben hasta las 20:00) |
   | `JRHL-48` | Furgón | 1.200 kg, 8 m³ | 08:00–18:00 |
 
   Si ya existen, no se tocan.

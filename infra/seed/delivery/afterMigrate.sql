@@ -303,12 +303,13 @@ ON CONFLICT (tracking_code) DO NOTHING;
 
 -- ---------------------------------------------------------------------
 -- 5. Camiones y carga (HU-29)
---    Dos camiones: el 3/4 hace la ruta del día; el furgón queda para HU-16
+--    Dos camiones: el 3/4 hace la ruta del día (su jornada llega a las 21:00
+--    porque los bares reciben hasta las 20:00); el furgón queda para HU-16
 --    (varios camiones). Si ya existen no se tocan (el despachador puede
 --    editarlos).
 -- ---------------------------------------------------------------------
 INSERT INTO vehicles (id, plate, name, capacity_kg, capacity_m3, shift_start, shift_end, active)
-VALUES ('5eedca00-0000-4000-8000-000000000001', 'KXPT-21', 'Camión 3/4', 3500, 18, TIME '08:00', TIME '20:00', TRUE),
+VALUES ('5eedca00-0000-4000-8000-000000000001', 'KXPT-21', 'Camión 3/4', 3500, 18, TIME '08:00', TIME '21:00', TRUE),
        ('5eedca00-0000-4000-8000-000000000002', 'JRHL-48', 'Furgón',     1200,  8, TIME '08:00', TIME '18:00', TRUE)
 ON CONFLICT (id) DO NOTHING;
 

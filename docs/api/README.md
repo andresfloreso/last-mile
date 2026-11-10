@@ -246,7 +246,7 @@ y m³) y jornada.
 
 ```json
 { "plate": "KXPT-21", "name": "Camión 3/4", "capacityKg": 3500, "capacityM3": 18,
-  "shiftStart": "08:00", "shiftEnd": "20:00", "active": true }
+  "shiftStart": "08:00", "shiftEnd": "21:00", "active": true }
 ```
 
 Reglas de los datos:
