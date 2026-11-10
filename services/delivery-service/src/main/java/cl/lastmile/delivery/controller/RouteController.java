@@ -2,18 +2,23 @@ package cl.lastmile.delivery.controller;
 
 import cl.lastmile.delivery.dto.DeliveryDtos.PlannedStopResponse;
 import cl.lastmile.delivery.dto.DeliveryDtos.RouteRequest;
+import cl.lastmile.delivery.exception.BadRequestException;
 import cl.lastmile.delivery.service.RouteService;
 import cl.lastmile.delivery.service.RouteService.ConsolidatedRoute;
 import cl.lastmile.delivery.service.RouteTimingService;
+import cl.lastmile.delivery.service.SavedRouteService;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -25,15 +30,18 @@ public class RouteController {
 
     private final RouteService routeService;
     private final RouteTimingService routeTimingService;
+    private final SavedRouteService savedRouteService;
     private final LocalTime defaultDeparture;
     private final int defaultStopMinutes;
 
     public RouteController(RouteService routeService,
                            RouteTimingService routeTimingService,
+                           SavedRouteService savedRouteService,
                            @Value("${routing.default-departure:08:00}") LocalTime defaultDeparture,
                            @Value("${routing.stop-minutes:10}") int defaultStopMinutes) {
         this.routeService = routeService;
         this.routeTimingService = routeTimingService;
+        this.savedRouteService = savedRouteService;
         this.defaultDeparture = defaultDeparture;
         this.defaultStopMinutes = defaultStopMinutes;
     }
@@ -71,6 +79,36 @@ public class RouteController {
                 .map(p -> p.withOptimizer(route.optimizer(), route.note(), route.vehicle()))
                 .toList();
         return ResponseEntity.ok().header(OPTIMIZER_HEADER, route.optimizer()).body(planned);
+    }
+
+    /**
+     * La ruta guardada de una fecha, con hora estimada (HU-32). No reordena ni escribe: es lo que usa la
+     * pantalla de rutas al abrirse. Para armar o rearmar la ruta está {@code POST /api/routes/build}.
+     */
+    @GetMapping
+    @Operation(
+            summary = "Ruta guardada del día, sin recalcular",
+            description = """
+                    Devuelve las paradas en el orden que guardó el último POST /api/routes/build, con la misma                     hora estimada por parada (llegada, espera, inicio, salida, outsideWindow y tramo para el mapa).                     No llama al optimizador ni cambia la posición o el estado de ningún envío. Los envíos sin                     posición (por ejemplo, importados después de armar la ruta) no aparecen; si la fecha no tiene                     ruta armada, devuelve una lista vacía. optimizer, optimizerNote y vehiclePlate vienen en null:                     no se guardan. Pueden verla ADMIN, DISPATCHER y OPERATOR; solo ADMIN y DISPATCHER la arman.""")
+    @ApiResponse(responseCode = "200", description = "Paradas en el orden guardado (una por local), o lista vacía si no hay ruta armada")
+    @ApiResponse(responseCode = "400", description = "Falta la fecha o el depósito, o stopMinutes fuera de 1–120")
+    @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN, DISPATCHER u OPERATOR)")
+    public List<PlannedStopResponse> savedRoute(
+            @Parameter(description = "Fecha de la ruta", example = "2027-01-04")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Latitud del depósito") @RequestParam double depotLat,
+            @Parameter(description = "Longitud del depósito") @RequestParam double depotLng,
+            @Parameter(description = "Hora de salida (por defecto routing.default-departure)", example = "08:00")
+            @RequestParam(required = false) @DateTimeFormat(pattern = "HH:mm") LocalTime departureTime,
+            @Parameter(description = "Minutos por parada, 1–120 (por defecto routing.stop-minutes)")
+            @RequestParam(required = false) Integer stopMinutes) {
+        LocalTime departure = departureTime != null ? departureTime : defaultDeparture;
+        if (stopMinutes != null && (stopMinutes < 1 || stopMinutes > 120)) {
+            throw new BadRequestException("stopMinutes debe estar entre 1 y 120");
+        }
+        int minutes = stopMinutes != null ? stopMinutes : defaultStopMinutes;
+        ConsolidatedRoute route = savedRouteService.savedRouteForDate(date);
+        return routeTimingService.schedule(route.stops(), route.loads(), depotLat, depotLng, departure, minutes);
     }
 
     /** Quién ordenó la ruta (HU-28), también en un encabezado para no tener que leer las paradas. */

@@ -8,6 +8,8 @@ import { CloseIcon, ListIcon } from "@/components/icons";
 import { customersApi, routesApi, shipmentsApi } from "@/api/endpoints";
 import { buildStopViews, summarize } from "@/lib/routeView";
 import { DEPARTURE_TIME, DEPOT } from "@/lib/config";
+import { canBuildRoutes, canViewRoutes, unroutedCount } from "@/lib/routeAccess";
+import { useAuthStore } from "@/store/authStore";
 import { useRouteDateStore } from "@/store/routeDateStore";
 import { useThemeStore } from "@/store/themeStore";
 import type { RouteStop, Shipment, TimeWindow } from "@/types";
@@ -22,8 +24,27 @@ function errorMessage(e: unknown): string {
  * Pantalla de rutas (HU-27). Es de presentación: junta lo que ya existe —
  * envíos de la fecha (HU-10), ruta con hora estimada (HU-14), ventana real por local (HU-11),
  * marca "revisar" (HU-09) y edición de la modulación (HU-25)— sin recalcular nada.
+ *
+ * HU-32: al abrirse lee la ruta guardada (GET /api/routes), sin efectos. Solo arma la ruta
+ * (POST /api/routes/build) cuando despacho lo pide. El operador la ve en solo lectura, y
+ * conductor y cliente no la ven.
  */
 export default function RoutePage() {
+  const role = useAuthStore((s) => s.user?.role);
+  if (!canViewRoutes(role)) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-md px-4 py-16 text-center">
+          <h1 className="text-22 font-bold text-ink">Ruta del día</h1>
+          <p className="mt-2 text-sm text-muted">Tu rol no ve la ruta del día: es para despacho, administración y operaciones.</p>
+        </div>
+      </Layout>
+    );
+  }
+  return <RouteScreen canBuild={canBuildRoutes(role)} />;
+}
+
+function RouteScreen({ canBuild }: { canBuild: boolean }) {
   const date = useRouteDateStore((s) => s.date);
   const theme = useThemeStore((s) => s.theme);
 
@@ -48,11 +69,14 @@ export default function RoutePage() {
     setTimeWindows(map);
   }, []);
 
-  /** Carga los envíos de la fecha y arma la ruta (POST /api/routes/build calcula y guarda el orden). */
+  /**
+   * Carga los envíos de la fecha y su ruta. Al abrir (build = false) lee la ruta guardada, sin
+   * efectos; con build = true la arma y guarda el orden (POST /api/routes/build), solo a pedido.
+   */
   const load = useCallback(
-    async (reoptimize = false) => {
+    async (build = false) => {
       const id = ++loadId.current;
-      if (reoptimize) setReoptimizing(true);
+      if (build) setReoptimizing(true);
       else setState("loading");
       setError(null);
       try {
@@ -65,11 +89,13 @@ export default function RoutePage() {
           setState("empty");
           return;
         }
-        const built = await routesApi.build(date, DEPOT.lat, DEPOT.lng, DEPARTURE_TIME);
+        const stops = build
+          ? await routesApi.build(date, DEPOT.lat, DEPOT.lng, DEPARTURE_TIME)
+          : await routesApi.saved(date, DEPOT.lat, DEPOT.lng, DEPARTURE_TIME);
         if (id !== loadId.current) return;
         setShipments(page.content);
-        setRoute(built);
-        setState("ready");
+        setRoute(stops);
+        setState(stops.length === 0 ? "unbuilt" : "ready");
         loadTimeWindows(page.content, id);
       } catch (e) {
         if (id !== loadId.current) return;
@@ -90,6 +116,10 @@ export default function RoutePage() {
 
   const stops = useMemo(() => buildStopViews(route, shipments, timeWindows), [route, shipments, timeWindows]);
   const summary = useMemo(() => (state === "ready" ? summarize(stops, route) : null), [state, stops, route]);
+  const unrouted = useMemo(
+    () => (state === "ready" ? unroutedCount(shipments.map((s) => s.id), route.flatMap((r) => r.shipmentIds ?? [r.shipmentId])) : 0),
+    [state, shipments, route]
+  );
   const selected = stops.find((s) => s.shipmentId === selectedId) ?? null;
 
   // Escape cierra la tarjeta de detalle (o el panel en tablet).
@@ -128,13 +158,16 @@ export default function RoutePage() {
     setTimeWindows((prev) => new Map(prev).set(customerId, tw));
   }
 
-  /** Corregir ubicación (HU-09): guarda el pin arrastrado y rearma la ruta con la nueva posición. */
+  /**
+   * Corregir ubicación (HU-09): guarda el pin arrastrado. Despacho rearma la ruta con la nueva
+   * posición (es una acción suya); en solo lectura se vuelve a leer la ruta guardada.
+   */
   async function relocate(lat: number, lng: number) {
     if (!selected) return;
     try {
       await customersApi.updateLocation(selected.customerId, lat, lng);
       setRelocatingId(null);
-      await load(true);
+      await load(canBuild);
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -149,8 +182,11 @@ export default function RoutePage() {
       summary={summary}
       selectedId={selectedId}
       onSelect={selectFromList}
-      onReoptimize={() => load(state === "ready")}
+      onBuild={() => load(true)}
+      onRetry={() => load(false)}
       reoptimizing={reoptimizing}
+      canBuild={canBuild}
+      unrouted={unrouted}
     />
   );
 
@@ -215,7 +251,7 @@ export default function RoutePage() {
               <div className="absolute inset-0 z-20 flex items-center justify-center" aria-live="polite">
                 <div className="absolute inset-0 bg-page opacity-60" aria-hidden="true" />
                 <p className="relative rounded-lg border border-line bg-float px-4 py-2 text-13 text-muted">
-                  Armando la ruta del día…
+                  Cargando la ruta del día…
                 </p>
               </div>
             )}

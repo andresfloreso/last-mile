@@ -33,6 +33,12 @@ interface Props {
 /** Margen alrededor de la tarjeta dentro del cual un marcador se considera tapado. */
 const COVER_MARGIN = 24;
 
+/**
+ * Tolerancia de simplificación de la polilínea, en píxeles de pantalla (HU-32). Leaflet la aplica
+ * de nuevo en cada zoom (Douglas-Peucker): alejado dibuja pocos puntos; cerca, el detalle de la calle.
+ */
+const ROUTE_SMOOTH_FACTOR = 1.5;
+
 /** Ruta en el color de la polilínea del tema (token --color-route). */
 function routeColor(): string {
   return getComputedStyle(document.documentElement).getPropertyValue("--color-route").trim();
@@ -43,7 +49,6 @@ export default function RouteMap(props: Props) {
   const [map, setMap] = useState<L.Map | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
-  const [, setTick] = useState(0);
   const [color, setColor] = useState(routeColor);
 
   const selected = stops.find((s) => s.shipmentId === selectedId) ?? null;
@@ -64,16 +69,6 @@ export default function RouteMap(props: Props) {
     map.fitBounds([[DEPOT.lat, DEPOT.lng], ...located], { paddingTopLeft: [40, 80], paddingBottomRight: [360, 40] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, stopsKey]);
-
-  // Redibuja la línea guía cuando el mapa se mueve.
-  useEffect(() => {
-    if (!map) return;
-    const bump = () => setTick((t) => t + 1);
-    map.on("move zoom resize", bump);
-    return () => {
-      map.off("move zoom resize", bump);
-    };
-  }, [map]);
 
   // Desde la lista: centrar la parada seleccionada.
   useEffect(() => {
@@ -101,17 +96,6 @@ export default function RouteMap(props: Props) {
     };
   }, [map, selected]);
 
-  const guide = (() => {
-    if (!map || !selected || !card.current || !wrapper.current || selected.latitude == null) return null;
-    const p = map.latLngToContainerPoint([selected.latitude, selected.longitude!]);
-    const r = card.current.getBoundingClientRect();
-    const w = wrapper.current.getBoundingClientRect();
-    const x1 = r.left - w.left;
-    const y1 = Math.min(Math.max(p.y, r.top - w.top + 24), r.bottom - w.top - 24);
-    if (p.x < 0 || p.y < 0 || p.x > w.width || p.y > w.height) return null;
-    return { x1, y1, x2: p.x, y2: p.y };
-  })();
-
   return (
     <div ref={wrapper} className="relative h-full w-full" role="region" aria-label="Mapa de la ruta del día">
       <MapContainer
@@ -119,6 +103,7 @@ export default function RouteMap(props: Props) {
         center={[DEPOT.lat, DEPOT.lng]}
         zoom={13}
         zoomControl={false}
+        preferCanvas
         className="h-full w-full"
       >
         <TileLayer
@@ -129,7 +114,7 @@ export default function RouteMap(props: Props) {
           maxZoom={19}
           maxNativeZoom={TILE_MAX_NATIVE_ZOOM}
         />
-        {polyline.length > 1 && <Polyline positions={polyline} pathOptions={{ color, weight: 5, opacity: 0.9 }} />}
+        {polyline.length > 1 && <Polyline positions={polyline} pathOptions={{ color, weight: 5, opacity: 0.9 }} smoothFactor={ROUTE_SMOOTH_FACTOR} />}
         <Marker position={[DEPOT.lat, DEPOT.lng]} icon={depotIcon()} title="Bodega" alt="Bodega" keyboard={false} />
         {ordered.map((s) => (
           <StopMarker
@@ -169,10 +154,8 @@ export default function RouteMap(props: Props) {
           </button>
         </div>
 
-        {guide && (
-          <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
-            <line x1={guide.x1} y1={guide.y1} x2={guide.x2} y2={guide.y2} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="3 3" />
-          </svg>
+        {map && selected && selected.latitude != null && selected.longitude != null && (
+          <GuideLine map={map} lat={selected.latitude} lng={selected.longitude} card={card} wrapper={wrapper} />
         )}
 
         {selected && (
@@ -191,5 +174,41 @@ export default function RouteMap(props: Props) {
         )}
       </div>
     </div>
+  );
+}
+
+interface GuideProps {
+  map: L.Map;
+  lat: number;
+  lng: number;
+  card: React.RefObject<HTMLDivElement>;
+  wrapper: React.RefObject<HTMLDivElement>;
+}
+
+/**
+ * Línea punteada de la tarjeta al marcador seleccionado. Sigue al mapa mientras se mueve: es lo único
+ * que se vuelve a dibujar en cada cuadro (HU-32), no los marcadores ni la polilínea.
+ */
+function GuideLine({ map, lat, lng, card, wrapper }: GuideProps) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setTick((t) => t + 1);
+    map.on("move zoom resize", bump);
+    return () => {
+      map.off("move zoom resize", bump);
+    };
+  }, [map]);
+
+  if (!card.current || !wrapper.current) return null;
+  const p = map.latLngToContainerPoint([lat, lng]);
+  const r = card.current.getBoundingClientRect();
+  const w = wrapper.current.getBoundingClientRect();
+  if (p.x < 0 || p.y < 0 || p.x > w.width || p.y > w.height) return null;
+  const x1 = r.left - w.left;
+  const y1 = Math.min(Math.max(p.y, r.top - w.top + 24), r.bottom - w.top - 24);
+  return (
+    <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
+      <line x1={x1} y1={y1} x2={p.x} y2={p.y} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="3 3" />
+    </svg>
   );
 }

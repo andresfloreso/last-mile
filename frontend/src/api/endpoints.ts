@@ -19,6 +19,12 @@ export const authApi = {
 };
 
 export const routesApi = {
+  /** HU-32: la ruta guardada, con hora estimada; no reordena ni escribe. Lista vacía si no está armada. */
+  saved: (date: string, depotLat: number, depotLng: number, departureTime?: string, stopMinutes?: number) =>
+    apiClient
+      .get<RouteStop[]>("/api/routes", { params: { date, depotLat, depotLng, departureTime, stopMinutes } })
+      .then((r) => r.data),
+  /** Arma (o rearma) la ruta y guarda el orden: solo cuando el despachador lo pide. */
   build: (date: string, depotLat: number, depotLng: number, departureTime?: string, stopMinutes?: number) =>
     apiClient
       .post<RouteStop[]>("/api/routes/build", { date, depotLat, depotLng, departureTime, stopMinutes })
