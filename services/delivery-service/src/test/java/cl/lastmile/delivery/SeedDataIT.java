@@ -211,6 +211,32 @@ class SeedDataIT {
                         Map.entry("AFTERNOON", 10), Map.entry("EVENING", 10));
     }
 
+    /** HU-29: camiones con capacidad y jornada, y peso y volumen en cada envío semilla. */
+    @Test
+    void cargaDosCamionesYElPesoYVolumenDeCadaEnvio() {
+        assertThat(jdbc.queryForList("""
+                SELECT plate, capacity_kg, capacity_m3, shift_start::text AS start, shift_end::text AS end, active
+                FROM vehicles WHERE id::text LIKE '5eedca00-%' ORDER BY plate"""))
+                .containsExactly(
+                        Map.of("plate", "JRHL-48", "capacity_kg", 1200.0, "capacity_m3", 8.0,
+                                "start", "08:00:00", "end", "18:00:00", "active", true),
+                        Map.of("plate", "KXPT-21", "capacity_kg", 3500.0, "capacity_m3", 18.0,
+                                "start", "08:00:00", "end", "20:00:00", "active", true));
+
+        // Todos los envíos semilla tienen peso y volumen según su tipo de local y sus bultos.
+        assertThat(count("""
+                SELECT count(*) FROM shipments s JOIN customers c ON c.id = s.customer_id
+                WHERE s.source = 'seed' AND (s.weight_kg <> s.package_count * CASE c.business_type
+                        WHEN 'BOTILLERIA' THEN 18 WHEN 'BAR' THEN 16 WHEN 'MINIMARKET' THEN 12 ELSE 10 END
+                     OR s.volume_m3 <= 0)""")).isZero();
+        // El día cargado entra en el camión 3/4 (la capacidad la usa HU-28) pero no en el furgón.
+        Map<String, Object> carga = jdbc.queryForMap("""
+                SELECT sum(weight_kg) AS kg, sum(volume_m3) AS m3 FROM shipments
+                WHERE scheduled_date = DATE '2027-01-04' AND tracking_code LIKE 'SEED-CARGA-%'""");
+        assertThat((Double) carga.get("kg")).isBetween(1200.0, 3500.0);
+        assertThat((Double) carga.get("m3")).isLessThan(18.0);
+    }
+
     @Test
     void elMotorRecuperaLosPatronesConocidos() {
         Map<String, String> patterns = patternByCustomerName();

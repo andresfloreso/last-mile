@@ -53,6 +53,12 @@ routing:
   stop-minutes: 10             # minutos de entrega en cada local
   fallback-speed-kmh: 25       # velocidad urbana para estimar tramos cuando OSRM no responde
 
+shipments:
+  # HU-29: peso y volumen de un envío que no los informa (API o planilla sin peso_kg / volumen_m3).
+  # Los envíos que existían antes de la migración V4 quedaron con 10 kg y 0,05 m³.
+  default-weight-kg: 10
+  default-volume-m3: 0.05
+
 management:
   endpoints:
     web:

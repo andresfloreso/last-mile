@@ -63,6 +63,9 @@ class RouteServiceTest {
         assertThat(route.stops().get(1).packageCount()).isEqualTo(4);  // 1 + 3
         assertThat(route.shipmentIds(route.stops().get(1))).containsExactly(a1.getId(), a2.getId());
         assertThat(route.shipmentIds(route.stops().get(0))).containsExactly(b1.getId());
+        // HU-29: peso y volumen de la parada A = suma de a1 y a2 (10 kg y 0,05 m³ cada uno por defecto).
+        assertThat(route.load(route.stops().get(1)).weightKg()).isEqualTo(20.0);
+        assertThat(route.load(route.stops().get(1)).volumeM3()).isCloseTo(0.10, org.assertj.core.data.Offset.offset(1e-9));
 
         assertThat(a1.getRoutePosition()).isEqualTo(2);
         assertThat(a2.getRoutePosition()).isEqualTo(2);

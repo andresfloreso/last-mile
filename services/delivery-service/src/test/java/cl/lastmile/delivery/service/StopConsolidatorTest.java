@@ -23,7 +23,8 @@ class StopConsolidatorTest {
 
     private static Shipment envio(String tracking, Customer local, int packages, OrderPreference order) {
         return Shipment.builder().id(UUID.randomUUID()).trackingCode(tracking).customer(local)
-                .scheduledDate(DAY).packageCount(packages).orderPreference(order).build();
+                .scheduledDate(DAY).packageCount(packages).orderPreference(order)
+                .weightKg(10.0 * packages).volumeM3(0.02 * packages).build();
     }
 
     @Test
@@ -42,6 +43,11 @@ class StopConsolidatorTest {
         assertThat(stopA.representative()).isSameAs(a1);           // tracking menor
         assertThat(stopA.shipmentIds()).containsExactly(a1.getId(), a2.getId());
         assertThat(stopA.packageCount()).isEqualTo(5);
+        // HU-29: la parada suma el peso y el volumen de sus envíos.
+        assertThat(stopA.weightKg()).isEqualTo(50.0);
+        assertThat(stopA.volumeM3()).isCloseTo(0.10, org.assertj.core.data.Offset.offset(1e-9));
+        assertThat(stopA.load().shipmentIds()).containsExactly(a1.getId(), a2.getId());
+        assertThat(stopA.load().weightKg()).isEqualTo(50.0);
         assertThat(stops.get(1).shipmentIds()).containsExactly(b1.getId());
         assertThat(stops.get(1).packageCount()).isEqualTo(1);
     }
@@ -69,12 +75,18 @@ class StopConsolidatorTest {
     }
 
     @Test
-    void bultosNulosCuentanComoCeroYSinEnviosNoHayParadas() {
+    void datosNulosCuentanComoCeroYSinEnviosNoHayParadas() {
         Customer a = local("A");
         Shipment s = envio("T-01", a, 1, OrderPreference.AUTO);
         s.setPackageCount(null);
+        s.setWeightKg(null);
+        s.setVolumeM3(null);
 
-        assertThat(StopConsolidator.consolidate(List.of(s)).get(0).packageCount()).isZero();
+        DeliveryStop stop = StopConsolidator.consolidate(List.of(s)).get(0);
+        assertThat(stop.packageCount()).isZero();
+        assertThat(stop.weightKg()).isZero();
+        assertThat(stop.volumeM3()).isZero();
+        assertThat(StopConsolidator.StopLoad.single(s.getId()).weightKg()).isNull();
         assertThat(StopConsolidator.consolidate(List.of())).isEmpty();
     }
 }

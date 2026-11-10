@@ -6,12 +6,17 @@ import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.model.DeclaredWindow;
 import cl.lastmile.delivery.model.DeliveryAttempt;
 import cl.lastmile.delivery.model.Shipment;
+import cl.lastmile.delivery.model.Vehicle;
+import cl.lastmile.delivery.service.StopConsolidator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 
 import java.time.Instant;
@@ -76,7 +81,11 @@ public class DeliveryDtos {
             String stopType,        // DELIVERY | PICKUP (opcional, default DELIVERY)
             Integer packageCount,   // opcional, default 1
             String orderPreference, // FIRST | AUTO | LAST (opcional, default AUTO)
-            String label
+            String label,
+            @Positive @Schema(description = "Peso total del envío en kg (HU-29). Si falta: shipments.default-weight-kg (10)", example = "24.5")
+            Double weightKg,
+            @Positive @Schema(description = "Volumen total del envío en m³ (HU-29). Si falta: shipments.default-volume-m3 (0,05)", example = "0.08")
+            Double volumeM3
     ) {}
 
     public record DeliveryAttemptRequest(
@@ -138,18 +147,23 @@ public class DeliveryDtos {
             @Schema(description = "Envíos de la parada (HU-30): todos los del mismo local en la fecha. El primero es shipmentId")
             List<UUID> shipmentIds,
             @Schema(description = "Cantidad de envíos de la parada (HU-30)", example = "2")
-            int shipmentCount
+            int shipmentCount,
+            @Schema(description = "Peso de la parada en kg: suma de sus envíos (HU-29)", example = "42.5")
+            Double weightKg,
+            @Schema(description = "Volumen de la parada en m³: suma de sus envíos (HU-29)", example = "0.12")
+            Double volumeM3
     ) {
         public static PlannedStopResponse of(RouteOptimizationService.RouteStop s,
                                              LocalTime arrival, LocalTime serviceStart, LocalTime departure,
                                              int waitMinutes, Integer travelMinutes, Integer legDistanceMeters,
                                              boolean outsideWindow, List<double[]> path, String timingSource,
-                                             int dayOffset, List<UUID> shipmentIds) {
+                                             int dayOffset, StopConsolidator.StopLoad load) {
             return new PlannedStopResponse(s.shipmentId(), s.customerName(), s.address(), s.position(),
                     s.windowStart(), s.windowEnd(), s.confidence(), s.hoursToAvoid(), s.stopType(),
                     s.packageCount(), s.orderPreference(), s.label(), s.latitude(), s.longitude(),
                     arrival, serviceStart, departure, waitMinutes, travelMinutes, legDistanceMeters,
-                    outsideWindow, path, timingSource, dayOffset, List.copyOf(shipmentIds), shipmentIds.size());
+                    outsideWindow, path, timingSource, dayOffset, load.shipmentIds(), load.shipmentIds().size(),
+                    load.weightKg(), load.volumeM3());
         }
     }
 
@@ -159,7 +173,9 @@ public class DeliveryDtos {
             Integer packageCount,
             String orderPreference,
             String label,
-            String notes
+            String notes,
+            @Schema(description = "Peso total del envío en kg (HU-29), mayor que 0", example = "24.5") Double weightKg,
+            @Schema(description = "Volumen total del envío en m³ (HU-29), mayor que 0", example = "0.08") Double volumeM3
     ) {}
 
     public record BulkImportResult(
@@ -285,7 +301,9 @@ public class DeliveryDtos {
             String orderPreference,
             String label,
             Instant createdAt,
-            CustomerResponse customer
+            CustomerResponse customer,
+            @Schema(description = "Peso total del envío en kg (HU-29)", example = "24.5") Double weightKg,
+            @Schema(description = "Volumen total del envío en m³ (HU-29)", example = "0.08") Double volumeM3
     ) {
         /** Debe invocarse dentro de una transacción: inicializa el cliente LAZY. */
         public static ShipmentResponse from(Shipment s) {
@@ -302,7 +320,9 @@ public class DeliveryDtos {
                     name(s.getOrderPreference()),
                     s.getLabel(),
                     s.getCreatedAt(),
-                    CustomerResponse.from(s.getCustomer()));
+                    CustomerResponse.from(s.getCustomer()),
+                    s.getWeightKg(),
+                    s.getVolumeM3());
         }
     }
 
@@ -336,5 +356,45 @@ public class DeliveryDtos {
 
     private static String name(Enum<?> e) {
         return e == null ? null : e.name();
+    }
+
+    // -----------------------------------------------------------------
+    // Vehículos (HU-29)
+    // -----------------------------------------------------------------
+
+    @Schema(description = "Camión de la distribuidora (HU-29)")
+    public record VehicleRequest(
+            @NotBlank @Size(max = 12) @Pattern(regexp = "^[A-Za-z0-9 -]{4,12}$", message = "patente inválida (letras, números y guion)")
+            @Schema(description = "Patente; se guarda en mayúsculas y sin espacios", example = "KXPT-21")
+            String plate,
+            @Size(max = 80) @Schema(description = "Nombre corto para la pantalla", example = "Camión 3/4")
+            String name,
+            @NotNull @Positive @Schema(description = "Capacidad de carga en kg", example = "3500")
+            Double capacityKg,
+            @NotNull @Positive @Schema(description = "Capacidad de carga en m³", example = "18")
+            Double capacityM3,
+            @NotNull @Schema(description = "Inicio de la jornada", type = "string", example = "08:00")
+            LocalTime shiftStart,
+            @NotNull @Schema(description = "Término de la jornada; debe ser posterior al inicio", type = "string", example = "20:00")
+            LocalTime shiftEnd,
+            @Schema(description = "false lo da de baja: no se usa en rutas nuevas, pero no se borra. Por defecto true")
+            Boolean active
+    ) {}
+
+    @Schema(description = "Camión de la distribuidora (HU-29)")
+    public record VehicleResponse(
+            UUID id,
+            @Schema(example = "KXPT-21") String plate,
+            @Schema(example = "Camión 3/4") String name,
+            @Schema(example = "3500") double capacityKg,
+            @Schema(example = "18") double capacityM3,
+            @JsonFormat(pattern = "HH:mm") @Schema(type = "string", example = "08:00") LocalTime shiftStart,
+            @JsonFormat(pattern = "HH:mm") @Schema(type = "string", example = "20:00") LocalTime shiftEnd,
+            boolean active
+    ) {
+        public static VehicleResponse from(Vehicle v) {
+            return new VehicleResponse(v.getId(), v.getPlate(), v.getName(), v.getCapacityKg(), v.getCapacityM3(),
+                    v.getShiftStart(), v.getShiftEnd(), v.isActive());
+        }
     }
 }
