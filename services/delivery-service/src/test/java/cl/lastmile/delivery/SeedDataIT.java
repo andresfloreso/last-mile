@@ -92,16 +92,16 @@ class SeedDataIT {
     }
 
     @Test
-    void cargaTreintaLocalesComercialesConTipoYModulacion() {
+    void cargaCuarentaLocalesComercialesConTipoYModulacion() {
         Map<String, Integer> byType = jdbc.query(
                         "SELECT business_type, count(*) FROM customers WHERE " + SEED_CUSTOMERS + " GROUP BY business_type",
                         (rs, i) -> Map.entry(rs.getString(1), rs.getInt(2)))
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         assertThat(byType).containsOnlyKeys("BOTILLERIA", "MINIMARKET", "BAR", "RESTAURANT");
-        assertThat(byType.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(30);
+        assertThat(byType.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(40);
 
         assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS
-                + " AND declared_window_start IS NOT NULL AND declared_window_end IS NOT NULL")).isEqualTo(30);
+                + " AND declared_window_start IS NOT NULL AND declared_window_end IS NOT NULL")).isEqualTo(40);
         assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS
                 + " AND declared_window2_start IS NOT NULL")).isEqualTo(1);
     }
@@ -151,16 +151,16 @@ class SeedDataIT {
     }
 
     @Test
-    void cargaTreintaLocalesEnUnaZonaCompactaDeTresComunas() {
-        assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(30);
-        // HU-31: los 30 locales están en la zona, 10 por comuna, dentro de una caja de unos 6 × 6 km.
+    void cargaCuarentaLocalesEnUnaZonaCompactaDeTresComunas() {
+        assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(40);
+        // HU-31: los 40 locales están en la zona, repartidos en 3 comunas, dentro de una caja de unos 6 × 6 km.
         assertThat(jdbc.query("SELECT commune, count(*) FROM customers WHERE " + SEED_CUSTOMERS + " GROUP BY commune",
                 (rs, i) -> Map.entry(rs.getString(1), rs.getInt(2))))
-                .containsExactlyInAnyOrder(Map.entry("Santiago", 10), Map.entry("Providencia", 10), Map.entry("Ñuñoa", 10));
+                .containsExactlyInAnyOrder(Map.entry("Santiago", 14), Map.entry("Providencia", 13), Map.entry("Ñuñoa", 13));
         assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS + " AND " + IN_ZONE_BOX))
-                .isEqualTo(30);
+                .isEqualTo(40);
         // Direcciones reales y distintas, con número (sin "s/n") y coordenadas fijas en el SQL.
-        assertThat(count("SELECT count(DISTINCT address) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(30);
+        assertThat(count("SELECT count(DISTINCT address) FROM customers WHERE " + SEED_CUSTOMERS)).isEqualTo(40);
         assertThat(count("SELECT count(*) FROM customers WHERE " + SEED_CUSTOMERS + " AND address !~ ' [0-9]+$'"))
                 .as("toda dirección termina en su número").isZero();
         // Sin geocodificar en runtime: ninguno queda marcado para revisar.
@@ -177,8 +177,8 @@ class SeedDataIT {
     }
 
     @Test
-    void cargaHistorialDeSesentaDiasYCincuentaEnviosDeHoy() {
-        assertThat(count("SELECT count(*) FROM delivery_attempts")).isEqualTo(600);
+    void cargaHistorialDeSesentaDiasYVeinticuatroEnviosDeHoy() {
+        assertThat(count("SELECT count(*) FROM delivery_attempts")).isEqualTo(800);
         assertThat(count("""
                 SELECT (max(attempted_at)::date - min(attempted_at)::date) FROM delivery_attempts
                 """)).isBetween(55, 60);
@@ -188,6 +188,20 @@ class SeedDataIT {
         assertThat(count("""
                 SELECT count(DISTINCT s.customer_id) FROM shipments s JOIN customers c ON c.id = s.customer_id
                 WHERE s.scheduled_date = CURRENT_DATE AND c.commune IN """ + ZONE)).isEqualTo(24);
+    }
+
+    /** HU-31: un día fijo con un pedido por local, más de lo que un camión entrega dentro de ventana. */
+    @Test
+    void cargaElDiaCargadoConCuarentaEnviosDiezPorFranja() {
+        String day = "scheduled_date = DATE '2027-01-04' AND tracking_code LIKE 'SEED-CARGA-20270104-%'";
+        assertThat(count("SELECT count(*) FROM shipments WHERE " + day)).isEqualTo(40);
+        assertThat(count("SELECT count(DISTINCT customer_id) FROM shipments WHERE " + day)).isEqualTo(40);
+        assertThat(jdbc.query("""
+                        SELECT substring(notes FROM 'patrón ([A-Z]+)'), count(*) FROM shipments
+                        WHERE %s GROUP BY 1""".formatted(day),
+                (rs, i) -> Map.entry(rs.getString(1), rs.getInt(2))))
+                .containsExactlyInAnyOrder(Map.entry("MORNING", 10), Map.entry("MIDDAY", 10),
+                        Map.entry("AFTERNOON", 10), Map.entry("EVENING", 10));
     }
 
     @Test
@@ -244,7 +258,7 @@ class SeedDataIT {
         assertThat(distinctAccepted).containsExactlyInAnyOrder(10, 11, 12, 13);
         // Los rechazos dentro de la ventana son "encargado no estaba".
         assertThat(count("SELECT count(*) FROM delivery_attempts WHERE rejection_reason = 'Encargado no estaba'"))
-                .isEqualTo(75); // 1 + idx % 4 por local: 8 locales con 2, 8 con 3, 7 con 4 y 7 con 1
+                .isEqualTo(100); // 1 + idx % 4 por local: 10 locales con 1, 2, 3 y 4 cada uno
     }
 
     @Test

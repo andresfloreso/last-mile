@@ -300,6 +300,106 @@
   "calle_osrm": "Avenida Providencia"
  },
  {
+  "local": 31,
+  "direccion": "Av. Providencia 2594",
+  "comuna": "Providencia",
+  "lat": -33.418501,
+  "lng": -70.603204,
+  "osm": "Piramide del Sol, 2594, Avenida Providencia, Barrio Los Leones, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 29.1,
+  "calle_osrm": "Luis Thayer Ojeda"
+ },
+ {
+  "local": 32,
+  "direccion": "Av. Manuel Montt 500",
+  "comuna": "Providencia",
+  "lat": -33.432795,
+  "lng": -70.617536,
+  "osm": "500, Avenida Manuel Montt, Población William Noon, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 5.2,
+  "calle_osrm": "Alberto Magno"
+ },
+ {
+  "local": 33,
+  "direccion": "Av. Pedro de Valdivia 100",
+  "comuna": "Providencia",
+  "lat": -33.424542,
+  "lng": -70.611415,
+  "osm": "100, Avenida Pedro de Valdivia, Barrio Paseo Providencia, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 32.9,
+  "calle_osrm": "Avenida Nueva Providencia"
+ },
+ {
+  "local": 34,
+  "direccion": "Av. Pedro de Valdivia 3000",
+  "comuna": "Ñuñoa",
+  "lat": -33.449881,
+  "lng": -70.60522,
+  "osm": "3000, Avenida Pedro de Valdivia, Barrio Villaseca, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 12.4,
+  "calle_osrm": "Avenida Pedro de Valdivia"
+ },
+ {
+  "local": 35,
+  "direccion": "Av. Suecia 2900",
+  "comuna": "Ñuñoa",
+  "lat": -33.446332,
+  "lng": -70.600794,
+  "osm": "2900, Avenida Suecia, Barrio Villaseca, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 11.0,
+  "calle_osrm": "Avenida Suecia"
+ },
+ {
+  "local": 36,
+  "direccion": "Av. Irarrázaval 2500",
+  "comuna": "Ñuñoa",
+  "lat": -33.453964,
+  "lng": -70.605204,
+  "osm": "2500, Avenida Irarrázaval, Barrio Suboficiales de Caballería, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 12.3,
+  "calle_osrm": "Avenida Irarrázaval"
+ },
+ {
+  "local": 37,
+  "direccion": "Av. Portugal 700",
+  "comuna": "Santiago",
+  "lat": -33.451812,
+  "lng": -70.634275,
+  "osm": "700, Avenida Portugal, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 10.6,
+  "calle_osrm": "Avenida Portugal"
+ },
+ {
+  "local": 38,
+  "direccion": "Carmen 800",
+  "comuna": "Santiago",
+  "lat": -33.453905,
+  "lng": -70.640345,
+  "osm": "800, Carmen, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 11.2,
+  "calle_osrm": "Copiapó"
+ },
+ {
+  "local": 39,
+  "direccion": "Santa Isabel 300",
+  "comuna": "Santiago",
+  "lat": -33.448313,
+  "lng": -70.635424,
+  "osm": "300, Avenida Santa Isabel, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 8.1,
+  "calle_osrm": "Avenida Santa Isabel"
+ },
+ {
+  "local": 40,
+  "direccion": "Merced 700",
+  "comuna": "Santiago",
+  "lat": -33.438161,
+  "lng": -70.646772,
+  "osm": "700, Merced, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 12.4,
+  "calle_osrm": "Merced"
+ },
+ {
   "local": "bodega",
   "direccion": "Av. Italia 1300",
   "comuna": "Providencia",

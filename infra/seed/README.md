@@ -36,10 +36,10 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
 
 ## Locales, historial y envíos (deliverydb)
 
-- **30 locales comerciales** (8 minimarkets, 8 botillerías, 7 restaurantes y
-  7 bares) en una **zona de reparto compacta de 3 comunas contiguas**:
-  Santiago, Providencia y Ñuñoa, 10 por comuna, dentro de una caja de unos
-  6 × 6 km (HU-31). `external_code` = `SEED-C01` … `SEED-C30`. Cada local tiene
+- **40 locales comerciales** (10 minimarkets, 10 botillerías, 10 restaurantes
+  y 10 bares) en una **zona de reparto compacta de 3 comunas contiguas**:
+  Santiago (14), Providencia (13) y Ñuñoa (13), dentro de una caja de unos
+  6 × 6 km (HU-31). `external_code` = `SEED-C01` … `SEED-C40`. Cada local tiene
   **tipo** y **modulación** (horario de recepción declarado, HU-25).
 - **Direcciones reales, nombres inventados.** Cada local está en una calle
   comercial real (por ejemplo Av. Providencia 2124 o Av. Irarrázaval 3550), con
@@ -48,16 +48,24 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
   hay datos personales. Ver "Cómo se verificaron las direcciones".
 - **Bodega:** Av. Italia 1300, Providencia (`-33.446393, -70.624979`), dentro
   de la zona. Es el valor por defecto de `VITE_DEPOT_LAT` / `VITE_DEPOT_LNG`.
-- **Historial de 60 días**: un intento cada 3 días por local (600 en total).
+- **Historial de 60 días**: un intento cada 3 días por local (800 en total).
+  Se genera por local: si una base ya tenía historial de los locales 1–30,
+  al arrancar se agrega solo el de los nuevos.
   Por local: 14 visitas en su ventana real y 6 fuera de ella
   (`REJECTED_NOT_HOME`, "Local cerrado"). **Dentro de la ventana no siempre
   recibe**: entre 1 y 4 de las 14 son "Encargado no estaba", así que acepta
   10, 11, 12 o 13 de 14 (71% a 93%; `1 + idx % 4` rechazos). Esos rechazos se
   reparten entre las dos horas de la ventana para que el motor aprenda la misma
   ventana. Es determinista: siempre se generan los mismos datos.
-- **24 envíos para hoy** (`SEED-<yyyymmdd>-01` … `-24`): uno por local, salvo
-  los 6 que hoy no piden (3, 6, 7, 11, 16 y 29), para que **un camión alcance a
-  hacer la ruta en el horario** (mañana 7, mediodía 7, tarde 4, noche 6). Si levantas el ambiente
+- **24 envíos para hoy** (`SEED-<yyyymmdd>-01` … `-24`): uno por local de los
+  locales 1–30, salvo los 6 que hoy no piden (3, 6, 7, 11, 16 y 29), para que
+  **un camión alcance a hacer la ruta en el horario** (mañana 7, mediodía 7,
+  tarde 4, noche 6). Es la demo de la pantalla de rutas.
+- **Día cargado: lunes 4 de enero de 2027** (`SEED-CARGA-20270104-01` … `-40`):
+  un envío por cada uno de los 40 locales, 10 por franja. Con un camión **no
+  caben todos dentro de su ventana real**, así que es el día con el que HU-28
+  compara optimizadores (km, hora de término y paradas y minutos fuera de
+  ventana). La fecha es fija para que no se mezcle con los envíos de "hoy". Si levantas el ambiente
   otro día, se crean los envíos de ese día.
 - Si la base ya tenía la semilla de HU-01 (30 "clientes" personas), los
   locales se actualizan solos al arrancar: el script usa `ON CONFLICT DO UPDATE`.
@@ -76,11 +84,11 @@ las 18 h, por eso el patrón `EVENING` se aprende como 18:00–20:00.
 
 ### Modulación (lo que el local declara)
 
-**19 locales** declaran su ventana real: minimarkets 09–12, botillerías 12–15,
+**26 locales** declaran su ventana real: minimarkets 09–12, botillerías 12–15,
 restaurantes 15–18 y bares 18–21. La **Botillería Chile España** (26) declara
 además un segundo tramo, de 17 a 19 h.
 
-**11 locales (más de un tercio) declaran otro horario**, como pasa en
+**14 locales (más de un tercio) declaran otro horario**, como pasa en
 terreno: dicen "recibo de 9 a 12", pero en verdad reciben en otra franja. Los
 que reciben en la mañana declaran 15–18.
 
@@ -97,8 +105,11 @@ que reciben en la mañana declaran 15–18.
 | 24 | Bar Bilbao | Providencia | 09–12 | después de las 19 |
 | 27 | Restaurant San Diego | Santiago | 09–12 | 15–17 |
 | 30 | Botillería Providencia | Providencia | 09–12 | 12–14 |
+| 33 | Minimarket Valdivia Norte | Providencia | 15–18 | 09–11 |
+| 36 | Bar El Clavel | Ñuñoa | 09–12 | después de las 19 |
+| 39 | Restaurant Santa Isabel | Santiago | 09–12 | 15–17 |
 
-`SeedDataIT` verifica que el motor aprende la ventana real de los 30 locales,
+`SeedDataIT` verifica que el motor aprende la ventana real de los 40 locales,
 y no la modulación declarada, también con el ruido dentro de la ventana.
 
 > Los locales mantienen su UUID, su patrón y su historial. En el Sprint 4
@@ -129,7 +140,7 @@ Las primeras 7 paradas tienen ventana `09:00`, que corresponde a los locales
 ## Cómo se verificaron las direcciones (HU-31)
 
 `tools/verificar_direcciones.py` revisa cada dirección de `tools/direcciones.json`
-(los 30 locales y la bodega) contra servicios públicos de OpenStreetMap, a 1
+(los 40 locales y la bodega) contra servicios públicos de OpenStreetMap, a 1
 request por segundo y con un User-Agent genérico:
 
 1. **Nominatim** (búsqueda estructurada): la dirección existe con **ese número

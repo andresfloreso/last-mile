@@ -150,6 +150,56 @@
   "commune": "Providencia"
  },
  {
+  "street": "Avenida Providencia",
+  "number": 2594,
+  "commune": "Providencia"
+ },
+ {
+  "street": "Avenida Manuel Montt",
+  "number": 500,
+  "commune": "Providencia"
+ },
+ {
+  "street": "Avenida Pedro de Valdivia",
+  "number": 100,
+  "commune": "Providencia"
+ },
+ {
+  "street": "Avenida Pedro de Valdivia",
+  "number": 3000,
+  "commune": "Ñuñoa"
+ },
+ {
+  "street": "Avenida Suecia",
+  "number": 2900,
+  "commune": "Ñuñoa"
+ },
+ {
+  "street": "Avenida Irarrázaval",
+  "number": 2500,
+  "commune": "Ñuñoa"
+ },
+ {
+  "street": "Avenida Portugal",
+  "number": 700,
+  "commune": "Santiago"
+ },
+ {
+  "street": "Carmen",
+  "number": 800,
+  "commune": "Santiago"
+ },
+ {
+  "street": "Santa Isabel",
+  "number": 300,
+  "commune": "Santiago"
+ },
+ {
+  "street": "Merced",
+  "number": 700,
+  "commune": "Santiago"
+ },
+ {
   "street": "Avenida Italia",
   "number": 1300,
   "commune": "Providencia"
