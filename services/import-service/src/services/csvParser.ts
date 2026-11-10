@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { ParseResult, ParsedShipmentRow, RowError } from "../types/shipment";
-import { REQUIRED_HEADERS, normalizeHeader, parseBusinessType, parseModulation } from "./columns";
+import { REQUIRED_HEADERS, firstError, normalizeHeader, parseBusinessType, parseLoad, parseModulation } from "./columns";
 
 function toNumber(value?: string): number | undefined {
   if (!value) return undefined;
@@ -52,8 +52,10 @@ export function parseShipmentsCsv(fileContent: string): ParseResult {
 
     const businessType = parseBusinessType(record["tipo_local"]);
     const modulation = parseModulation(record["modulacion_desde"], record["modulacion_hasta"]);
-    if (!businessType.ok || !modulation.ok) {
-      errors.push({ rowNumber, message: !businessType.ok ? businessType.error : (modulation as { error: string }).error });
+    const load = parseLoad(record["peso_kg"], record["volumen_m3"]);
+    const error = firstError(businessType, modulation, load);
+    if (error || !businessType.ok || !modulation.ok || !load.ok) {
+      errors.push({ rowNumber, message: error ?? "Fila inválida" });
       return;
     }
 
@@ -70,6 +72,7 @@ export function parseShipmentsCsv(fileContent: string): ParseResult {
       externalCode: record["codigo_externo"]?.trim() || undefined,
       trackingCode,
       scheduledDate,
+      ...load.value,
       notes: record["notas"]?.trim() || undefined,
     });
   });

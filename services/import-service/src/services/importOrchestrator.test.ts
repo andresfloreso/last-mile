@@ -127,4 +127,11 @@ describe("importShipmentRows (HU-08)", () => {
       },
     ]);
   });
+
+  it("envía el peso y el volumen de la fila a delivery-service (HU-29)", async () => {
+    const api = new FakeDeliveryApi();
+    await importShipmentRows([row(2, { weightKg: 24.5, volumeM3: 0.08 }), row(3)], [], api, "x");
+    expect(api.shipments.get("PED-2")).toMatchObject({ weightKg: 24.5, volumeM3: 0.08 });
+    expect(api.shipments.get("PED-3")?.weightKg).toBeUndefined();
+  });
 });

@@ -8,12 +8,14 @@ import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.model.DeclaredWindow;
 import cl.lastmile.delivery.model.DeliveryAttempt;
 import cl.lastmile.delivery.model.Shipment;
+import cl.lastmile.delivery.model.ShipmentDefaults;
 import cl.lastmile.delivery.repository.CustomerRepository;
 import cl.lastmile.delivery.repository.DeliveryAttemptRepository;
 import cl.lastmile.delivery.repository.ShipmentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,12 @@ public class ShipmentService {
     private final CustomerRepository customerRepository;
     private final DeliveryAttemptRepository deliveryAttemptRepository;
     private final GeocodingService geocodingService;
+
+    /** Peso y volumen de un envío nuevo que no los informa (HU-29). */
+    @Value("${shipments.default-weight-kg:" + ShipmentDefaults.WEIGHT_KG + "}")
+    private double defaultWeightKg = ShipmentDefaults.WEIGHT_KG;
+    @Value("${shipments.default-volume-m3:" + ShipmentDefaults.VOLUME_M3 + "}")
+    private double defaultVolumeM3 = ShipmentDefaults.VOLUME_M3;
 
     @Transactional
     public CustomerResponse createOrGetCustomer(CustomerRequest req) {
@@ -110,6 +118,8 @@ public class ShipmentService {
                         ? RequestValues.enumValue(Shipment.OrderPreference.class, req.orderPreference(), "orderPreference")
                         : Shipment.OrderPreference.AUTO)
                 .label(req.label())
+                .weightKg(req.weightKg() != null ? req.weightKg() : defaultWeightKg)
+                .volumeM3(req.volumeM3() != null ? req.volumeM3() : defaultVolumeM3)
                 .build();
 
         return ShipmentResponse.from(shipmentRepository.save(shipment));
@@ -143,6 +153,8 @@ public class ShipmentService {
         if (req.orderPreference() != null) shipment.setOrderPreference(RequestValues.enumValue(Shipment.OrderPreference.class, req.orderPreference(), "orderPreference"));
         if (req.label() != null) shipment.setLabel(req.label());
         if (req.notes() != null) shipment.setNotes(req.notes());
+        if (req.weightKg() != null) shipment.setWeightKg(positive(req.weightKg(), "weightKg"));
+        if (req.volumeM3() != null) shipment.setVolumeM3(positive(req.volumeM3(), "volumeM3"));
 
         return ShipmentResponse.from(shipmentRepository.save(shipment));
     }
@@ -164,6 +176,8 @@ public class ShipmentService {
                 .packageCount(original.getPackageCount())
                 .orderPreference(original.getOrderPreference())
                 .label(original.getLabel())
+                .weightKg(original.getWeightKg())
+                .volumeM3(original.getVolumeM3())
                 .build();
 
         return ShipmentResponse.from(shipmentRepository.save(copy));
@@ -216,5 +230,10 @@ public class ShipmentService {
         if (shipmentRepository.existsByTrackingCode(trackingCode)) {
             throw new ConflictException("Ya existe un envío con el trackingCode " + trackingCode);
         }
+    }
+
+    private static double positive(double value, String field) {
+        if (!(value > 0)) throw new BadRequestException(field + " debe ser mayor que 0");
+        return value;
     }
 }

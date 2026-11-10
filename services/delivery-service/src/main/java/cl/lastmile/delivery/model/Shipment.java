@@ -51,6 +51,16 @@ public class Shipment {
     @Builder.Default
     private Integer packageCount = 1;
 
+    /** Peso total del envío en kg (HU-29). Sin dato: shipments.default-weight-kg. */
+    @Builder.Default
+    @Column(name = "weight_kg", nullable = false)
+    private Double weightKg = ShipmentDefaults.WEIGHT_KG;
+
+    /** Volumen total del envío en m³ (HU-29). Sin dato: shipments.default-volume-m3. */
+    @Builder.Default
+    @Column(name = "volume_m3", nullable = false)
+    private Double volumeM3 = ShipmentDefaults.VOLUME_M3;
+
     /**
      * Cómo debe tratar el optimizador esta parada dentro de la ruta:
      * FIRST la fuerza al inicio, LAST al final, AUTO deja que el algoritmo

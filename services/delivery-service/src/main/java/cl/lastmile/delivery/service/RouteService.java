@@ -5,6 +5,7 @@ import cl.lastmile.delivery.algorithm.RouteOptimizationService.RouteStop;
 import cl.lastmile.delivery.model.Shipment;
 import cl.lastmile.delivery.repository.ShipmentRepository;
 import cl.lastmile.delivery.service.StopConsolidator.DeliveryStop;
+import cl.lastmile.delivery.service.StopConsolidator.StopLoad;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,11 +29,16 @@ public class RouteService {
      *
      * @param stops           paradas en orden; cada una con el envío representante como {@code shipmentId}
      *                        y la suma de bultos de sus envíos
-     * @param shipmentsByStop envíos de cada parada, por id del representante (el representante va primero)
+     * @param loads           envíos de cada parada (el representante va primero) y la suma de su peso y
+     *                        volumen (HU-29), por id del representante
      */
-    public record ConsolidatedRoute(List<RouteStop> stops, Map<UUID, List<UUID>> shipmentsByStop) {
+    public record ConsolidatedRoute(List<RouteStop> stops, Map<UUID, StopLoad> loads) {
+        public StopLoad load(RouteStop stop) {
+            return loads.getOrDefault(stop.shipmentId(), StopLoad.single(stop.shipmentId()));
+        }
+
         public List<UUID> shipmentIds(RouteStop stop) {
-            return shipmentsByStop.getOrDefault(stop.shipmentId(), List.of(stop.shipmentId()));
+            return load(stop).shipmentIds();
         }
     }
 
@@ -52,7 +58,7 @@ public class RouteService {
                 stops.stream().map(DeliveryStop::representative).toList(), depotLat, depotLng);
 
         List<RouteStop> route = new ArrayList<>();
-        Map<UUID, List<UUID>> shipmentsByStop = new LinkedHashMap<>();
+        Map<UUID, StopLoad> loads = new LinkedHashMap<>();
         for (RouteStop stop : ordered) {
             DeliveryStop group = stopByRepresentative.get(stop.shipmentId());
             for (Shipment shipment : group.shipments()) {
@@ -60,11 +66,11 @@ public class RouteService {
                 shipment.setStatus(Shipment.ShipmentStatus.ROUTED);
             }
             route.add(withPackages(stop, group.packageCount()));
-            shipmentsByStop.put(stop.shipmentId(), group.shipmentIds());
+            loads.put(stop.shipmentId(), group.load());
         }
         shipmentRepository.saveAll(shipments);
 
-        return new ConsolidatedRoute(route, shipmentsByStop);
+        return new ConsolidatedRoute(route, loads);
     }
 
     private static RouteStop withPackages(RouteStop s, int packageCount) {

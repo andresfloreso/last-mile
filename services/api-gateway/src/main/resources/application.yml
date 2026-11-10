@@ -25,6 +25,11 @@ spring:
           uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
           predicates:
             - Path=/api/customers/**
+        # Vehículos (HU-29): camiones con capacidad y jornada.
+        - id: delivery-service-vehicles
+          uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/vehicles/**
         - id: delivery-service-routes
           uri: ${DELIVERY_SERVICE_URI:http://localhost:8082}
           predicates:

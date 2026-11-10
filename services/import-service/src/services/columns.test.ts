@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBusinessType, parseModulation, parseTimeOfDay } from "./columns";
+import { firstError, parseBusinessType, parseLoad, parseModulation, parsePositiveNumber, parseTimeOfDay } from "./columns";
 
 describe("parseBusinessType", () => {
   it.each([
@@ -79,5 +79,33 @@ describe("parseModulation", () => {
   it("una hora inválida indica la columna", () => {
     const result = parseModulation("9 de la mañana", "12:00");
     expect(!result.ok && result.error).toMatch(/^modulacion_desde no es una hora válida/);
+  });
+});
+
+describe("parsePositiveNumber y parseLoad (HU-29)", () => {
+  it("acepta coma o punto decimal y números de Excel", () => {
+    expect(parsePositiveNumber("24,5")).toBe(24.5);
+    expect(parsePositiveNumber(" 0.08 ")).toBe(0.08);
+    expect(parsePositiveNumber(30)).toBe(30);
+  });
+
+  it("vacío es undefined; cero, negativo o texto es null", () => {
+    expect(parsePositiveNumber(undefined)).toBeUndefined();
+    expect(parsePositiveNumber("  ")).toBeUndefined();
+    expect(parsePositiveNumber("0")).toBeNull();
+    expect(parsePositiveNumber(-2)).toBeNull();
+    expect(parsePositiveNumber("1.000,5")).toBeNull();
+    expect(parsePositiveNumber("diez")).toBeNull();
+  });
+
+  it("parseLoad indica la columna con el error", () => {
+    expect(parseLoad("12", undefined)).toEqual({ ok: true, value: { weightKg: 12, volumeM3: undefined } });
+    expect(parseLoad("x", "1")).toEqual({ ok: false, error: 'peso_kg debe ser un número mayor que 0: "x"' });
+    expect(parseLoad("1", 0)).toEqual({ ok: false, error: 'volumen_m3 debe ser un número mayor que 0: "0"' });
+  });
+
+  it("firstError devuelve el primer error", () => {
+    expect(firstError({ ok: true }, { ok: false, error: "a" }, { ok: false, error: "b" })).toBe("a");
+    expect(firstError({ ok: true })).toBeUndefined();
   });
 });

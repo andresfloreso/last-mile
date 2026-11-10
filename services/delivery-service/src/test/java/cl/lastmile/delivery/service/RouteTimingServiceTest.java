@@ -4,6 +4,7 @@ import cl.lastmile.delivery.algorithm.RouteOptimizationService.RouteStop;
 import cl.lastmile.delivery.dto.DeliveryDtos.PlannedStopResponse;
 import cl.lastmile.delivery.geo.OsrmRoutingClient;
 import cl.lastmile.delivery.geo.OsrmRoutingClient.Leg;
+import cl.lastmile.delivery.service.StopConsolidator.StopLoad;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalTime;
@@ -181,7 +182,10 @@ class RouteTimingServiceTest {
         assertThat(timing.schedule(List.of(), DEPOT_LAT, DEPOT_LNG, LocalTime.of(8, 0), 10)).isEmpty();
     }
 
-    /** HU-30: la parada consolidada informa sus envíos; una parada sin entrada tiene solo el suyo. */
+    /**
+     * HU-30: la parada consolidada informa sus envíos; una parada sin entrada tiene solo el suyo.
+     * HU-29: y el peso y el volumen de la parada (desconocidos si no hay entrada).
+     */
     @Test
     void informaLosEnviosDeCadaParada() {
         RouteStop consolidated = stop(1, "A", 9, 11, "AUTO", -33.40, -70.60);
@@ -190,12 +194,15 @@ class RouteTimingServiceTest {
         when(osrm.route(anyList())).thenReturn(Optional.of(List.of(leg(10, 1), leg(10, 1))));
 
         List<PlannedStopResponse> plan = timing.schedule(List.of(consolidated, single),
-                Map.of(consolidated.shipmentId(), List.of(consolidated.shipmentId(), other)),
+                Map.of(consolidated.shipmentId(), new StopLoad(List.of(consolidated.shipmentId(), other), 32.5, 0.12)),
                 DEPOT_LAT, DEPOT_LNG, LocalTime.of(8, 0), 10);
 
         assertThat(plan.get(0).shipmentIds()).containsExactly(consolidated.shipmentId(), other);
         assertThat(plan.get(0).shipmentCount()).isEqualTo(2);
+        assertThat(plan.get(0).weightKg()).isEqualTo(32.5);
+        assertThat(plan.get(0).volumeM3()).isEqualTo(0.12);
         assertThat(plan.get(1).shipmentIds()).containsExactly(single.shipmentId());
         assertThat(plan.get(1).shipmentCount()).isEqualTo(1);
+        assertThat(plan.get(1).weightKg()).isNull();
     }
 }

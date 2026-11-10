@@ -71,6 +71,25 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
   compara optimizadores (km, hora de término y paradas y minutos fuera de
   ventana). La fecha es fija para que no se mezcle con los envíos de "hoy". Si levantas el ambiente
   otro día, se crean los envíos de ese día.
+- **Camiones (HU-29):**
+
+  | Patente | Vehículo | Capacidad | Jornada |
+  |---|---|---|---|
+  | `KXPT-21` | Camión 3/4 | 3.500 kg, 18 m³ | 08:00–21:00 (los bares reciben hasta las 20:00) |
+  | `JRHL-48` | Furgón | 1.200 kg, 8 m³ | 08:00–18:00 |
+
+  Si ya existen, no se tocan.
+- **Peso y volumen de cada envío semilla** = bultos × lo que pesa y ocupa un
+  bulto según el tipo de local. Se recalcula en cada arranque.
+
+  | Tipo de local | kg por bulto | m³ por bulto |
+  |---|---|---|
+  | Botillería | 18 | 0,035 |
+  | Bar | 16 | 0,040 |
+  | Minimarket | 12 | 0,050 |
+  | Restaurant | 10 | 0,060 |
+
+  El día cargado (1.300 kg y 4,2 m³) cabe en el camión 3/4 pero no en el furgón.
 - Si la base ya tenía la semilla de HU-01 (30 "clientes" personas), los
   locales se actualizan solos al arrancar: el script usa `ON CONFLICT DO UPDATE`.
 

@@ -14,6 +14,10 @@ export interface ParsedShipmentRow {
   declaredWindowEnd?: string;
   trackingCode: string;
   scheduledDate: string; // ISO yyyy-MM-dd
+  /** Peso del envío en kg (HU-29); si falta, delivery-service usa el valor por defecto. */
+  weightKg?: number;
+  /** Volumen del envío en m³ (HU-29); si falta, delivery-service usa el valor por defecto. */
+  volumeM3?: number;
   notes?: string;
 }
 

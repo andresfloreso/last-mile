@@ -60,7 +60,7 @@ public class RouteController {
         ConsolidatedRoute route = routeService.buildRouteForDate(req.date(), req.depotLat(), req.depotLng());
         LocalTime departure = req.departureTime() != null ? req.departureTime() : defaultDeparture;
         int stopMinutes = req.stopMinutes() != null ? req.stopMinutes() : defaultStopMinutes;
-        return ResponseEntity.ok(routeTimingService.schedule(route.stops(), route.shipmentsByStop(),
+        return ResponseEntity.ok(routeTimingService.schedule(route.stops(), route.loads(),
                 req.depotLat(), req.depotLng(), departure, stopMinutes));
     }
 }

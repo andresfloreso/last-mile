@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { ParseResult, ParsedShipmentRow, RowError } from "../types/shipment";
-import { REQUIRED_HEADERS, normalizeHeader, parseBusinessType, parseModulation } from "./columns";
+import { REQUIRED_HEADERS, firstError, normalizeHeader, parseBusinessType, parseLoad, parseModulation } from "./columns";
 
 /**
  * Columnas esperadas en la planilla (fila 1 = encabezados, sin distinguir
@@ -93,8 +93,10 @@ export async function parseShipmentsExcel(buffer: Buffer): Promise<ParseResult> 
 
     const businessType = parseBusinessType(cellToString(get("tipo_local")));
     const modulation = parseModulation(cellToTimeRaw(get("modulacion_desde")), cellToTimeRaw(get("modulacion_hasta")));
-    if (!businessType.ok || !modulation.ok) {
-      errors.push({ rowNumber, message: !businessType.ok ? businessType.error : (modulation as { error: string }).error });
+    const load = parseLoad(get("peso_kg"), get("volumen_m3"));
+    const error = firstError(businessType, modulation, load);
+    if (error || !businessType.ok || !modulation.ok || !load.ok) {
+      errors.push({ rowNumber, message: error ?? "Fila inválida" });
       return;
     }
 
@@ -111,6 +113,7 @@ export async function parseShipmentsExcel(buffer: Buffer): Promise<ParseResult> 
       externalCode: cellToString(get("codigo_externo")),
       trackingCode,
       scheduledDate,
+      ...load.value,
       notes: cellToString(get("notas")),
     });
   });

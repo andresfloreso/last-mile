@@ -29,6 +29,22 @@ public final class StopConsolidator {
 
     private StopConsolidator() {}
 
+    /**
+     * Lo que se entrega en una parada: sus envíos (el representante primero) y la suma de su peso y
+     * volumen (HU-29). Peso y volumen son null si no se conocen (paradas armadas sin consolidar).
+     */
+    public record StopLoad(List<UUID> shipmentIds, Double weightKg, Double volumeM3) {
+
+        public StopLoad {
+            shipmentIds = List.copyOf(shipmentIds);
+        }
+
+        /** Parada de un solo envío, sin peso ni volumen conocidos. */
+        public static StopLoad single(UUID shipmentId) {
+            return new StopLoad(List.of(shipmentId), null, null);
+        }
+    }
+
     /** Una parada: un local, una fecha y sus envíos (el representante va primero). */
     public record DeliveryStop(Shipment representative, List<Shipment> shipments) {
 
@@ -48,6 +64,20 @@ public final class StopConsolidator {
         /** Suma de los bultos de los envíos de la parada. */
         public int packageCount() {
             return shipments.stream().mapToInt(s -> s.getPackageCount() == null ? 0 : s.getPackageCount()).sum();
+        }
+
+        /** Suma del peso de los envíos de la parada, en kg (HU-29). */
+        public double weightKg() {
+            return shipments.stream().mapToDouble(s -> s.getWeightKg() == null ? 0 : s.getWeightKg()).sum();
+        }
+
+        /** Suma del volumen de los envíos de la parada, en m³ (HU-29). */
+        public double volumeM3() {
+            return shipments.stream().mapToDouble(s -> s.getVolumeM3() == null ? 0 : s.getVolumeM3()).sum();
+        }
+
+        public StopLoad load() {
+            return new StopLoad(shipmentIds(), weightKg(), volumeM3());
         }
     }
 

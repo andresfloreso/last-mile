@@ -4,6 +4,7 @@ import cl.lastmile.delivery.algorithm.RouteOptimizationService.RouteStop;
 import cl.lastmile.delivery.dto.DeliveryDtos.PlannedStopResponse;
 import cl.lastmile.delivery.geo.OsrmRoutingClient;
 import cl.lastmile.delivery.geo.OsrmRoutingClient.Leg;
+import cl.lastmile.delivery.service.StopConsolidator.StopLoad;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -56,10 +57,11 @@ public class RouteTimingService {
     }
 
     /**
-     * Igual que {@link #schedule(List, double, double, LocalTime, int)}, con los envíos de cada parada
-     * consolidada (HU-30), por id del envío representante. Una parada sin entrada tiene un solo envío.
+     * Igual que {@link #schedule(List, double, double, LocalTime, int)}, con lo que se entrega en cada
+     * parada consolidada (HU-30: envíos; HU-29: peso y volumen), por id del envío representante.
+     * Una parada sin entrada tiene un solo envío, sin peso ni volumen conocidos.
      */
-    public List<PlannedStopResponse> schedule(List<RouteStop> route, Map<UUID, List<UUID>> shipmentsByStop,
+    public List<PlannedStopResponse> schedule(List<RouteStop> route, Map<UUID, StopLoad> loads,
                                               double depotLat, double depotLng,
                                               LocalTime departure, int stopMinutes) {
         // Solo las paradas con coordenadas entran al recorrido; las demás se informan sin tramo.
@@ -99,7 +101,7 @@ public class RouteTimingService {
                     leg == null ? List.of() : leg.path(),
                     leg == null ? "NO_LOCATION" : source,
                     Math.floorDiv(arrival, DAY),
-                    shipmentsByStop.getOrDefault(stop.shipmentId(), List.of(stop.shipmentId()))));
+                    loads.getOrDefault(stop.shipmentId(), StopLoad.single(stop.shipmentId()))));
             clock = leave;
         }
         return planned;
