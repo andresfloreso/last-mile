@@ -207,9 +207,54 @@ nuevos:
 La **hora estimada** que muestra la pantalla es `serviceStart` (llegada +
 espera), con "espera N min" debajo cuando corresponde.
 
-El orden lo decide `RouteOptimizationService`, sin cambios: las paradas
-Primera y Última quedan en los extremos. La hora estimada es una capa aparte
-(`RouteTimingService`) que no reordena.
+La hora estimada es una capa aparte (`RouteTimingService`) que no reordena.
+
+### Optimizador VRPTW (HU-28)
+
+El orden lo decide un `RouteOptimizer`. `routing.optimizer.engine` elige cuál:
+
+| Valor | Optimizador |
+|---|---|
+| `timefold` (por defecto) | VRPTW de un camión con Timefold Solver: parte del nearest-neighbor y lo mejora con búsqueda tabú |
+| `nearest-neighbor` | El orden por franja y cercanía de HU-04 (`RouteOptimizationService`, sin cambios) |
+
+El VRPTW, de mayor a menor prioridad:
+
+1. Respeta la capacidad en kg y m³ y la jornada del camión. Son restricciones
+   duras.
+2. Respeta las paradas Primera y Última.
+3. Minimiza las paradas fuera de su ventana real.
+4. Minimiza los minutos fuera de ventana.
+5. Minimiza los km.
+
+Si el solver falla, o la mejor ruta no cabe en el camión o no termina dentro de
+su jornada, usa el nearest-neighbor como respaldo y dice por qué.
+
+El cuerpo acepta además `vehicleId` (opcional): el camión de la ruta. Sin él,
+usa el vehículo activo de mayor capacidad en kg. Un vehículo inexistente da
+`404`; uno inactivo, `400`.
+
+Campos nuevos en cada parada, y una cabecera:
+
+| Campo | Significado |
+|---|---|
+| `optimizer` | `VRPTW` o `NEAREST_NEIGHBOR`: el que ordenó la ruta |
+| `optimizerNote` | Por qué se usó el respaldo (por ejemplo, "Sin solución factible para el camión KXPT-21: la carga (4100 kg) supera su capacidad (3500 kg)…"); `null` si no hizo falta |
+| `vehiclePlate` | Patente del camión de la ruta; `null` si no hay vehículos |
+| Cabecera `X-Route-Optimizer` | El mismo valor que `optimizer` |
+
+Configuración (en `application.yml`):
+
+| Propiedad | Por defecto | Qué hace |
+|---|---|---|
+| `routing.optimizer.engine` | `timefold` | Optimizador a usar |
+| `routing.optimizer.time-limit` | `10s` | Tiempo máximo del solver por ruta |
+| `routing.optimizer.unimproved-time-limit` | `3s` | Corta antes si pasa este tiempo sin mejora |
+
+El VRPTW pide a OSRM una sola tabla de tiempos y distancias (`/table`). Si OSRM
+no responde, usa línea recta × 1,3 a `routing.fallback-speed-kmh`. La medición
+antes/después está en
+[`docs/plan/hu-28/antes-despues.md`](../plan/hu-28/antes-despues.md).
 
 ### Paradas consolidadas (HU-30)
 

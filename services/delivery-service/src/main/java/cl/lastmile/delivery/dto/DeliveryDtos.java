@@ -105,7 +105,10 @@ public class DeliveryDtos {
             LocalTime departureTime,
             @Schema(description = "Minutos de entrega en cada local (HU-14). Por defecto routing.stop-minutes (10)",
                     example = "10", minimum = "1", maximum = "120")
-            @Min(1) @Max(120) Integer stopMinutes
+            @Min(1) @Max(120) Integer stopMinutes,
+            @Schema(description = "Camión de la ruta (HU-28): su capacidad y su jornada son restricciones duras. "
+                    + "Si falta, se usa el camión activo de mayor capacidad; sin camiones, la ruta no tiene esos límites")
+            String vehicleId
     ) {}
 
     @Schema(description = "Parada de la ruta con su hora estimada (HU-14)")
@@ -151,8 +154,24 @@ public class DeliveryDtos {
             @Schema(description = "Peso de la parada en kg: suma de sus envíos (HU-29)", example = "42.5")
             Double weightKg,
             @Schema(description = "Volumen de la parada en m³: suma de sus envíos (HU-29)", example = "0.12")
-            Double volumeM3
+            Double volumeM3,
+            @Schema(description = "Quién ordenó la ruta (HU-28): VRPTW (Timefold) o NEAREST_NEIGHBOR (fallback o configurado)",
+                    allowableValues = {"VRPTW", "NEAREST_NEIGHBOR"})
+            String optimizer,
+            @Schema(description = "Por qué se usó el fallback (solver con error o sin solución factible para la capacidad o la jornada del camión); null si no hubo aviso")
+            String optimizerNote,
+            @Schema(description = "Patente del camión con que se armó la ruta; null si no hay camiones registrados", example = "KXPT-21")
+            String vehiclePlate
     ) {
+        /** La misma parada con quién ordenó la ruta y con qué camión (HU-28). */
+        public PlannedStopResponse withOptimizer(String optimizer, String optimizerNote, String vehiclePlate) {
+            return new PlannedStopResponse(shipmentId, customerName, address, position, windowStart, windowEnd,
+                    confidence, hoursToAvoid, stopType, packageCount, orderPreference, label, latitude, longitude,
+                    estimatedArrival, serviceStart, estimatedDeparture, waitMinutes, travelMinutes, legDistanceMeters,
+                    outsideWindow, path, timingSource, dayOffset, shipmentIds, shipmentCount, weightKg, volumeM3,
+                    optimizer, optimizerNote, vehiclePlate);
+        }
+
         public static PlannedStopResponse of(RouteOptimizationService.RouteStop s,
                                              LocalTime arrival, LocalTime serviceStart, LocalTime departure,
                                              int waitMinutes, Integer travelMinutes, Integer legDistanceMeters,
@@ -163,7 +182,7 @@ public class DeliveryDtos {
                     s.packageCount(), s.orderPreference(), s.label(), s.latitude(), s.longitude(),
                     arrival, serviceStart, departure, waitMinutes, travelMinutes, legDistanceMeters,
                     outsideWindow, path, timingSource, dayOffset, load.shipmentIds(), load.shipmentIds().size(),
-                    load.weightKg(), load.volumeM3());
+                    load.weightKg(), load.volumeM3(), null, null, null);
         }
     }
 
