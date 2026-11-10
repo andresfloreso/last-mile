@@ -2,6 +2,7 @@ package cl.lastmile.delivery.geo;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -9,7 +10,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -29,8 +32,34 @@ import java.util.stream.Collectors;
 public class OsrmRoutingClient {
 
     private final WebClient webClient;
+    private final Map<String, CachedRoute> routeCache;
+    private final int routeCacheSize;
+    private final Duration routeCacheTtl;
 
-    public OsrmRoutingClient(@Value("${routing.osrm-url:https://router.project-osrm.org}") String baseUrl) {
+    private record CachedRoute(List<Leg> legs, long expiresAtNanos) {}
+
+    /** Sin caché de /route: cada llamada consulta OSRM. */
+    public OsrmRoutingClient(String baseUrl) {
+        this(baseUrl, 0, Duration.ZERO);
+    }
+
+    /**
+     * @param routeCacheSize cuántas rutas de /route recuerda (HU-32); 0 apaga la caché
+     * @param routeCacheTtl  cuánto dura cada ruta en la caché
+     */
+    @Autowired
+    public OsrmRoutingClient(@Value("${routing.osrm-url:https://router.project-osrm.org}") String baseUrl,
+                             @Value("${routing.osrm-route-cache.size:64}") int routeCacheSize,
+                             @Value("${routing.osrm-route-cache.ttl:6h}") Duration routeCacheTtl) {
+        this.routeCacheSize = routeCacheSize;
+        this.routeCacheTtl = routeCacheTtl;
+        // LinkedHashMap en orden de acceso: al llenarse, sale la ruta usada hace más tiempo.
+        this.routeCache = new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, CachedRoute> eldest) {
+                return size() > OsrmRoutingClient.this.routeCacheSize;
+            }
+        };
         this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
                 // /route con la geometría de cada paso pesa ~1 MB para 50 paradas; el límite por defecto es 256 KB.
@@ -142,6 +171,10 @@ public class OsrmRoutingClient {
      * con un tramo por cada par de puntos consecutivos (HU-14: hora estimada y polilínea).
      *
      * @param points coordenadas (lat, lng) en el orden de la ruta; el índice 0 es el depósito
+     * <p>Recuerda las últimas respuestas buenas por lista de puntos (HU-32): volver a abrir la ruta de un
+     * día, o pedir su hora estimada otra vez sin cambiar el orden, no vuelve a consultar OSRM. Las fallas
+     * no se guardan, así que se reintentan en la llamada siguiente.
+     *
      * @return los {@code points.size() - 1} tramos, o Optional.empty() si OSRM no está disponible
      */
     public Optional<List<Leg>> route(List<double[]> points) {
@@ -151,6 +184,25 @@ public class OsrmRoutingClient {
         String coordinates = points.stream()
                 .map(p -> p[1] + "," + p[0]) // OSRM espera lon,lat
                 .collect(Collectors.joining(";"));
+        if (routeCacheSize <= 0) {
+            return fetchRoute(points, coordinates);
+        }
+        synchronized (routeCache) {
+            CachedRoute cached = routeCache.get(coordinates);
+            if (cached != null && cached.expiresAtNanos() - System.nanoTime() > 0) {
+                return Optional.of(cached.legs());
+            }
+        }
+        Optional<List<Leg>> legs = fetchRoute(points, coordinates);
+        legs.ifPresent(l -> {
+            synchronized (routeCache) {
+                routeCache.put(coordinates, new CachedRoute(List.copyOf(l), System.nanoTime() + routeCacheTtl.toNanos()));
+            }
+        });
+        return legs;
+    }
+
+    private Optional<List<Leg>> fetchRoute(List<double[]> points, String coordinates) {
         try {
             JsonNode response = webClient.get()
                     .uri("/route/v1/driving/" + coordinates + "?overview=false&steps=true&geometries=geojson")

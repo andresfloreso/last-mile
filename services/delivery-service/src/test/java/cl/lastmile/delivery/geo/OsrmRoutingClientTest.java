@@ -9,19 +9,22 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** HU-14: OSRM /route contra un servidor falso, sin red. */
+/** HU-14: OSRM /route contra un servidor falso, sin red. HU-32: caché de /route. */
 class OsrmRoutingClientTest {
 
     private HttpServer server;
     private final AtomicReference<String> body = new AtomicReference<>("{}");
     private final AtomicReference<Integer> status = new AtomicReference<>(200);
     private final AtomicReference<String> lastPath = new AtomicReference<>();
+    private final AtomicInteger requests = new AtomicInteger();
     private OsrmRoutingClient client;
 
     @BeforeEach
@@ -29,6 +32,7 @@ class OsrmRoutingClientTest {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/route", exchange -> {
             lastPath.set(exchange.getRequestURI().toString());
+            requests.incrementAndGet();
             byte[] bytes = body.get().getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(status.get(), bytes.length);
@@ -120,5 +124,72 @@ class OsrmRoutingClientTest {
     void conUnSoloPuntoNoHayTramos() {
         assertThat(client.route(List.of(new double[]{-33.45, -70.66}))).contains(List.of());
         assertThat(lastPath.get()).isNull();
+    }
+
+    private static final String TWO_LEGS = """
+            {"code":"Ok","routes":[{"legs":[
+              {"duration":600,"distance":4200,"steps":[{"geometry":{"coordinates":[[-70.66,-33.45],[-70.65,-33.44]]}}]},
+              {"duration":300,"distance":1500,"steps":[{"geometry":{"coordinates":[[-70.65,-33.44],[-70.64,-33.43]]}}]}
+            ]}]}""";
+
+    private OsrmRoutingClient cached(int size, Duration ttl) {
+        return new OsrmRoutingClient("http://127.0.0.1:" + server.getAddress().getPort(), size, ttl);
+    }
+
+    @Test
+    void laMismaRutaSeConsultaUnaSolaVez() {
+        body.set(TWO_LEGS);
+        OsrmRoutingClient osrm = cached(8, Duration.ofHours(1));
+
+        Optional<List<Leg>> first = osrm.route(POINTS);
+        Optional<List<Leg>> second = osrm.route(List.of(
+                new double[]{-33.45, -70.66}, new double[]{-33.44, -70.65}, new double[]{-33.43, -70.64}));
+
+        assertThat(requests.get()).isEqualTo(1);
+        assertThat(second).isPresent();
+        assertThat(second.get()).extracting(Leg::distanceMeters).containsExactly(4200.0, 1500.0);
+        assertThat(first.get()).extracting(Leg::durationSeconds).isEqualTo(second.get().stream().map(Leg::durationSeconds).toList());
+    }
+
+    @Test
+    void otroOrdenEsOtraRuta() {
+        body.set(TWO_LEGS);
+        OsrmRoutingClient osrm = cached(8, Duration.ofHours(1));
+        osrm.route(POINTS);
+        osrm.route(List.of(POINTS.get(0), POINTS.get(2), POINTS.get(1)));
+        assertThat(requests.get()).isEqualTo(2);
+    }
+
+    @Test
+    void unaFallaNoSeGuardaYSeReintenta() {
+        status.set(429);
+        body.set("{\"message\":\"Too Many Requests\"}");
+        OsrmRoutingClient osrm = cached(8, Duration.ofHours(1));
+        assertThat(osrm.route(POINTS)).isEmpty();
+
+        status.set(200);
+        body.set(TWO_LEGS);
+        assertThat(osrm.route(POINTS)).isPresent();
+        assertThat(requests.get()).isEqualTo(2);
+    }
+
+    @Test
+    void unaRutaVencidaSeVuelveAConsultar() {
+        body.set(TWO_LEGS);
+        OsrmRoutingClient osrm = cached(8, Duration.ZERO);
+        osrm.route(POINTS);
+        osrm.route(POINTS);
+        assertThat(requests.get()).isEqualTo(2);
+    }
+
+    @Test
+    void alLlenarseSaleLaRutaUsadaHaceMasTiempo() {
+        body.set(TWO_LEGS);
+        OsrmRoutingClient osrm = cached(1, Duration.ofHours(1));
+        List<double[]> other = List.of(POINTS.get(2), POINTS.get(1), POINTS.get(0));
+        osrm.route(POINTS);
+        osrm.route(other);   // POINTS sale de la caché
+        osrm.route(POINTS);
+        assertThat(requests.get()).isEqualTo(3);
     }
 }

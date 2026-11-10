@@ -85,7 +85,29 @@ class AuthorizationIT {
                 Arguments.of("PUT", "/api/customers/" + ID + "/location", "{\"latitude\":-33.4,\"longitude\":-70.6}"),
                 Arguments.of("GET", "/api/geocoding/search?q=providencia", null),
                 Arguments.of("POST", "/api/routes/build", "{\"date\":\"2026-12-01\",\"depotLat\":-33.4,\"depotLng\":-70.6}"),
+                Arguments.of("GET", ROUTE_GET, null),
                 Arguments.of("GET", "/api/no-existe", null));
+    }
+
+    /** HU-32: la ruta guardada de una fecha sin envíos (lista vacía). */
+    private static final String ROUTE_GET = "/api/routes?date=2031-03-03&depotLat=-33.4&depotLng=-70.6";
+
+    @ParameterizedTest(name = "{0} → GET /api/routes")
+    @ValueSource(strings = {"ADMIN", "DISPATCHER", "OPERATOR"})
+    void laRutaGuardadaLaVenDespachoAdministracionYOperaciones(String role) throws Exception {
+        assertThat(status(role, "GET", ROUTE_GET, null)).isEqualTo(200);
+    }
+
+    @ParameterizedTest(name = "{0} → GET /api/routes")
+    @ValueSource(strings = {"DRIVER", "CLIENT"})
+    void conductorYClienteNoVenLaRutaGuardada(String role) throws Exception {
+        assertThat(status(role, "GET", ROUTE_GET, null)).isEqualTo(403);
+    }
+
+    @Test
+    void operatorNoArmaLaRuta() throws Exception {
+        assertThat(status("OPERATOR", "POST", "/api/routes/build", "{\"date\":\"2031-03-03\",\"depotLat\":-33.4,\"depotLng\":-70.6}"))
+                .isEqualTo(403);
     }
 
     private int status(String role, String method, String url, String body) throws Exception {

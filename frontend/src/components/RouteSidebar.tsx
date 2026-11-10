@@ -8,7 +8,8 @@ import KpiGrid from "@/components/KpiGrid";
 import StopList from "@/components/StopList";
 import { SearchIcon } from "@/components/icons";
 
-export type LoadState = "loading" | "ready" | "empty" | "error";
+/** unbuilt: hay envíos, pero la ruta de la fecha todavía no se arma (HU-32). */
+export type LoadState = "loading" | "ready" | "empty" | "unbuilt" | "error";
 
 interface Props {
   date: string;
@@ -18,8 +19,15 @@ interface Props {
   summary: RouteSummary | null;
   selectedId: string | null;
   onSelect: (shipmentId: string) => void;
-  onReoptimize: () => void;
+  /** Arma o rearma la ruta (POST /api/routes/build). */
+  onBuild: () => void;
+  /** Vuelve a leer la ruta guardada, tras un error. */
+  onRetry: () => void;
   reoptimizing: boolean;
+  /** HU-32: solo despacho y administración arman la ruta; el operador la ve en solo lectura. */
+  canBuild: boolean;
+  /** Envíos de la fecha que no están en la ruta guardada. */
+  unrouted: number;
 }
 
 function Skeleton() {
@@ -40,7 +48,7 @@ function Skeleton() {
 
 /** Panel izquierdo de la pantalla de rutas (HU-27): camión, KPIs, buscador, paradas y acciones. */
 export default function RouteSidebar(props: Props) {
-  const { date, state, error, stops, summary, selectedId, onSelect, onReoptimize, reoptimizing } = props;
+  const { date, state, error, stops, summary, selectedId, onSelect, onBuild, onRetry, reoptimizing, canBuild, unrouted } = props;
   const [query, setQuery] = useState("");
   const visible = useMemo(() => listOrder(stops).filter((s) => matchesSearch(s, query)), [stops, query]);
 
@@ -88,7 +96,7 @@ export default function RouteSidebar(props: Props) {
               <p className="text-sm text-ink">{error ?? "No se pudo cargar la ruta del día."}</p>
               <button
                 type="button"
-                onClick={onReoptimize}
+                onClick={onRetry}
                 className="h-10 rounded-lg border border-border px-4 text-13 font-semibold text-ink hover:bg-tile"
               >
                 Reintentar
@@ -107,19 +115,49 @@ export default function RouteSidebar(props: Props) {
               </Link>
             </div>
           )}
+          {state === "unbuilt" && (
+            <div className="space-y-3 px-4 py-8 text-center">
+              <p className="text-sm font-semibold text-ink">La ruta de este día todavía no está armada</p>
+              <p className="text-13 text-muted">
+                {canBuild
+                  ? "Ármala para ordenar los envíos y ver la hora estimada de cada parada."
+                  : "Despacho la arma; cuando esté lista, la verás aquí."}
+              </p>
+              {canBuild && (
+                <button
+                  type="button"
+                  onClick={onBuild}
+                  disabled={reoptimizing}
+                  className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-13 font-semibold text-primary-ink disabled:opacity-60"
+                >
+                  {reoptimizing ? "Armando…" : "Armar ruta"}
+                </button>
+              )}
+            </div>
+          )}
+          {state === "ready" && unrouted > 0 && (
+            <p className="mx-4 mt-3 rounded-lg bg-warning-bg px-3 py-2 text-13 text-warning-ink" role="status">
+              {unrouted === 1 ? "1 envío de esta fecha no está en la ruta." : `${unrouted} envíos de esta fecha no están en la ruta.`}{" "}
+              {canBuild ? "Reoptimiza para incluirlos." : "Despacho debe reoptimizar para incluirlos."}
+            </p>
+          )}
           {state === "ready" && <StopList stops={visible} selectedId={selectedId} onSelect={onSelect} />}
         </div>
       </div>
 
       <div className="flex shrink-0 gap-2 border-t border-line bg-panel p-3">
-        <button
-          type="button"
-          onClick={onReoptimize}
-          disabled={reoptimizing || state === "loading" || state === "empty"}
-          className="h-11 flex-1 rounded-lg border border-border text-sm font-semibold text-ink hover:bg-tile disabled:opacity-60"
-        >
-          {reoptimizing ? "Reoptimizando…" : "Reoptimizar"}
-        </button>
+        {canBuild ? (
+          <button
+            type="button"
+            onClick={onBuild}
+            disabled={reoptimizing || state !== "ready"}
+            className="h-11 flex-1 rounded-lg border border-border text-sm font-semibold text-ink hover:bg-tile disabled:opacity-60"
+          >
+            {reoptimizing ? "Reoptimizando…" : "Reoptimizar"}
+          </button>
+        ) : (
+          <p className="flex h-11 flex-1 items-center justify-center rounded-lg bg-tile text-13 text-muted">Solo lectura</p>
+        )}
         {/* Un botón deshabilitado no muestra su title en todos los navegadores: el tooltip va en el contenedor. */}
         <span className="flex-1" title="Disponible en HU-17">
           <button

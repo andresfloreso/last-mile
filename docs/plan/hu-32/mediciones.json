@@ -1,0 +1,154 @@
+{
+ "antes-1": {
+  "tag": "hu32-antes",
+  "abrir": {
+   "api": [
+    "POST /api/routes/build",
+    "POST /api/routes/build",
+    "POST /api/routes/build",
+    "POST /api/routes/build"
+   ],
+   "osrm": {
+    "table": 8,
+    "route": 4
+   },
+   "osrmTotal": 12
+  },
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 14295,
+   "cuadros": 774,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.3,
+   "cuadrosLentos": 6,
+   "tareasLargasMs": 232,
+   "scriptMs": 1876,
+   "layoutYEstiloMs": 2046,
+   "cpuX": 4,
+   "osrmTotal": 0
+  },
+  "operador": {
+   "api": [
+    "POST /api/routes/build"
+   ],
+   "status": [
+    403
+   ],
+   "osrm": {}
+  }
+ },
+ "antes-2": {
+  "tag": "hu32-antes",
+  "abrir": {
+   "api": [
+    "POST /api/routes/build",
+    "POST /api/routes/build",
+    "POST /api/routes/build",
+    "POST /api/routes/build"
+   ],
+   "osrm": {
+    "table": 8,
+    "route": 4
+   },
+   "osrmTotal": 12
+  },
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 16119,
+   "cuadros": 846,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.4,
+   "cuadrosLentos": 10,
+   "tareasLargasMs": 351,
+   "scriptMs": 2208,
+   "layoutYEstiloMs": 2320,
+   "cpuX": 4,
+   "osrmTotal": 0
+  },
+  "operador": {
+   "api": [
+    "POST /api/routes/build"
+   ],
+   "status": [
+    403
+   ],
+   "osrm": {}
+  }
+ },
+ "despues-1": {
+  "tag": "hu32-despues",
+  "abrir": {
+   "api": [
+    "GET /api/routes",
+    "GET /api/routes",
+    "GET /api/routes",
+    "GET /api/routes"
+   ],
+   "osrm": {
+    "route": 2
+   },
+   "osrmTotal": 2
+  },
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 11322,
+   "cuadros": 616,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.3,
+   "cuadrosLentos": 5,
+   "tareasLargasMs": 266,
+   "scriptMs": 678,
+   "layoutYEstiloMs": 1237,
+   "cpuX": 4,
+   "osrmTotal": 0
+  },
+  "operador": {
+   "api": [
+    "GET /api/routes"
+   ],
+   "status": [
+    200
+   ],
+   "osrm": {}
+  }
+ },
+ "despues-2": {
+  "tag": "hu32-despues",
+  "abrir": {
+   "api": [
+    "GET /api/routes",
+    "GET /api/routes",
+    "GET /api/routes",
+    "GET /api/routes"
+   ],
+   "osrm": {},
+   "osrmTotal": 0
+  },
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 11769,
+   "cuadros": 619,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.3,
+   "cuadrosLentos": 10,
+   "tareasLargasMs": 513,
+   "scriptMs": 777,
+   "layoutYEstiloMs": 1241,
+   "cpuX": 4,
+   "osrmTotal": 0
+  },
+  "operador": {
+   "api": [
+    "GET /api/routes"
+   ],
+   "status": [
+    200
+   ],
+   "osrm": {}
+  }
+ }
+}

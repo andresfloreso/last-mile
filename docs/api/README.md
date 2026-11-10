@@ -34,6 +34,7 @@ a lo público. Un endpoint sin regla propia queda cerrado a `CLIENT`.
 | delivery | `POST /api/shipments/attempts` (intentos de entrega) | ✓ | ✓ | ✓ | ✓ | — |
 | delivery | `GET /api/customers/{id}`, `GET /api/customers/{id}/time-window` | ✓ | ✓ | ✓ | ✓ | — |
 | delivery | `PUT /api/customers/{id}/declared-window`, `PUT /api/customers/{id}/location` | ✓ | ✓ | ✓ | — | — |
+| delivery | `GET /api/routes` (ruta guardada, HU-32) | ✓ | ✓ | ✓ | — | — |
 | delivery | `POST /api/routes/build` | ✓ | ✓ | — | — | — |
 | delivery | `GET /api/vehicles`, `GET /api/vehicles/{id}` (HU-29) | ✓ | ✓ | ✓ | — | — |
 | delivery | `POST /api/vehicles`, `PUT /api/vehicles/{id}` (HU-29) | ✓ | ✓ | — | — | — |
@@ -255,6 +256,33 @@ El VRPTW pide a OSRM una sola tabla de tiempos y distancias (`/table`). Si OSRM
 no responde, usa línea recta × 1,3 a `routing.fallback-speed-kmh`. La medición
 antes/después está en
 [`docs/plan/hu-28/antes-despues.md`](../plan/hu-28/antes-despues.md).
+
+### Ruta guardada, sin efectos (HU-32)
+
+`GET /api/routes?date=2027-01-04&depotLat=-33.446393&depotLng=-70.624979`
+(`ADMIN`, `DISPATCHER`, `OPERATOR`) devuelve la ruta que guardó el último
+`POST /api/routes/build`: las mismas paradas, en el mismo orden y con la misma
+hora estimada.
+
+- **No escribe nada:** no llama al optimizador ni cambia la posición o el
+  estado de ningún envío.
+- **Parámetros:** `departureTime` (HH:mm) y `stopMinutes` (1–120) son
+  opcionales, como en `build`.
+- **Envíos sin posición:** si un envío no tiene posición (por ejemplo, se
+  importó después de armar la ruta), no aparece. La pantalla avisa cuántos
+  faltan.
+- **Fecha sin ruta armada:** devuelve `[]`.
+- **Campos en `null`:** `optimizer`, `optimizerNote` y `vehiclePlate`, porque
+  no se guardan.
+
+La pantalla de rutas usa este `GET` al abrir y al cambiar de fecha. Solo
+llama a `build` cuando despacho aprieta "Armar ruta" o "Reoptimizar", o
+corrige la ubicación de un local.
+
+La hora estimada pide a OSRM una `route` por orden de paradas. Las últimas 64
+quedan en memoria por 6 h (`routing.osrm-route-cache.size` y `.ttl`). Volver a
+abrir un día no consulta OSRM mientras el orden no cambie. La medición está en
+[`docs/plan/hu-32/medicion.md`](../plan/hu-32/medicion.md).
 
 ### Paradas consolidadas (HU-30)
 
