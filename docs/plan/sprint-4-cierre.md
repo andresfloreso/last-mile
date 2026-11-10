@@ -19,7 +19,7 @@
 | **HU-30** Una parada por local | 3 | #62 | #73 ✅ mergeado | 4/4 | Hoy: 26 envíos en 24 paradas; día cargado: 46 en 40 |
 | **HU-29** Vehículos y capacidad | 5 | #61 | #74 ✅ mergeado | 6/6 | Dos camiones en la semilla; peso y volumen por envío |
 | **HU-28** Optimizador VRPTW | 8 | #60 | #76 | 10/10 | Tabla antes/después abajo |
-| **HU-32** Mapa y ruta sin efectos | 3 | #64 (y #58) | PR de HU-32 | 6/6 | `docs/plan/hu-32/medicion.md` |
+| **HU-32** Mapa y ruta sin efectos | 3 | #64 (y #58) | #77 | 6/6 | `docs/plan/hu-32/medicion.md` |
 
 **Puntos completados: 22/22.** 11 ya están en `main`; los 11 de HU-28 y HU-32 esperan merge.
 
@@ -62,16 +62,16 @@
 **Cumplido.** En el día cargado, la ruta tiene 2,8 km menos y una parada menos
 fuera de ventana (4 → 3; 4 → 1 minutos). Hoy tiene 3,7 km menos, con todas las
 paradas a tiempo. La pantalla de rutas ya no reescribe la ruta al abrirse.
-Falta el merge de #76 y del PR de HU-32.
+Falta el merge de #76 y del #77.
 
 ## Orden de merge
 
 ```
-main (#72, #73, #74 ya mergeados) ← #76 HU-28 ← PR de HU-32 (+ este cierre)
+main (#72, #73, #74 ya mergeados) ← #76 HU-28 ← #77 (+ este cierre)
 ```
 
 1. **#76, HU-28.** Ya tiene `main` mergeado: su diff muestra solo HU-28.
-2. **PR de HU-32.** La rama salió de HU-28, porque cambia `RouteController` y
+2. **#77.** La rama salió de HU-28, porque cambia `RouteController` y
    `RouteService`, que HU-28 también toca. Hasta que entre #76, el diff de
    HU-32 muestra también lo de HU-28.
 
