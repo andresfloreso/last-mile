@@ -105,6 +105,24 @@ describe("buildStopViews", () => {
   });
 });
 
+describe("paradas consolidadas (HU-30)", () => {
+  it("una parada con dos envíos los cuenta, muestra sus códigos y se encuentra por cualquiera", () => {
+    const [v] = buildStopViews(
+      [routeStop({ shipmentIds: ["s1", "s2"], shipmentCount: 2, packageCount: 3 })],
+      [shipment("s1", "c1"), shipment("s2", "c1")],
+      new Map()
+    );
+    expect(v).toMatchObject({ shipmentCount: 2, packageCount: 3, trackingCodes: ["SEED-s1", "SEED-s2"] });
+    expect(matchesSearch(v, "seed-s2")).toBe(true);
+  });
+
+  it("sin shipmentIds (API anterior) la parada tiene su único envío", () => {
+    const [v] = buildStopViews([routeStop({})], [shipment("s1", "c1")], new Map());
+    expect(v.shipmentIds).toEqual(["s1"]);
+    expect(v.shipmentCount).toBe(1);
+  });
+});
+
 describe("lista y resumen", () => {
   const stops = buildStopViews(
     [

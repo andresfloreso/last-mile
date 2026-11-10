@@ -8,6 +8,7 @@ import { bandVars } from "@/lib/timeWindows";
  * - Fuera de ventana: anillo del color de rechazo.
  * - Local nuevo: borde punteado.
  * - Por revisar: un "!" pequeño.
+ * - Varios envíos en la parada (HU-30): un contador pequeño abajo a la derecha.
  * Los colores son variables CSS, así cambian con el tema sin recrear el ícono.
  */
 export function stopIcon(stop: StopView, selected: boolean): L.DivIcon {
@@ -24,9 +25,13 @@ export function stopIcon(stop: StopView, selected: boolean): L.DivIcon {
   const review = stop.needsReview
     ? `<span style="position:absolute;top:-5px;right:-5px;width:14px;height:14px;border-radius:50%;background:var(--color-panel);color:var(--color-reject);font:700 11px/14px Inter,sans-serif;text-align:center;border:1px solid var(--color-reject)">!</span>`
     : "";
+  const count =
+    stop.shipmentCount > 1
+      ? `<span style="position:absolute;bottom:-6px;right:-8px;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;background:var(--color-text);color:var(--color-page);font:700 10px/16px Inter,sans-serif;text-align:center;border:1px solid var(--color-panel)">×${stop.shipmentCount}</span>`
+      : "";
   return L.divIcon({
     className: "lm-marker",
-    html: `<div style="position:relative;box-sizing:border-box;width:${size}px;height:${size}px;border-radius:50%;background:${fill};color:${ink};border:${border};box-shadow:${ring};display:flex;align-items:center;justify-content:center;font:700 ${selected ? 14 : 12}px Inter,sans-serif">${stop.position}${review}</div>`,
+    html: `<div style="position:relative;box-sizing:border-box;width:${size}px;height:${size}px;border-radius:50%;background:${fill};color:${ink};border:${border};box-shadow:${ring};display:flex;align-items:center;justify-content:center;font:700 ${selected ? 14 : 12}px Inter,sans-serif">${stop.position}${review}${count}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });

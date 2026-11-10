@@ -120,6 +120,19 @@ const StopDetailCard = forwardRef<HTMLDivElement, Props>(function StopDetailCard
         <p className="text-xs font-semibold text-reject">Llega fuera de su ventana real</p>
       )}
 
+      {stop.shipmentCount > 1 && (
+        <div className="rounded-lg bg-tile p-2.5">
+          <p className="text-xs text-muted">
+            Entrega {stop.shipmentCount} envíos · {stop.packageCount} bultos
+          </p>
+          <ul className="mt-1 space-y-0.5 text-13 font-semibold tabular-nums">
+            {stop.trackingCodes.map((code) => (
+              <li key={code}>{code}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg bg-tile p-2.5">
           <p className="text-xs text-muted">Declara (modulación)</p>

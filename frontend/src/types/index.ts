@@ -50,6 +50,10 @@ export interface RouteStop {
   timingSource: "OSRM" | "ESTIMATED" | "NO_LOCATION";
   /** 1 si la ruta no alcanza en el día y la llegada es al día siguiente. */
   dayOffset: number;
+  // ---- HU-30: paradas consolidadas (una por local) ----
+  /** Envíos que se entregan en la parada; el primero es shipmentId. */
+  shipmentIds?: string[];
+  shipmentCount?: number;
 }
 
 /** Parada tal como la ve/edita el usuario antes de optimizar — igual al panel de detalle de la app de referencia. */

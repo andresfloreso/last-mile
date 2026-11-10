@@ -9,10 +9,10 @@ function envOr(value: unknown, fallback: string): string {
   return typeof value === "string" && value.trim() !== "" ? value : fallback;
 }
 
-/** Bodega desde donde sale el camión. */
+/** Bodega desde donde sale el camión: Av. Italia 1300, Providencia, dentro de la zona de la semilla (HU-31). */
 export const DEPOT = {
-  lat: Number(env.VITE_DEPOT_LAT ?? -33.4489),
-  lng: Number(env.VITE_DEPOT_LNG ?? -70.6693),
+  lat: Number(env.VITE_DEPOT_LAT ?? -33.446393),
+  lng: Number(env.VITE_DEPOT_LNG ?? -70.624979),
 };
 
 /** Hora de salida del camión (HU-14). */

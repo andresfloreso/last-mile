@@ -11,6 +11,12 @@ export interface StopView {
   shipmentId: string;
   customerId: string;
   trackingCode: string;
+  /** HU-30: todos los envíos de la parada (el local se visita una vez). */
+  shipmentIds: string[];
+  trackingCodes: string[];
+  shipmentCount: number;
+  /** Bultos de la parada: suma de sus envíos. */
+  packageCount: number;
   position: number;
   name: string;
   address: string;
@@ -55,6 +61,11 @@ export function buildStopViews(
   const byShipment = new Map(shipments.map((s) => [s.id, s]));
   return route.map((r) => {
     const s = byShipment.get(r.shipmentId);
+    const shipmentIds = r.shipmentIds?.length ? r.shipmentIds : [r.shipmentId];
+    const trackingCodes = shipmentIds.flatMap((id) => {
+      const code = byShipment.get(id)?.trackingCode;
+      return code ? [code] : [];
+    });
     const customerId = s?.customer.id ?? "";
     const tw = timeWindows.get(customerId);
     const declared = s?.customer.declaredWindow ?? tw?.declaredWindow ?? null;
@@ -65,6 +76,10 @@ export function buildStopViews(
       shipmentId: r.shipmentId,
       customerId,
       trackingCode: s?.trackingCode ?? "",
+      shipmentIds,
+      trackingCodes,
+      shipmentCount: shipmentIds.length,
+      packageCount: r.packageCount,
       position: r.position,
       name: r.customerName,
       address: r.address,
@@ -99,12 +114,14 @@ export function listOrder(stops: StopView[]): StopView[] {
   return [...stops].sort((a, b) => Number(b.needsReview) - Number(a.needsReview) || a.position - b.position);
 }
 
-/** Filtro del buscador: local, dirección, comuna o código (sin tildes ni mayúsculas). */
+/** Filtro del buscador: local, dirección, comuna o código de cualquiera de sus envíos (sin tildes ni mayúsculas). */
 export function matchesSearch(stop: StopView, query: string): boolean {
   const norm = (v: string) => v.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   const q = norm(query.trim());
   if (!q) return true;
-  return [stop.name, stop.address, stop.commune ?? "", stop.trackingCode].some((v) => norm(v).includes(q));
+  return [stop.name, stop.address, stop.commune ?? "", stop.trackingCode, ...stop.trackingCodes].some((v) =>
+    norm(v).includes(q)
+  );
 }
 
 export interface RouteSummary {

@@ -1,9 +1,9 @@
 package cl.lastmile.delivery.controller;
 
-import cl.lastmile.delivery.algorithm.RouteOptimizationService.RouteStop;
 import cl.lastmile.delivery.dto.DeliveryDtos.PlannedStopResponse;
 import cl.lastmile.delivery.dto.DeliveryDtos.RouteRequest;
 import cl.lastmile.delivery.service.RouteService;
+import cl.lastmile.delivery.service.RouteService.ConsolidatedRoute;
 import cl.lastmile.delivery.service.RouteTimingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -47,18 +47,20 @@ public class RouteController {
     @Operation(
             summary = "Arma la ruta del día con hora estimada por parada",
             description = """
-                    Ordena los envíos de la fecha (ventana real + cercanía, respetando las paradas Primera y Última), \
+                    Agrupa los envíos de la fecha en paradas, una por local (HU-30), y las ordena \
+                    (ventana real + cercanía, respetando las paradas Primera y Última); \
                     guarda el orden y calcula para cada parada la llegada, la espera hasta que abre su ventana real, \
                     el inicio de la entrega y la salida, con los tiempos por calle de OSRM y la duración de parada. \
                     Marca outsideWindow si la entrega empezaría cuando la ventana real ya cerró. \
                     Si OSRM no responde, los tiempos se estiman (timingSource = ESTIMATED).""")
-    @ApiResponse(responseCode = "200", description = "Paradas en orden, con hora estimada y el tramo para el mapa")
+    @ApiResponse(responseCode = "200", description = "Paradas en orden (una por local), con sus envíos, hora estimada y el tramo para el mapa")
     @ApiResponse(responseCode = "400", description = "Falta la fecha, o stopMinutes fuera de 1–120")
     @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN o DISPATCHER)")
     public ResponseEntity<List<PlannedStopResponse>> buildRoute(@Valid @RequestBody RouteRequest req) {
-        List<RouteStop> route = routeService.buildRouteForDate(req.date(), req.depotLat(), req.depotLng());
+        ConsolidatedRoute route = routeService.buildRouteForDate(req.date(), req.depotLat(), req.depotLng());
         LocalTime departure = req.departureTime() != null ? req.departureTime() : defaultDeparture;
         int stopMinutes = req.stopMinutes() != null ? req.stopMinutes() : defaultStopMinutes;
-        return ResponseEntity.ok(routeTimingService.schedule(route, req.depotLat(), req.depotLng(), departure, stopMinutes));
+        return ResponseEntity.ok(routeTimingService.schedule(route.stops(), route.shipmentsByStop(),
+                req.depotLat(), req.depotLng(), departure, stopMinutes));
     }
 }

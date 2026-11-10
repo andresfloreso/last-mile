@@ -1,0 +1,412 @@
+[
+ {
+  "local": 1,
+  "direccion": "Merced 300",
+  "comuna": "Santiago",
+  "lat": -33.437229,
+  "lng": -70.640901,
+  "osm": "300, Merced, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 12.8,
+  "calle_osrm": "Merced"
+ },
+ {
+  "local": 2,
+  "direccion": "Av. Providencia 2124",
+  "comuna": "Providencia",
+  "lat": -33.422072,
+  "lng": -70.611427,
+  "osm": "La Resistencia Café, 2124, Avenida Providencia, Barrio Paseo Providencia, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 10.7,
+  "calle_osrm": "Arquitecta Montserrat Palmer Trias"
+ },
+ {
+  "local": 3,
+  "direccion": "Av. Providencia 2300",
+  "comuna": "Providencia",
+  "lat": -33.420578,
+  "lng": -70.607977,
+  "osm": "2300, Avenida Providencia, Barrio Los Leones, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 11.9,
+  "calle_osrm": "Avenida Providencia"
+ },
+ {
+  "local": 4,
+  "direccion": "Av. Irarrázaval 3550",
+  "comuna": "Ñuñoa",
+  "lat": -33.454179,
+  "lng": -70.593643,
+  "osm": "Ilustre Municipalidad de Ñuñoa, 3550, Avenida Irarrázaval, Barrio Plaza Ñuñoa, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 35.5,
+  "calle_osrm": ""
+ },
+ {
+  "local": 5,
+  "direccion": "Av. Simón Bolívar 3500",
+  "comuna": "Ñuñoa",
+  "lat": -33.448593,
+  "lng": -70.594306,
+  "osm": "3500, Avenida Simón Bolívar, Población Empleados Públicos y Periodistas Chile-España, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 11.0,
+  "calle_osrm": "Avenida Simón Bolívar"
+ },
+ {
+  "local": 6,
+  "direccion": "Av. Los Leones 400",
+  "comuna": "Providencia",
+  "lat": -33.423419,
+  "lng": -70.604389,
+  "osm": "400, Avenida Los Leones, Barrio Los Leones, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 8.1,
+  "calle_osrm": "Avenida Los Leones"
+ },
+ {
+  "local": 7,
+  "direccion": "José Victorino Lastarria 70",
+  "comuna": "Santiago",
+  "lat": -33.439582,
+  "lng": -70.641336,
+  "osm": "Casa Lastarria, 70, José Victorino Lastarria, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 13.0,
+  "calle_osrm": "José Victorino Lastarria"
+ },
+ {
+  "local": 8,
+  "direccion": "Lira 600",
+  "comuna": "Santiago",
+  "lat": -33.450374,
+  "lng": -70.638593,
+  "osm": "600, Lira, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 8.3,
+  "calle_osrm": "Lira"
+ },
+ {
+  "local": 9,
+  "direccion": "Av. Ricardo Lyon 2900",
+  "comuna": "Ñuñoa",
+  "lat": -33.447757,
+  "lng": -70.602405,
+  "osm": "2900, Avenida Ricardo Lyon, Barrio Villaseca, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 11.1,
+  "calle_osrm": "Avenida Ricardo Lyon"
+ },
+ {
+  "local": 10,
+  "direccion": "Av. Santa Rosa 500",
+  "comuna": "Santiago",
+  "lat": -33.450207,
+  "lng": -70.644395,
+  "osm": "500, Avenida Santa Rosa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 7.5,
+  "calle_osrm": "Avenida Santa Rosa"
+ },
+ {
+  "local": 11,
+  "direccion": "Av. Nueva Providencia 1900",
+  "comuna": "Providencia",
+  "lat": -33.42528,
+  "lng": -70.613628,
+  "osm": "1900, Avenida Nueva Providencia, Barrio Paseo Providencia, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 11.3,
+  "calle_osrm": "Avenida Nueva Providencia"
+ },
+ {
+  "local": 12,
+  "direccion": "Dublé Almeyda 2850",
+  "comuna": "Ñuñoa",
+  "lat": -33.455885,
+  "lng": -70.601745,
+  "osm": "2850, Dublé Almeyda, Población Empleados Públicos y Periodistas Chile-España, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 13.5,
+  "calle_osrm": "Dublé Almeyda"
+ },
+ {
+  "local": 13,
+  "direccion": "Carmen 500",
+  "comuna": "Santiago",
+  "lat": -33.450027,
+  "lng": -70.641394,
+  "osm": "500, Carmen, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 13.4,
+  "calle_osrm": "Carmen"
+ },
+ {
+  "local": 14,
+  "direccion": "Av. Irarrázaval 2100",
+  "comuna": "Ñuñoa",
+  "lat": -33.453503,
+  "lng": -70.609235,
+  "osm": "2100, Avenida Irarrázaval, Barrio Suboficiales de Caballería, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 14.1,
+  "calle_osrm": "Avenida Irarrázaval"
+ },
+ {
+  "local": 15,
+  "direccion": "Av. Italia 1180",
+  "comuna": "Providencia",
+  "lat": -33.445361,
+  "lng": -70.625269,
+  "osm": "1180, Avenida Italia, Barrio Las Mil Calles, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 10.2,
+  "calle_osrm": "Avenida Italia"
+ },
+ {
+  "local": 16,
+  "direccion": "Pío Nono 150",
+  "comuna": "Providencia",
+  "lat": -33.432768,
+  "lng": -70.63611,
+  "osm": "150, Pío Nono, Barrio Plaza Italia, Recoleta, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7530215, Chile",
+  "distancia_a_calle_m": 17.2,
+  "calle_osrm": "Pío Nono"
+ },
+ {
+  "local": 17,
+  "direccion": "José Domingo Cañas 2200",
+  "comuna": "Ñuñoa",
+  "lat": -33.456723,
+  "lng": -70.608382,
+  "osm": "2200, Avenida José Domingo Cañas, Barrio Eusebio Lillo, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 14.7,
+  "calle_osrm": "Avenida José Domingo Cañas"
+ },
+ {
+  "local": 18,
+  "direccion": "Av. Portugal 1000",
+  "comuna": "Santiago",
+  "lat": -33.455322,
+  "lng": -70.633432,
+  "osm": "1000, Avenida Portugal, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 6.0,
+  "calle_osrm": "Avenida Portugal"
+ },
+ {
+  "local": 19,
+  "direccion": "Av. Libertador Bernardo O'Higgins 1302",
+  "comuna": "Santiago",
+  "lat": -33.445884,
+  "lng": -70.653969,
+  "osm": "Sigdo Koppers, 1302, Avenida Libertador Bernardo O'Higgins, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 8.3,
+  "calle_osrm": "Nataniel Cox"
+ },
+ {
+  "local": 20,
+  "direccion": "Av. Manuel Montt 1050",
+  "comuna": "Providencia",
+  "lat": -33.437644,
+  "lng": -70.615823,
+  "osm": "1050, Avenida Manuel Montt, Barrio Manuel Montt, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 11.3,
+  "calle_osrm": "Avenida Manuel Montt"
+ },
+ {
+  "local": 21,
+  "direccion": "Av. Pedro de Valdivia 1215",
+  "comuna": "Providencia",
+  "lat": -33.434241,
+  "lng": -70.608945,
+  "osm": "1215, Avenida Pedro de Valdivia, Barrio Los Estanques, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 29.2,
+  "calle_osrm": "Avenida Pedro de Valdivia"
+ },
+ {
+  "local": 22,
+  "direccion": "Av. Manuel Montt 2600",
+  "comuna": "Ñuñoa",
+  "lat": -33.451307,
+  "lng": -70.61279,
+  "osm": "Asia Limeña, 2600, Avenida Manuel Montt, Barrio Suboficiales de Caballería, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 10.2,
+  "calle_osrm": "Avenida Manuel Montt"
+ },
+ {
+  "local": 23,
+  "direccion": "Monjitas 500",
+  "comuna": "Santiago",
+  "lat": -33.436711,
+  "lng": -70.644546,
+  "osm": "500, Monjitas, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 10.8,
+  "calle_osrm": "Monjitas"
+ },
+ {
+  "local": 24,
+  "direccion": "Av. Francisco Bilbao 500",
+  "comuna": "Providencia",
+  "lat": -33.441534,
+  "lng": -70.625609,
+  "osm": "500, Avenida Francisco Bilbao, Barrio Las Mil Calles, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 12.8,
+  "calle_osrm": "Avenida Francisco Bilbao"
+ },
+ {
+  "local": 25,
+  "direccion": "Jorge Washington 26",
+  "comuna": "Ñuñoa",
+  "lat": -33.454837,
+  "lng": -70.594391,
+  "osm": "Teatro UC, 26, Jorge Washington, Barrio Plaza Ñuñoa, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 26.0,
+  "calle_osrm": "Jorge Washington"
+ },
+ {
+  "local": 26,
+  "direccion": "Chile España 400",
+  "comuna": "Ñuñoa",
+  "lat": -33.450969,
+  "lng": -70.598213,
+  "osm": "400, Avenida Chile España, Población Empleados Públicos y Periodistas Chile-España, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 10.9,
+  "calle_osrm": "Avenida Chile España"
+ },
+ {
+  "local": 27,
+  "direccion": "San Diego 860",
+  "comuna": "Santiago",
+  "lat": -33.456309,
+  "lng": -70.649562,
+  "osm": "860, San Diego, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 10.6,
+  "calle_osrm": "San Diego"
+ },
+ {
+  "local": 28,
+  "direccion": "Arturo Prat 800",
+  "comuna": "Santiago",
+  "lat": -33.455309,
+  "lng": -70.647987,
+  "osm": "800, Arturo Prat, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 5.8,
+  "calle_osrm": "Arturo Prat"
+ },
+ {
+  "local": 29,
+  "direccion": "Av. Irarrázaval 3000",
+  "comuna": "Ñuñoa",
+  "lat": -33.454343,
+  "lng": -70.599834,
+  "osm": "Caja Los Andes, 3000, Avenida Irarrázaval, Población Empleados Públicos y Periodistas Chile-España, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 17.1,
+  "calle_osrm": "Avenida Suecia"
+ },
+ {
+  "local": 30,
+  "direccion": "Av. Providencia 1308",
+  "comuna": "Providencia",
+  "lat": -33.428584,
+  "lng": -70.620205,
+  "osm": "1308, Avenida Providencia, Barrio Tajamar, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 19.3,
+  "calle_osrm": "Avenida Providencia"
+ },
+ {
+  "local": 31,
+  "direccion": "Av. Providencia 2594",
+  "comuna": "Providencia",
+  "lat": -33.418501,
+  "lng": -70.603204,
+  "osm": "Piramide del Sol, 2594, Avenida Providencia, Barrio Los Leones, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 29.1,
+  "calle_osrm": "Luis Thayer Ojeda"
+ },
+ {
+  "local": 32,
+  "direccion": "Av. Manuel Montt 500",
+  "comuna": "Providencia",
+  "lat": -33.432795,
+  "lng": -70.617536,
+  "osm": "500, Avenida Manuel Montt, Población William Noon, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 5.2,
+  "calle_osrm": "Alberto Magno"
+ },
+ {
+  "local": 33,
+  "direccion": "Av. Pedro de Valdivia 100",
+  "comuna": "Providencia",
+  "lat": -33.424542,
+  "lng": -70.611415,
+  "osm": "100, Avenida Pedro de Valdivia, Barrio Paseo Providencia, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 32.9,
+  "calle_osrm": "Avenida Nueva Providencia"
+ },
+ {
+  "local": 34,
+  "direccion": "Av. Pedro de Valdivia 3000",
+  "comuna": "Ñuñoa",
+  "lat": -33.449881,
+  "lng": -70.60522,
+  "osm": "3000, Avenida Pedro de Valdivia, Barrio Villaseca, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 12.4,
+  "calle_osrm": "Avenida Pedro de Valdivia"
+ },
+ {
+  "local": 35,
+  "direccion": "Av. Suecia 2900",
+  "comuna": "Ñuñoa",
+  "lat": -33.446332,
+  "lng": -70.600794,
+  "osm": "2900, Avenida Suecia, Barrio Villaseca, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 11.0,
+  "calle_osrm": "Avenida Suecia"
+ },
+ {
+  "local": 36,
+  "direccion": "Av. Irarrázaval 2500",
+  "comuna": "Ñuñoa",
+  "lat": -33.453964,
+  "lng": -70.605204,
+  "osm": "2500, Avenida Irarrázaval, Barrio Suboficiales de Caballería, Ñuñoa, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 12.3,
+  "calle_osrm": "Avenida Irarrázaval"
+ },
+ {
+  "local": 37,
+  "direccion": "Av. Portugal 700",
+  "comuna": "Santiago",
+  "lat": -33.451812,
+  "lng": -70.634275,
+  "osm": "700, Avenida Portugal, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 10.6,
+  "calle_osrm": "Avenida Portugal"
+ },
+ {
+  "local": 38,
+  "direccion": "Carmen 800",
+  "comuna": "Santiago",
+  "lat": -33.453905,
+  "lng": -70.640345,
+  "osm": "800, Carmen, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 11.2,
+  "calle_osrm": "Copiapó"
+ },
+ {
+  "local": 39,
+  "direccion": "Santa Isabel 300",
+  "comuna": "Santiago",
+  "lat": -33.448313,
+  "lng": -70.635424,
+  "osm": "300, Avenida Santa Isabel, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 8.1,
+  "calle_osrm": "Avenida Santa Isabel"
+ },
+ {
+  "local": 40,
+  "direccion": "Merced 700",
+  "comuna": "Santiago",
+  "lat": -33.438161,
+  "lng": -70.646772,
+  "osm": "700, Merced, Santiago, Provincia de Santiago, Región Metropolitana de Santiago, 8320000, Chile",
+  "distancia_a_calle_m": 12.4,
+  "calle_osrm": "Merced"
+ },
+ {
+  "local": "bodega",
+  "direccion": "Av. Italia 1300",
+  "comuna": "Providencia",
+  "lat": -33.446393,
+  "lng": -70.624979,
+  "osm": "1300, Avenida Italia, Barrio Las Mil Calles, Providencia, Provincia de Santiago, Región Metropolitana de Santiago, 7500000, Chile",
+  "distancia_a_calle_m": 9.5,
+  "calle_osrm": "Avenida Italia"
+ }
+]

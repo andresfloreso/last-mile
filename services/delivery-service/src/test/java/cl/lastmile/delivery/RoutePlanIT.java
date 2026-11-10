@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * HU-14: POST /api/routes/build con la semilla (50 envíos del día) y hora estimada por parada.
+ * HU-14: POST /api/routes/build con la semilla (26 envíos del día en 24 paradas, HU-30) y hora estimada por parada.
  *
  * OSRM apunta a un puerto cerrado: los tiempos se estiman (timingSource = ESTIMATED), sin red.
  */
@@ -72,7 +72,7 @@ class RoutePlanIT {
 
     private JsonNode build(String extraJson) throws Exception {
         return call("DISPATCHER", post("/api/routes/build").content("""
-                {"date":"%s","depotLat":-33.4489,"depotLng":-70.6693%s}""".formatted(today(), extraJson)), 200);
+                {"date":"%s","depotLat":-33.446393,"depotLng":-70.624979%s}""".formatted(today(), extraJson)), 200);
     }
 
     private static LocalTime t(JsonNode node, String field) {
@@ -87,9 +87,10 @@ class RoutePlanIT {
     @Test
     void cadaParadaTieneUnaHoraEstimadaCoherenteConLaAnterior() throws Exception {
         JsonNode route = build("");
-        // Tantas paradas como envíos del día (50 con la semilla de HU-25; 24 con la de #52).
+        // Una parada por local con envíos del día (HU-30).
         assertThat(route.size()).isEqualTo(jdbc.queryForObject(
-                "SELECT count(*) FROM shipments WHERE scheduled_date = CURRENT_DATE", Integer.class)).isPositive();
+                "SELECT count(DISTINCT customer_id) FROM shipments WHERE scheduled_date = CURRENT_DATE",
+                Integer.class)).isPositive();
 
         int clock = 8 * 60; // salida por defecto, 08:00
         int totalMeters = 0;
@@ -117,7 +118,7 @@ class RoutePlanIT {
             assertThat(t(stop, "estimatedDeparture")).as(name).isEqualTo(t(stop, "serviceStart").plusMinutes(10));
             // Fuera de ventana ⇔ empieza cuando la ventana ya cerró (o al día siguiente).
             assertThat(stop.get("outsideWindow").asBoolean()).as(name).isEqualTo(start >= windowEnd);
-            // Tramo para la polilínea: en línea recta sin OSRM (0 m si el local se repite).
+            // Tramo para la polilínea: en línea recta sin OSRM.
             assertThat(stop.get("path")).as(name).hasSize(2);
             assertThat(stop.get("legDistanceMeters").asInt()).as(name).isGreaterThanOrEqualTo(0);
             totalMeters += stop.get("legDistanceMeters").asInt();
@@ -163,6 +164,38 @@ class RoutePlanIT {
         }
     }
 
+    /** HU-30: los envíos del mismo local en la fecha forman una sola parada. */
+    @Test
+    void losEnviosDelMismoLocalFormanUnaSolaParada() throws Exception {
+        JsonNode route = build("");
+        Map<String, Integer> stopsByCustomer = new java.util.HashMap<>();
+        for (JsonNode stop : route) stopsByCustomer.merge(stop.get("customerName").asText(), 1, Integer::sum);
+        assertThat(stopsByCustomer.values()).containsOnly(1);
+
+        // El local 1 de la semilla tiene dos envíos hoy.
+        UUID local = UUID.fromString("5eed0000-0000-4000-8000-000000000001");
+        java.util.List<Map<String, Object>> envios = jdbc.queryForList("""
+                SELECT id::text AS id, package_count, route_position, status FROM shipments
+                WHERE scheduled_date = CURRENT_DATE AND customer_id = ? ORDER BY tracking_code""", local);
+        assertThat(envios).hasSize(2);
+
+        JsonNode stop = null;
+        for (JsonNode s : route) {
+            if (s.get("shipmentId").asText().equals(envios.get(0).get("id"))) stop = s;
+        }
+        assertThat(stop).as("parada del local 1").isNotNull();
+        assertThat(stop.get("shipmentCount").asInt()).isEqualTo(2);
+        assertThat(stop.get("shipmentIds")).extracting(JsonNode::asText)
+                .containsExactly((String) envios.get(0).get("id"), (String) envios.get(1).get("id"));
+        int packages = envios.stream().mapToInt(e -> ((Number) e.get("package_count")).intValue()).sum();
+        assertThat(stop.get("packageCount").asInt()).isEqualTo(packages);
+        // Los dos envíos quedan en la misma posición de la ruta y ruteados.
+        for (Map<String, Object> e : envios) {
+            assertThat(((Number) e.get("route_position")).intValue()).isEqualTo(stop.get("position").asInt());
+            assertThat(e.get("status")).isEqualTo("ROUTED");
+        }
+    }
+
     @Test
     void validaLaDuracionDeParadaYLosRoles() throws Exception {
         call("DISPATCHER", post("/api/routes/build").content("""
@@ -178,6 +211,7 @@ class RoutePlanIT {
         String apiDocs = mvc.perform(get("/v3/api-docs")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(apiDocs).contains("Arma la ruta del día con hora estimada por parada",
-                "estimatedArrival", "outsideWindow", "departureTime", "stopMinutes");
+                "estimatedArrival", "outsideWindow", "departureTime", "stopMinutes",
+                "shipmentIds", "shipmentCount");
     }
 }
