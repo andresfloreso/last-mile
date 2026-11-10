@@ -57,7 +57,8 @@ class RouteRegressionIT {
     @Autowired RouteTimingService timing;
     @Autowired JdbcTemplate jdbc;
 
-    private record Metrics(int outsideWindow, int meters, String optimizer) {}
+    /** Lo que mide la tabla antes/después, con la hora estimada de HU-14 (no con el modelo del solver). */
+    private record Metrics(int outsideWindow, int lateMinutes, int meters, String optimizer) {}
 
     private RouteProblem problem(LocalDate date) {
         return new RouteProblem(StopConsolidator.consolidate(shipments.findByScheduledDate(date)).stream()
@@ -68,9 +69,18 @@ class RouteRegressionIT {
     private Metrics measure(OptimizedRoute route) {
         List<PlannedStopResponse> plan = timing.schedule(route.stops(), DEPOT_LAT, DEPOT_LNG, DEPARTURE, STOP_MINUTES);
         int meters = plan.stream().mapToInt(p -> p.legDistanceMeters() == null ? 0 : p.legDistanceMeters()).sum();
-        return new Metrics((int) plan.stream().filter(PlannedStopResponse::outsideWindow).count(), meters, route.optimizer());
+        int lateMinutes = plan.stream().filter(PlannedStopResponse::outsideWindow)
+                .mapToInt(p -> p.dayOffset() * 1440 + (p.serviceStart().toSecondOfDay() - p.windowEnd().toSecondOfDay()) / 60)
+                .sum();
+        return new Metrics((int) plan.stream().filter(PlannedStopResponse::outsideWindow).count(), lateMinutes,
+                meters, route.optimizer());
     }
 
+    /**
+     * El VRPTW no queda peor que la línea base en el orden de su objetivo: primero paradas fuera de
+     * ventana (el criterio de HU-28), después minutos fuera de ventana y después km. Si ninguna parada
+     * queda fuera de ventana, los km deben bajar.
+     */
     private void compare(LocalDate date, int expectedStops) {
         RouteProblem problem = problem(date);
         assertThat(problem.stops()).hasSize(expectedStops);
@@ -85,9 +95,19 @@ class RouteRegressionIT {
         assertThat(optimized.outsideWindow())
                 .as("paradas fuera de ventana: VRPTW %s vs nearest-neighbor %s", optimized, baseline)
                 .isLessThanOrEqualTo(baseline.outsideWindow());
-        assertThat(optimized.meters())
-                .as("km: VRPTW %s vs nearest-neighbor %s", optimized, baseline)
-                .isLessThan(baseline.meters());
+        if (optimized.outsideWindow() == baseline.outsideWindow()) {
+            assertThat(optimized.lateMinutes())
+                    .as("minutos fuera de ventana: VRPTW %s vs nearest-neighbor %s", optimized, baseline)
+                    .isLessThanOrEqualTo(baseline.lateMinutes() + 1); // ± 1 min: el solver usa la tabla, el horario los tramos
+            if (optimized.lateMinutes() >= baseline.lateMinutes()) {
+                assertThat(optimized.meters())
+                        .as("km: VRPTW %s vs nearest-neighbor %s", optimized, baseline)
+                        .isLessThanOrEqualTo(baseline.meters());
+            }
+        }
+        if (baseline.outsideWindow() == 0) {
+            assertThat(optimized.meters()).as("sin atrasos, el VRPTW acorta el recorrido").isLessThan(baseline.meters());
+        }
     }
 
     @Test

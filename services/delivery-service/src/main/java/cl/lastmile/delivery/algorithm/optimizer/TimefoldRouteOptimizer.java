@@ -2,6 +2,9 @@ package cl.lastmile.delivery.algorithm.optimizer;
 
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.config.localsearch.LocalSearchPhaseConfig;
+import ai.timefold.solver.core.config.localsearch.decider.acceptor.LocalSearchAcceptorConfig;
+import ai.timefold.solver.core.config.localsearch.decider.forager.LocalSearchForagerConfig;
 import ai.timefold.solver.core.config.solver.EnvironmentMode;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
@@ -26,7 +29,7 @@ import java.util.UUID;
  *   <li>Arma la ruta con el nearest-neighbor ({@link NearestNeighborOptimizer}): da la ventana real de
  *       cada parada y es la <b>solución inicial</b>. Como el solver solo acepta mejoras de puntaje, la
  *       ruta final nunca queda peor que la línea base en lo que mide {@link RouteConstraints}.</li>
- *   <li>Mejora el orden durante a lo más {@code routing.optimizer.time-limit} (10 s), o hasta que pasa
+ *   <li>Mejora el orden con búsqueda tabú durante a lo más {@code routing.optimizer.time-limit} (10 s), o hasta que pasa
  *       {@code routing.optimizer.unimproved-time-limit} sin mejorar.</li>
  *   <li>Si el solver falla, o la mejor ruta no cumple la capacidad o la jornada del camión, devuelve el
  *       nearest-neighbor y dice por qué en {@link OptimizedRoute#note()}.</li>
@@ -54,9 +57,24 @@ public class TimefoldRouteOptimizer implements RouteOptimizer {
                 .withEntityClasses(TruckRoute.class)
                 .withConstraintProviderClass(RouteConstraints.class)
                 .withEnvironmentMode(EnvironmentMode.REPRODUCIBLE)
+                .withPhases(localSearch())
                 .withTerminationConfig(new TerminationConfig()
                         .withSpentLimit(timeLimit)
                         .withUnimprovedSpentLimit(unimprovedTimeLimit)));
+    }
+
+    /**
+     * Búsqueda tabú. La solución inicial ya está completa (el nearest-neighbor), así que no hace falta
+     * heurística de construcción. Con la búsqueda por defecto (late acceptance) el solver se queda en un
+     * óptimo local: cada parada fuera de ventana cuesta un salto grande, y casi cualquier movimiento
+     * dentro de una franja apretada atrasa alguna. En el día cargado de la semilla, late acceptance
+     * terminaba con 79 km; la tabú, con 70 km y las mismas paradas fuera de ventana (ver
+     * docs/plan/hu-28/antes-despues.md).
+     */
+    static LocalSearchPhaseConfig localSearch() {
+        return new LocalSearchPhaseConfig()
+                .withAcceptorConfig(new LocalSearchAcceptorConfig().withEntityTabuSize(1).withValueTabuSize(7))
+                .withForagerConfig(new LocalSearchForagerConfig().withAcceptedCountLimit(1000));
     }
 
     @Override
