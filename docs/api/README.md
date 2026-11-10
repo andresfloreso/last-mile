@@ -35,6 +35,8 @@ a lo público. Un endpoint sin regla propia queda cerrado a `CLIENT`.
 | delivery | `GET /api/customers/{id}`, `GET /api/customers/{id}/time-window` | ✓ | ✓ | ✓ | ✓ | — |
 | delivery | `PUT /api/customers/{id}/declared-window`, `PUT /api/customers/{id}/location` | ✓ | ✓ | ✓ | — | — |
 | delivery | `POST /api/routes/build` | ✓ | ✓ | — | — | — |
+| delivery | `GET /api/vehicles`, `GET /api/vehicles/{id}` (HU-29) | ✓ | ✓ | ✓ | — | — |
+| delivery | `POST /api/vehicles`, `PUT /api/vehicles/{id}` (HU-29) | ✓ | ✓ | — | — | — |
 | delivery | `GET /api/geocoding/search` y cualquier otra ruta | ✓ | ✓ | ✓ | ✓ | — |
 | import | `GET /api/import/template`, `POST /api/import/shipments` | ✓ | ✓ | ✓ | — | — |
 | import | `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ | ✓ (público) |
@@ -221,11 +223,53 @@ por local:
 | `shipmentIds` | Todos los envíos de la parada; el representante va primero |
 | `shipmentCount` | Cantidad de envíos de la parada |
 | `packageCount` | Suma de los bultos de sus envíos |
+| `weightKg`, `volumeM3` | Suma del peso (kg) y del volumen (m³) de sus envíos (HU-29) |
 
 El representante define la preferencia de orden de la parada: si algún envío
 pide **Primera**, la parada va primera; si no, si alguno pide **Última**, va
 última; si no, es automática. Todos los envíos de la parada quedan con la
-misma `routePosition`. Peso y volumen se suman en HU-29, cuando existan.
+misma `routePosition`.
+
+## Vehículos y carga (HU-29)
+
+### Vehículos
+
+Un **vehículo** es un camión de la distribuidora, con patente, capacidad (kg
+y m³) y jornada.
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/api/vehicles?includeInactive=false` | Lista por patente; por defecto, solo los activos |
+| GET | `/api/vehicles/{id}` | Detalle |
+| POST | `/api/vehicles` | Registra uno (201). Patente repetida: 409 |
+| PUT | `/api/vehicles/{id}` | Reemplaza sus datos. Con `"active": false` lo da de baja sin borrarlo |
+
+```json
+{ "plate": "KXPT-21", "name": "Camión 3/4", "capacityKg": 3500, "capacityM3": 18,
+  "shiftStart": "08:00", "shiftEnd": "20:00", "active": true }
+```
+
+Reglas de los datos:
+
+- La patente se guarda en mayúsculas y sin espacios (`kxpt 21` → `KXPT21`).
+- Las capacidades deben ser mayores que 0.
+- La jornada debe terminar después de empezar.
+- Si un dato no cumple, la API responde 400.
+
+### Peso y volumen por envío
+
+Los envíos tienen `weightKg` (kg) y `volumeM3` (m³), los dos mayores que 0.
+Se informan en `POST /api/shipments`, se editan con
+`PATCH /api/shipments/{id}` y vienen en `GET /api/shipments`.
+
+**Valor por defecto: 10 kg y 0,05 m³ por envío.**
+
+- **Envíos que ya existían** antes de la migración V4: quedaron con ese
+  valor.
+- **Envíos nuevos sin peso o volumen** (de la API o de una planilla sin
+  `peso_kg`/`volumen_m3`): toman `shipments.default-weight-kg` y
+  `shipments.default-volume-m3` de la configuración de delivery-service.
+  Por defecto son los mismos valores.
 
 ## Planilla de importación (import-service)
 
@@ -234,12 +278,17 @@ plantilla `.xlsx`, con una hoja "Envíos" y otra "Instrucciones". Columnas:
 
 `cliente`\*, `tipo_local`, `telefono`, `direccion`\*, `comuna`, `latitud`,
 `longitud`, `codigo_externo`, `modulacion_desde`, `modulacion_hasta`,
-`tracking`\*, `fecha_entrega`\*, `notas` (\* obligatoria).
+`tracking`\*, `fecha_entrega`\*, `peso_kg`, `volumen_m3`, `notas`
+(\* obligatoria).
 
 `tipo_local` acepta botillería, minimarket, bar, restaurant (o restaurante) u
 otro. La modulación se escribe en HH:mm (también acepta `9`, `9:30` o una celda
 con formato de hora de Excel). Si una fila trae un tipo o una modulación
 inválidos, se informa con su número de fila y no se importa.
+
+`peso_kg` y `volumen_m3` (HU-29) aceptan coma o punto decimal (`24,5`).
+- Si faltan, se usa el valor por defecto (10 kg y 0,05 m³).
+- Si no son un número mayor que 0, la fila se informa y no se importa.
 
 ### Resumen de importación (HU-08)
 

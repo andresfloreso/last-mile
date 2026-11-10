@@ -1,5 +1,5 @@
 -- =====================================================================
--- Semilla de deliverydb (HU-01, HU-25, HU-31) — SOLO desarrollo / demo.
+-- Semilla de deliverydb (HU-01, HU-25, HU-31, HU-30, HU-29) — SOLO desarrollo / demo.
 --
 -- Flyway ejecuta este callback después de cada `migrate` cuando el perfil
 -- `seed` agrega esta carpeta a spring.flyway.locations. Es idempotente:
@@ -17,6 +17,8 @@
 --      10 por franja; 46 envíos, HU-30), más de las que un camión alcanza a entregar dentro de
 --      ventana. Es la fecha fija con la que HU-28 compara optimizadores
 --      (tracking SEED-CARGA-20270104-<nn>).
+--   5. Camiones y carga (HU-29): 2 camiones con capacidad y jornada, y el peso y
+--      el volumen de cada envío semilla según el tipo de local y sus bultos.
 --
 -- Ventana real (columna `pattern`), en hora de America/Santiago:
 --   MORNING   recibe 09–11 h, rechaza 14–17 h   (minimarkets; "local A")
@@ -298,6 +300,41 @@ SELECT md5('seed-carga-2027-01-04-extra-' || c.idx)::uuid,
 FROM seed_customer_v c
 WHERE c.idx IN (2, 5, 12, 19, 26, 33)
 ON CONFLICT (tracking_code) DO NOTHING;
+
+-- ---------------------------------------------------------------------
+-- 5. Camiones y carga (HU-29)
+--    Dos camiones: el 3/4 hace la ruta del día; el furgón queda para HU-16
+--    (varios camiones). Si ya existen no se tocan (el despachador puede
+--    editarlos).
+-- ---------------------------------------------------------------------
+INSERT INTO vehicles (id, plate, name, capacity_kg, capacity_m3, shift_start, shift_end, active)
+VALUES ('5eedca00-0000-4000-8000-000000000001', 'KXPT-21', 'Camión 3/4', 3500, 18, TIME '08:00', TIME '20:00', TRUE),
+       ('5eedca00-0000-4000-8000-000000000002', 'JRHL-48', 'Furgón',     1200,  8, TIME '08:00', TIME '18:00', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Peso y volumen de los envíos semilla: bultos × kg y m³ por bulto según el
+-- tipo de local (una botillería recibe cajas de botellas: pesadas y compactas).
+-- Se recalcula en cada arranque, como los datos de los locales semilla.
+--   tipo        kg/bulto  m³/bulto
+--   BOTILLERIA      18     0.035
+--   BAR             16     0.040
+--   MINIMARKET      12     0.050
+--   RESTAURANT      10     0.060
+--   otro            10     0.050
+UPDATE shipments s
+SET weight_kg = s.package_count * CASE c.business_type WHEN 'BOTILLERIA' THEN 18
+                                                       WHEN 'BAR'        THEN 16
+                                                       WHEN 'MINIMARKET' THEN 12
+                                                       ELSE 10 END,
+    volume_m3 = s.package_count * CASE c.business_type WHEN 'BOTILLERIA' THEN 0.035
+                                                       WHEN 'BAR'        THEN 0.040
+                                                       WHEN 'MINIMARKET' THEN 0.050
+                                                       WHEN 'RESTAURANT' THEN 0.060
+                                                       ELSE 0.050 END
+FROM customers c
+WHERE c.id = s.customer_id
+  AND s.source = 'seed'
+  AND s.package_count > 0;
 
 -- ---------------------------------------------------------------------
 -- Limpieza de objetos temporales
