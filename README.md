@@ -115,8 +115,8 @@ cuando corres `docker compose up` en la raíz) activa el perfil **`seed`**, que
 carga datos de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/seed/README.md)):
 
 - un usuario por rol (`admin@`, `despacho@`, `conductor@`, `operador@` y `cliente@lastmile.cl`), todos con la contraseña `lastmile123`;
-- 30 locales comerciales de Santiago (botillerías, minimarkets, bares y restaurantes) con tipo, modulación declarada y 60 días de historial de intentos; 11 declaran un horario distinto de su ventana real, y dentro de su ventana reciben entre 71% y 93% de las visitas;
-- 24 envíos para la fecha de hoy, en 5 comunas vecinas (Santiago, Providencia, Ñuñoa, Macul y San Joaquín), que un camión alcanza a repartir en el horario.
+- 30 locales comerciales (botillerías, minimarkets, bares y restaurantes) en direcciones reales de Santiago, Providencia y Ñuñoa (HU-31), con tipo, modulación declarada y 60 días de historial de intentos; 11 declaran un horario distinto de su ventana real, y dentro de su ventana reciben entre 71% y 93% de las visitas;
+- 24 envíos para la fecha de hoy, en esa zona compacta, que un camión alcanza a repartir en el horario, saliendo de la bodega de Av. Italia 1300 (Providencia).
 
 | Quiero… | Comando |
 |---|---|
@@ -157,7 +157,7 @@ curl -X POST http://localhost:8080/api/import/shipments \
 curl -X POST http://localhost:8080/api/routes/build \
   -H "Authorization: Bearer <accessToken>" \
   -H "Content-Type: application/json" \
-  -d '{"date":"2026-09-05","depotLat":-33.4489,"depotLng":-70.6693}'
+  -d '{"date":"2026-09-05","depotLat":-33.446393,"depotLng":-70.624979}'
 
 # 5. Seguimiento público (sin token) por trackingCode
 curl http://localhost:8080/api/tracking/ABC123
@@ -336,7 +336,7 @@ cd frontend && npm ci && npm run dev
 | `VITE_TILE_URL_LIGHT` / `VITE_TILE_URL_DARK` | Esri Gray Canvas claro / oscuro | Mapa base. CARTO exige API key desde 2026: ver `frontend/src/lib/config.ts` |
 | `VITE_TILE_ATTRIBUTION` | Atribución de Esri y OpenStreetMap | Atribución del mapa base |
 | `VITE_TILE_MAX_NATIVE_ZOOM` | `16` | Zoom máximo con teselas propias del proveedor |
-| `VITE_DEPOT_LAT` / `VITE_DEPOT_LNG` | `-33.4489` / `-70.6693` | Bodega desde donde sale el camión |
+| `VITE_DEPOT_LAT` / `VITE_DEPOT_LNG` | `-33.446393` / `-70.624979` | Bodega desde donde sale el camión |
 | `VITE_DEPARTURE_TIME` | `08:00` | Hora de salida para la hora estimada (HU-14) |
 
 Con Docker, las cuatro `VITE_TILE_*` van en `.env` y compose las pasa como

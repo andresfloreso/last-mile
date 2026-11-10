@@ -181,7 +181,7 @@ intentos de entrega.
 guarda el orden y devuelve cada parada con su hora estimada.
 
 ```json
-{ "date": "2026-12-15", "depotLat": -33.4489, "depotLng": -70.6693,
+{ "date": "2026-12-15", "depotLat": -33.446393, "depotLng": -70.624979,
   "departureTime": "08:00", "stopMinutes": 10 }
 ```
 

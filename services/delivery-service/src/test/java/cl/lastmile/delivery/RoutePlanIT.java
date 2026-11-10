@@ -72,7 +72,7 @@ class RoutePlanIT {
 
     private JsonNode build(String extraJson) throws Exception {
         return call("DISPATCHER", post("/api/routes/build").content("""
-                {"date":"%s","depotLat":-33.4489,"depotLng":-70.6693%s}""".formatted(today(), extraJson)), 200);
+                {"date":"%s","depotLat":-33.446393,"depotLng":-70.624979%s}""".formatted(today(), extraJson)), 200);
     }
 
     private static LocalTime t(JsonNode node, String field) {

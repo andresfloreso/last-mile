@@ -1,15 +1,15 @@
 -- =====================================================================
--- Semilla de deliverydb (HU-01, HU-25) — SOLO desarrollo / demo.
+-- Semilla de deliverydb (HU-01, HU-25, HU-31) — SOLO desarrollo / demo.
 --
 -- Flyway ejecuta este callback después de cada `migrate` cuando el perfil
 -- `seed` agrega esta carpeta a spring.flyway.locations. Es idempotente:
 --   1. 30 locales comerciales de Santiago con UUID fijo (se actualizan si ya
 --      existían, para que una base vieja reciba el tipo y la modulación).
---      25 están en 5 comunas vecinas (Santiago, Providencia, Ñuñoa, Macul y
---      San Joaquín, 5 por comuna) y 5 fuera de esa zona.
+--      Todos están en una zona compacta de 3 comunas contiguas (Santiago,
+--      Providencia y Ñuñoa, 10 por comuna), en direcciones reales (HU-31).
 --   2. Historial de 60 días de intentos con patrones conocidos; se genera una
 --      sola vez (si los locales semilla aún no tienen intentos).
---   3. 24 envíos para la fecha de HOY, todos en la zona de 5 comunas, para que
+--   3. 24 envíos para la fecha de HOY, uno por local salvo 6 locales, para que
 --      un camión alcance a hacer la ruta dentro del horario. En cada arranque
 --      se asegura que existan los del día (tracking SEED-<yyyymmdd>-<nn>).
 --
@@ -49,41 +49,46 @@ CREATE TEMP TABLE seed_customer (
     modulacion_distinta BOOLEAN
 );
 
--- Coordenadas aproximadas de calles reales de cada comuna. El patrón rota con
--- idx % 4 para repartir las ventanas. Los locales 3, 6, 7, 11 y 16 quedan fuera
--- de la zona de reparto del día (Las Condes, Vitacura, Lo Barnechea, Puente
--- Alto y San Bernardo): tienen historial pero hoy no reciben.
+-- HU-31: direcciones reales de calles comerciales en una zona compacta de 3
+-- comunas contiguas (Santiago, Providencia y Ñuñoa; 10 locales por comuna, en
+-- una caja de unos 6 × 6 km). Los nombres de los locales son inventados.
+-- Coordenadas fijas (no se geocodifica en runtime), tomadas de OpenStreetMap
+-- (Nominatim, con el número exacto) y verificadas: cada punto queda a menos de
+-- 40 m de una calle (OSRM /nearest) y fuera de parques, estadios, canchas y
+-- hospitales (Overpass). Ver infra/seed/README.md.
+-- El patrón rota con idx % 4 para repartir las ventanas. Los locales 3, 6, 7,
+-- 11, 16 y 29 hoy no tienen pedido (tienen historial).
 INSERT INTO seed_customer (idx, full_name, business_type, address, commune, lat, lng, pattern, modulacion_distinta) VALUES
-    ( 1, 'Minimarket Don Lucho',            'MINIMARKET', 'Plaza de Armas s/n',                       'Santiago',     -33.4378, -70.6504, 'MORNING',   false),
-    ( 2, 'Botillería El Roble',             'BOTILLERIA', 'Av. Providencia 2124',                     'Providencia',  -33.4210, -70.6080, 'MIDDAY',    false),
-    ( 3, 'Restaurant El Apoquindo',         'RESTAURANT', 'Av. Apoquindo 3000',                       'Las Condes',   -33.4166, -70.5974, 'AFTERNOON', true),
-    ( 4, 'Bar La Esquina de Ñuñoa',         'BAR',        'Av. Irarrázaval 3550',                     'Ñuñoa',        -33.4542, -70.5981, 'EVENING',   true),
-    ( 5, 'Minimarket Sierra Bella',         'MINIMARKET', 'Av. Sierra Bella 2000',                    'San Joaquín',  -33.4810, -70.6250, 'MORNING',   false),
-    ( 6, 'Botillería Vitacura',             'BOTILLERIA', 'Av. Vitacura 3600',                        'Vitacura',     -33.4004, -70.5966, 'MIDDAY',    true),
-    ( 7, 'Restaurant El Arrayán',           'RESTAURANT', 'Av. Raúl Labbé 12100',                     'Lo Barnechea', -33.3530, -70.5170, 'AFTERNOON', false),
-    ( 8, 'Bar El Macul',                    'BAR',        'Av. Macul 3200',                           'Macul',        -33.4893, -70.5994, 'EVENING',   false),
-    ( 9, 'Minimarket Los Andes',            'MINIMARKET', 'Av. Grecia 2040',                          'Ñuñoa',        -33.4668, -70.6010, 'MORNING',   true),
-    (10, 'Botillería Quilín',               'BOTILLERIA', 'Av. Quilín 3500',                          'Macul',        -33.4940, -70.5930, 'MIDDAY',    false),
-    (11, 'Restaurant La Plaza',             'RESTAURANT', 'Plaza de Puente Alto, Av. Concha y Toro 1', 'Puente Alto', -33.6118, -70.5756, 'AFTERNOON', false),
-    (12, 'Bar Dublé Almeyda',               'BAR',        'Dublé Almeyda 2850',                       'Ñuñoa',        -33.4500, -70.6045, 'EVENING',   true),
-    (13, 'Minimarket Santa Rosa',           'MINIMARKET', 'Av. Santa Rosa 2900',                      'San Joaquín',  -33.4917, -70.6402, 'MORNING',   false),
-    (14, 'Botillería El Paradero',          'BOTILLERIA', 'Av. Macul 2500',                           'Macul',        -33.4800, -70.6000, 'MIDDAY',    false),
-    (15, 'Restaurant Alessandri',           'RESTAURANT', 'Av. José Pedro Alessandri 1200',           'Macul',        -33.4777, -70.5933, 'AFTERNOON', true),
-    (16, 'Bar Maestranza',                  'BAR',        'Eyzaguirre 450',                           'San Bernardo', -33.5925, -70.7046, 'EVENING',   false),
-    (17, 'Minimarket Exequiel Fernández',   'MINIMARKET', 'Av. Exequiel Fernández 3000',              'Macul',        -33.4820, -70.6120, 'MORNING',   false),
-    (18, 'Botillería Carlos Valdovinos',    'BOTILLERIA', 'Av. Carlos Valdovinos 600',                'San Joaquín',  -33.4772, -70.6350, 'MIDDAY',    true),
-    (19, 'Restaurant Alameda',              'RESTAURANT', 'Av. Libertador Bernardo O''Higgins 1302',  'Santiago',     -33.4447, -70.6555, 'AFTERNOON', false),
-    (20, 'Bar Bellavista',                  'BAR',        'Constitución 40',                          'Providencia',  -33.4335, -70.6345, 'EVENING',   false),
-    (21, 'Minimarket Los Leones',           'MINIMARKET', 'Av. Los Leones 1100',                      'Providencia',  -33.4290, -70.6006, 'MORNING',   true),
-    (22, 'Botillería Manuel Montt',         'BOTILLERIA', 'Av. Manuel Montt 1000',                    'Providencia',  -33.4337, -70.6176, 'MIDDAY',    false),
-    (23, 'Restaurant Mapocho',              'RESTAURANT', 'Mapocho 1520',                             'Santiago',     -33.4319, -70.6624, 'AFTERNOON', false),
-    (24, 'Bar Santa María',                 'BAR',        'Av. Santa María 2150',                     'Providencia',  -33.4249, -70.6155, 'EVENING',   true),
-    (25, 'Minimarket Plaza Ñuñoa',          'MINIMARKET', 'Jorge Washington 26',                      'Ñuñoa',        -33.4566, -70.5947, 'MORNING',   false),
-    (26, 'Botillería Villa Frei',           'BOTILLERIA', 'Av. Ramón Cruz 1350',                      'Ñuñoa',        -33.4610, -70.5800, 'MIDDAY',    false),
-    (27, 'Restaurant San Diego',            'RESTAURANT', 'San Diego 860',                            'Santiago',     -33.4560, -70.6505, 'AFTERNOON', true),
-    (28, 'Bar El Tranque',                  'BAR',        'Bandera 520',                              'Santiago',     -33.4362, -70.6530, 'EVENING',   false),
-    (29, 'Minimarket Isabel Riquelme',      'MINIMARKET', 'Av. Isabel Riquelme 1000',                 'San Joaquín',  -33.4730, -70.6400, 'MORNING',   false),
-    (30, 'Botillería Departamental',        'BOTILLERIA', 'Av. Departamental 1200',                   'San Joaquín',  -33.4870, -70.6300, 'MIDDAY',    true);
+    ( 1, 'Minimarket Don Lucho',         'MINIMARKET', 'Merced 300',                              'Santiago',    -33.437229, -70.640901, 'MORNING',   false),
+    ( 2, 'Botillería El Roble',          'BOTILLERIA', 'Av. Providencia 2124',                    'Providencia', -33.422072, -70.611427, 'MIDDAY',    false),
+    ( 3, 'Restaurant El Encuentro',      'RESTAURANT', 'Av. Providencia 2300',                    'Providencia', -33.420578, -70.607977, 'AFTERNOON', true),
+    ( 4, 'Bar La Esquina de Ñuñoa',      'BAR',        'Av. Irarrázaval 3550',                    'Ñuñoa',       -33.454179, -70.593643, 'EVENING',   true),
+    ( 5, 'Minimarket Simón Bolívar',     'MINIMARKET', 'Av. Simón Bolívar 3500',                  'Ñuñoa',       -33.448593, -70.594306, 'MORNING',   false),
+    ( 6, 'Botillería Los Leones',        'BOTILLERIA', 'Av. Los Leones 400',                      'Providencia', -33.423419, -70.604389, 'MIDDAY',    true),
+    ( 7, 'Restaurant Lastarria',         'RESTAURANT', 'José Victorino Lastarria 70',             'Santiago',    -33.439582, -70.641336, 'AFTERNOON', false),
+    ( 8, 'Bar El Farol',                 'BAR',        'Lira 600',                                'Santiago',    -33.450374, -70.638593, 'EVENING',   false),
+    ( 9, 'Minimarket Los Andes',         'MINIMARKET', 'Av. Ricardo Lyon 2900',                   'Ñuñoa',       -33.447757, -70.602405, 'MORNING',   true),
+    (10, 'Botillería Santa Rosa',        'BOTILLERIA', 'Av. Santa Rosa 500',                      'Santiago',    -33.450207, -70.644395, 'MIDDAY',    false),
+    (11, 'Restaurant Nueva Providencia', 'RESTAURANT', 'Av. Nueva Providencia 1900',              'Providencia', -33.425280, -70.613628, 'AFTERNOON', false),
+    (12, 'Bar Dublé Almeyda',            'BAR',        'Dublé Almeyda 2850',                      'Ñuñoa',       -33.455885, -70.601745, 'EVENING',   true),
+    (13, 'Minimarket Carmen',            'MINIMARKET', 'Carmen 500',                              'Santiago',    -33.450027, -70.641394, 'MORNING',   false),
+    (14, 'Botillería El Paradero',       'BOTILLERIA', 'Av. Irarrázaval 2100',                    'Ñuñoa',       -33.453503, -70.609235, 'MIDDAY',    false),
+    (15, 'Restaurant Barrio Italia',     'RESTAURANT', 'Av. Italia 1180',                         'Providencia', -33.445361, -70.625269, 'AFTERNOON', true),
+    (16, 'Bar Bellavista',               'BAR',        'Pío Nono 150',                            'Providencia', -33.432768, -70.636110, 'EVENING',   false),
+    (17, 'Minimarket Cañas',             'MINIMARKET', 'José Domingo Cañas 2200',                 'Ñuñoa',       -33.456723, -70.608382, 'MORNING',   false),
+    (18, 'Botillería Portugal',          'BOTILLERIA', 'Av. Portugal 1000',                       'Santiago',    -33.455322, -70.633432, 'MIDDAY',    true),
+    (19, 'Restaurant Alameda',           'RESTAURANT', 'Av. Libertador Bernardo O''Higgins 1302', 'Santiago',    -33.445884, -70.653969, 'AFTERNOON', false),
+    (20, 'Bar Manuel Montt',             'BAR',        'Av. Manuel Montt 1050',                   'Providencia', -33.437644, -70.615823, 'EVENING',   false),
+    (21, 'Minimarket Pedro de Valdivia', 'MINIMARKET', 'Av. Pedro de Valdivia 1215',              'Providencia', -33.434241, -70.608945, 'MORNING',   true),
+    (22, 'Botillería Manuel Montt',      'BOTILLERIA', 'Av. Manuel Montt 2600',                   'Ñuñoa',       -33.451307, -70.612790, 'MIDDAY',    false),
+    (23, 'Restaurant Monjitas',          'RESTAURANT', 'Monjitas 500',                            'Santiago',    -33.436711, -70.644546, 'AFTERNOON', false),
+    (24, 'Bar Bilbao',                   'BAR',        'Av. Francisco Bilbao 500',                'Providencia', -33.441534, -70.625609, 'EVENING',   true),
+    (25, 'Minimarket Plaza Ñuñoa',       'MINIMARKET', 'Jorge Washington 26',                     'Ñuñoa',       -33.454837, -70.594391, 'MORNING',   false),
+    (26, 'Botillería Chile España',      'BOTILLERIA', 'Chile España 400',                        'Ñuñoa',       -33.450969, -70.598213, 'MIDDAY',    false),
+    (27, 'Restaurant San Diego',         'RESTAURANT', 'San Diego 860',                           'Santiago',    -33.456309, -70.649562, 'AFTERNOON', true),
+    (28, 'Bar El Tranque',               'BAR',        'Arturo Prat 800',                         'Santiago',    -33.455309, -70.647987, 'EVENING',   false),
+    (29, 'Minimarket Irarrázaval',       'MINIMARKET', 'Av. Irarrázaval 3000',                    'Ñuñoa',       -33.454343, -70.599834, 'MORNING',   false),
+    (30, 'Botillería Providencia',       'BOTILLERIA', 'Av. Providencia 1308',                    'Providencia', -33.428584, -70.620205, 'MIDDAY',    true);
 
 -- Ventana real por patrón (horas en que recibe y en que rechaza) y la
 -- modulación que declara un local que SÍ dice la verdad.
@@ -102,7 +107,7 @@ INSERT INTO seed_pattern VALUES
     ('EVENING',   ARRAY[19, 19], ARRAY[11, 15, 17], '18:00', '21:00');
 
 -- Modulación final: si el local declara otro horario, el típico 09–12 (o
--- 15–18 si en verdad recibe en la mañana). La Botillería Huechuraba (26)
+-- 15–18 si en verdad recibe en la mañana). La Botillería Chile España (26)
 -- declara además un segundo tramo, de 17 a 19 h.
 CREATE TEMP VIEW seed_customer_v AS
 SELECT c.*,
@@ -221,8 +226,8 @@ FROM seed_attempt
 ON CONFLICT (id) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 3. 24 envíos para HOY: uno por local de la zona de 5 comunas, salvo el 29
---    (así la franja de la mañana, 09–11, tiene 7 locales y alcanza).
+-- 3. 24 envíos para HOY: uno por local, salvo los 6 que hoy no piden (3, 6, 7, 11, 16 y 29)
+--    Así la franja de la mañana (09–11) tiene 7 locales y alcanza.
 --    Por franja: mañana 7, mediodía 7, tarde 4, noche 6.
 -- ---------------------------------------------------------------------
 INSERT INTO shipments (id, tracking_code, customer_id, scheduled_date, status, source, notes,

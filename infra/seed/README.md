@@ -1,4 +1,4 @@
-# Datos semilla (HU-01, HU-25)
+# Datos semilla (HU-01, HU-25, HU-31)
 
 > Solo para desarrollo y demo. Nunca actives el perfil `seed` en producción.
 
@@ -36,13 +36,18 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
 
 ## Locales, historial y envíos (deliverydb)
 
-- **30 locales comerciales** de Santiago (8 minimarkets, 8 botillerías, 7
-  restaurantes y 7 bares) con coordenadas aproximadas de calles reales.
-  **25 están en una zona de reparto de 5 comunas vecinas** (Santiago,
-  Providencia, Ñuñoa, Macul y San Joaquín, 5 por comuna) y **5 fuera** (Las
-  Condes, Vitacura, Lo Barnechea, Puente Alto y San Bernardo: locales 3, 6, 7,
-  11 y 16). `external_code` = `SEED-C01` … `SEED-C30`. Cada local tiene
+- **30 locales comerciales** (8 minimarkets, 8 botillerías, 7 restaurantes y
+  7 bares) en una **zona de reparto compacta de 3 comunas contiguas**:
+  Santiago, Providencia y Ñuñoa, 10 por comuna, dentro de una caja de unos
+  6 × 6 km (HU-31). `external_code` = `SEED-C01` … `SEED-C30`. Cada local tiene
   **tipo** y **modulación** (horario de recepción declarado, HU-25).
+- **Direcciones reales, nombres inventados.** Cada local está en una calle
+  comercial real (por ejemplo Av. Providencia 2124 o Av. Irarrázaval 3550), con
+  el número y las coordenadas que tiene en OpenStreetMap, fijas en el SQL: no se
+  geocodifica nada en runtime. Los nombres de los locales son inventados y no
+  hay datos personales. Ver "Cómo se verificaron las direcciones".
+- **Bodega:** Av. Italia 1300, Providencia (`-33.446393, -70.624979`), dentro
+  de la zona. Es el valor por defecto de `VITE_DEPOT_LAT` / `VITE_DEPOT_LNG`.
 - **Historial de 60 días**: un intento cada 3 días por local (600 en total).
   Por local: 14 visitas en su ventana real y 6 fuera de ella
   (`REJECTED_NOT_HOME`, "Local cerrado"). **Dentro de la ventana no siempre
@@ -50,9 +55,9 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
   10, 11, 12 o 13 de 14 (71% a 93%; `1 + idx % 4` rechazos). Esos rechazos se
   reparten entre las dos horas de la ventana para que el motor aprenda la misma
   ventana. Es determinista: siempre se generan los mismos datos.
-- **24 envíos para hoy** (`SEED-<yyyymmdd>-01` … `-24`): uno por local de la
-  zona, salvo el 29, para que **un camión alcance a hacer la ruta en el
-  horario** (mañana 7, mediodía 7, tarde 4, noche 6). Si levantas el ambiente
+- **24 envíos para hoy** (`SEED-<yyyymmdd>-01` … `-24`): uno por local, salvo
+  los 6 que hoy no piden (3, 6, 7, 11, 16 y 29), para que **un camión alcance a
+  hacer la ruta en el horario** (mañana 7, mediodía 7, tarde 4, noche 6). Si levantas el ambiente
   otro día, se crean los envíos de ese día.
 - Si la base ya tenía la semilla de HU-01 (30 "clientes" personas), los
   locales se actualizan solos al arrancar: el script usa `ON CONFLICT DO UPDATE`.
@@ -72,38 +77,38 @@ las 18 h, por eso el patrón `EVENING` se aprende como 18:00–20:00.
 ### Modulación (lo que el local declara)
 
 **19 locales** declaran su ventana real: minimarkets 09–12, botillerías 12–15,
-restaurantes 15–18 y bares 18–21. La **Botillería Villa Frei** (26) declara
+restaurantes 15–18 y bares 18–21. La **Botillería Chile España** (26) declara
 además un segundo tramo, de 17 a 19 h.
 
 **11 locales (más de un tercio) declaran otro horario**, como pasa en
 terreno: dicen "recibo de 9 a 12", pero en verdad reciben en otra franja. Los
 que reciben en la mañana declaran 15–18.
 
-| # | Local | Declara | Recibe de verdad |
-|---|---|---|---|
-| 3 | Restaurant El Apoquindo | 09–12 | 15–17 |
-| 4 | Bar La Esquina de Ñuñoa ("local B") | 09–12 | después de las 19 |
-| 6 | Botillería Vitacura | 09–12 | 12–14 |
-| 9 | Minimarket Los Andes | 15–18 | 09–11 |
-| 12 | Bar Dublé Almeyda | 09–12 | después de las 19 |
-| 15 | Restaurant Alessandri | 09–12 | 15–17 |
-| 18 | Botillería Carlos Valdovinos | 09–12 | 12–14 |
-| 21 | Minimarket Los Leones | 15–18 | 09–11 |
-| 24 | Bar Santa María | 09–12 | después de las 19 |
-| 27 | Restaurant San Diego | 09–12 | 15–17 |
-| 30 | Botillería Departamental | 09–12 | 12–14 |
+| # | Local | Comuna | Declara | Recibe de verdad |
+|---|---|---|---|---|
+| 3 | Restaurant El Encuentro | Providencia | 09–12 | 15–17 |
+| 4 | Bar La Esquina de Ñuñoa ("local B") | Ñuñoa | 09–12 | después de las 19 |
+| 6 | Botillería Los Leones | Providencia | 09–12 | 12–14 |
+| 9 | Minimarket Los Andes | Ñuñoa | 15–18 | 09–11 |
+| 12 | Bar Dublé Almeyda | Ñuñoa | 09–12 | después de las 19 |
+| 15 | Restaurant Barrio Italia | Providencia | 09–12 | 15–17 |
+| 18 | Botillería Portugal | Santiago | 09–12 | 12–14 |
+| 21 | Minimarket Pedro de Valdivia | Providencia | 15–18 | 09–11 |
+| 24 | Bar Bilbao | Providencia | 09–12 | después de las 19 |
+| 27 | Restaurant San Diego | Santiago | 09–12 | 15–17 |
+| 30 | Botillería Providencia | Providencia | 09–12 | 12–14 |
 
 `SeedDataIT` verifica que el motor aprende la ventana real de los 30 locales,
 y no la modulación declarada, también con el ruido dentro de la ventana.
 
-> Los locales mantienen su UUID y su historial. En el Sprint 3 se reubicaron 20
-> de ellos en la zona de reparto y se renombraron los que tenían nombre de otra
-> comuna. Una base existente se actualiza sola (dirección, comuna y
-> coordenadas), pero su historial no cambia: para tener el ruido nuevo, recrea
-> la base con `docker compose down -v`.
+> Los locales mantienen su UUID, su patrón y su historial. En el Sprint 4
+> (HU-31) cambiaron de dirección, comuna y, varios, de nombre. Una base existente
+> se actualiza sola al arrancar (`ON CONFLICT DO UPDATE`), pero para una base
+> limpia, recréala con `docker compose down -v` (respalda antes con `pg_dumpall`
+> en `backups/`).
 
-Ejemplos: el **local 1** (Minimarket Don Lucho, Santiago) es un local A que
-declara y recibe en la mañana. El **local 4** (Bar La Esquina de Ñuñoa) es un
+Ejemplos: el **local 1** (Minimarket Don Lucho, Merced 300, Santiago) es un local A que
+declara y recibe en la mañana. El **local 4** (Bar La Esquina de Ñuñoa, Av. Irarrázaval 3550) es un
 local B: declara 09–12, pero el motor aprende 18:00–20:00.
 
 ## Demo: la ruta pone primero a los locales de la mañana
@@ -114,12 +119,37 @@ TOKEN=$(curl -s -X POST localhost:8080/api/auth/login -H 'Content-Type: applicat
 
 curl -s -X POST localhost:8080/api/routes/build \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"date\":\"$(date +%F)\",\"depotLat\":-33.4489,\"depotLng\":-70.6693}" \
+  -d "{\"date\":\"$(date +%F)\",\"depotLat\":-33.446393,\"depotLng\":-70.624979}" \
   | jq -r '.[] | "\(.position)\t\(.windowStart)\t\(.customerName)"'
 ```
 
-Las primeras 13 paradas tienen ventana `09:00`, que corresponde a los locales
-`MORNING`. Después vienen las de 12:00, 15:00 y 18:00.
+Las primeras 7 paradas tienen ventana `09:00`, que corresponde a los locales
+`MORNING` con pedido hoy. Después vienen las de 12:00, 15:00 y 18:00.
+
+## Cómo se verificaron las direcciones (HU-31)
+
+`tools/verificar_direcciones.py` revisa cada dirección de `tools/direcciones.json`
+(los 30 locales y la bodega) contra servicios públicos de OpenStreetMap, a 1
+request por segundo y con un User-Agent genérico:
+
+1. **Nominatim** (búsqueda estructurada): la dirección existe con **ese número
+   exacto** (`place_rank` 30) y en esa comuna.
+2. **OSRM `/nearest`**: el punto queda a **menos de 40 m de una calle**
+   transitable en auto (el máximo de la semilla es 35,5 m).
+3. **Overpass `is_in`**: el punto **no cae dentro** de un parque, estadio,
+   cancha, plaza de juegos, cementerio, universidad u hospital.
+
+```bash
+python -I infra/seed/tools/verificar_direcciones.py infra/seed/tools/direcciones.json /tmp/resultado.json
+```
+
+El resultado con el que se armó la semilla está en
+`tools/direcciones-verificadas.json` (coordenadas, dirección según OSM,
+distancia a la calle y calle más cercana). En la semilla anterior, por ejemplo,
+"Av. Grecia 2040" caía dentro del Estadio Nacional, y Av. Providencia 2124
+estaba unos 350 m corrida. Esta semilla descarta todo lo que no pasa los tres
+chequeos. Cualquier dirección se puede abrir en Google Maps con su
+`lat,lng`.
 
 ## Recrear la semilla desde cero
 

@@ -40,3 +40,16 @@ describe("mapa base (HU-27)", () => {
     expect(TILE_MAX_NATIVE_ZOOM).toBe(19);
   });
 });
+
+describe("bodega (HU-31)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("por defecto queda dentro de la zona de reparto de la semilla", async () => {
+    const { DEPOT } = await loadConfig();
+    // Misma caja que SeedDataIT: Santiago, Providencia y Ñuñoa.
+    expect(DEPOT.lat).toBeGreaterThanOrEqual(-33.47);
+    expect(DEPOT.lat).toBeLessThanOrEqual(-33.41);
+    expect(DEPOT.lng).toBeGreaterThanOrEqual(-70.66);
+    expect(DEPOT.lng).toBeLessThanOrEqual(-70.585);
+  });
+});
