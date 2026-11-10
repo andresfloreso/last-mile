@@ -47,20 +47,32 @@ public class RouteController {
     @Operation(
             summary = "Arma la ruta del día con hora estimada por parada",
             description = """
-                    Agrupa los envíos de la fecha en paradas, una por local (HU-30), y las ordena \
-                    (ventana real + cercanía, respetando las paradas Primera y Última); \
+                    Agrupa los envíos de la fecha en paradas, una por local (HU-30), y las ordena con el \
+                    optimizador VRPTW de un camión (HU-28, Timefold): respeta la capacidad y la jornada del camión, \
+                    y busca la menor cantidad de paradas fuera de su ventana real, después los menos km, \
+                    con las paradas Primera y Última en los extremos. Si el solver falla o no hay solución \
+                    factible, usa el orden por franja y cercanía (optimizer = NEAREST_NEIGHBOR y optimizerNote dice por qué). \
+                    Después \
                     guarda el orden y calcula para cada parada la llegada, la espera hasta que abre su ventana real, \
                     el inicio de la entrega y la salida, con los tiempos por calle de OSRM y la duración de parada. \
                     Marca outsideWindow si la entrega empezaría cuando la ventana real ya cerró. \
                     Si OSRM no responde, los tiempos se estiman (timingSource = ESTIMATED).""")
     @ApiResponse(responseCode = "200", description = "Paradas en orden (una por local), con sus envíos, hora estimada y el tramo para el mapa")
-    @ApiResponse(responseCode = "400", description = "Falta la fecha, o stopMinutes fuera de 1–120")
+    @ApiResponse(responseCode = "400", description = "Falta la fecha, stopMinutes fuera de 1–120, o el camión está dado de baja")
+    @ApiResponse(responseCode = "404", description = "vehicleId no existe")
     @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN o DISPATCHER)")
     public ResponseEntity<List<PlannedStopResponse>> buildRoute(@Valid @RequestBody RouteRequest req) {
-        ConsolidatedRoute route = routeService.buildRouteForDate(req.date(), req.depotLat(), req.depotLng());
         LocalTime departure = req.departureTime() != null ? req.departureTime() : defaultDeparture;
         int stopMinutes = req.stopMinutes() != null ? req.stopMinutes() : defaultStopMinutes;
-        return ResponseEntity.ok(routeTimingService.schedule(route.stops(), route.loads(),
-                req.depotLat(), req.depotLng(), departure, stopMinutes));
+        ConsolidatedRoute route = routeService.buildRouteForDate(req.date(), req.depotLat(), req.depotLng(),
+                departure, stopMinutes, req.vehicleId());
+        List<PlannedStopResponse> planned = routeTimingService.schedule(route.stops(), route.loads(),
+                        req.depotLat(), req.depotLng(), departure, stopMinutes).stream()
+                .map(p -> p.withOptimizer(route.optimizer(), route.note(), route.vehicle()))
+                .toList();
+        return ResponseEntity.ok().header(OPTIMIZER_HEADER, route.optimizer()).body(planned);
     }
+
+    /** Quién ordenó la ruta (HU-28), también en un encabezado para no tener que leer las paradas. */
+    static final String OPTIMIZER_HEADER = "X-Route-Optimizer";
 }

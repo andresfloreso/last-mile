@@ -52,6 +52,11 @@ routing:
   default-departure: "08:00"   # salida del depósito si la request no la indica
   stop-minutes: 10             # minutos de entrega en cada local
   fallback-speed-kmh: 25       # velocidad urbana para estimar tramos cuando OSRM no responde
+  # HU-28: optimizador de la ruta del día.
+  optimizer:
+    engine: timefold             # timefold (VRPTW de un camión) o nearest-neighbor (HU-04)
+    time-limit: 10s              # tiempo máximo del solver
+    unimproved-time-limit: 3s    # corta antes si pasa este tiempo sin mejorar
 
 shipments:
   # HU-29: peso y volumen de un envío que no los informa (API o planilla sin peso_kg / volumen_m3).

@@ -22,6 +22,8 @@
     <jjwt.version>0.12.6</jjwt.version>
     <!-- 1.21.4+ es compatible con Docker Engine 29 (API mínima 1.44) -->
     <testcontainers.version>1.21.4</testcontainers.version>
+    <!-- HU-28: optimizador VRPTW de un camión -->
+    <timefold.version>1.15.0</timefold.version>
     <jacoco.version>0.8.12</jacoco.version>
     <!-- HU-04: cobertura mínima de líneas en el paquete algorithm/ (el CI falla por debajo) -->
     <jacoco.algorithm.minimum>0.60</jacoco.algorithm.minimum>
@@ -87,6 +89,14 @@
       <artifactId>jjwt-jackson</artifactId>
       <version>${jjwt.version}</version>
       <scope>runtime</scope>
+    </dependency>
+
+    <!-- HU-28: Timefold Solver (VRPTW de un camión). Solo el núcleo: el solver se arma
+         en código (TimefoldRouteOptimizer), sin el starter de Spring Boot. -->
+    <dependency>
+      <groupId>ai.timefold.solver</groupId>
+      <artifactId>timefold-solver-core</artifactId>
+      <version>${timefold.version}</version>
     </dependency>
 
     <!-- OpenAPI: /v3/api-docs y /swagger-ui.html (HU-25) -->

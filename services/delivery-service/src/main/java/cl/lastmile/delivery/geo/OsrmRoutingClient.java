@@ -88,6 +88,52 @@ public class OsrmRoutingClient {
         }
     }
 
+    /** Tiempos (s) y distancias (m) por calle entre todos los pares de puntos: [origen][destino]. */
+    public record Table(double[][] seconds, double[][] meters) {}
+
+    /**
+     * Como {@link #distanceMatrix(List)}, con tiempos y distancias (HU-28: el optimizador necesita
+     * los dos). Una celda sin ruta queda en NaN.
+     *
+     * @return la tabla, o Optional.empty() si OSRM no está disponible
+     */
+    public Optional<Table> table(List<double[]> points) {
+        int n = points.size();
+        if (n < 2) return Optional.of(new Table(new double[n][n], new double[n][n]));
+
+        String coordinates = points.stream()
+                .map(p -> p[1] + "," + p[0]) // OSRM espera lon,lat
+                .collect(Collectors.joining(";"));
+        try {
+            JsonNode response = webClient.get()
+                    .uri("/table/v1/driving/" + coordinates + "?annotations=duration,distance")
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .timeout(Duration.ofSeconds(6))
+                    .onErrorResume(ex -> {
+                        log.warn("OSRM no disponible para la tabla de tiempos: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .block();
+            if (response == null || !"Ok".equals(response.path("code").asText())) return Optional.empty();
+            return Optional.of(new Table(cells(response.get("durations"), n), cells(response.get("distances"), n)));
+        } catch (Exception ex) {
+            log.warn("Error inesperado consultando la tabla de OSRM: {}", ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private static double[][] cells(JsonNode rows, int n) {
+        double[][] matrix = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                JsonNode cell = rows.get(i).get(j);
+                matrix[i][j] = cell.isNull() ? Double.NaN : cell.asDouble();
+            }
+        }
+        return matrix;
+    }
+
     /** Un tramo de la ruta entre dos puntos consecutivos. {@code path} va como pares (lat, lng). */
     public record Leg(double durationSeconds, double distanceMeters, List<double[]> path) {}
 

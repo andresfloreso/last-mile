@@ -8,3 +8,8 @@ spring:
     # Testcontainers (@ServiceConnection) entrega la conexión real; este valor
     # solo evita que el placeholder sin default quede sin resolver.
     password: test
+routing:
+  optimizer:
+    # HU-28: el solver corta antes en los tests que arman rutas (RouteRegressionIT usa su propio límite).
+    time-limit: 3s
+    unimproved-time-limit: 1s
