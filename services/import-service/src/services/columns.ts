@@ -25,6 +25,8 @@ export const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "modulacion_hasta", required: false, example: "12:00", description: "Término del horario de recepción que declara el local (HH:mm)" },
   { key: "tracking", required: true, example: "PED-0001", description: "Código único del envío" },
   { key: "fecha_entrega", required: true, example: "2026-12-01", description: "yyyy-mm-dd o dd-mm-yyyy" },
+  { key: "peso_kg", required: false, example: "24,5", description: "Peso total del envío en kg. Si falta: 10 kg" },
+  { key: "volumen_m3", required: false, example: "0,08", description: "Volumen total del envío en m³. Si falta: 0,05 m³" },
   { key: "notas", required: false, example: "Entregar por la puerta lateral", description: "Notas para el conductor" },
 ];
 
@@ -120,4 +122,38 @@ export function parseModulation(fromRaw: unknown, toRaw: unknown): FieldResult<M
     return { ok: false, error: `Modulación inválida: modulacion_desde (${start}) debe ser anterior a modulacion_hasta (${end})` };
   }
   return { ok: true, value: { declaredWindowStart: start, declaredWindowEnd: end } };
+}
+
+export interface Load {
+  weightKg?: number;
+  volumeM3?: number;
+}
+
+/** Número positivo con punto o coma decimal ("24,5"). Vacío: undefined; inválido: null. */
+export function parsePositiveNumber(raw: unknown): number | undefined | null {
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw === "number") return Number.isFinite(raw) && raw > 0 ? raw : null;
+  const text = String(raw).trim();
+  if (text === "") return undefined;
+  if (!/^\d+([.,]\d+)?$/.test(text)) return null;
+  const value = Number(text.replace(",", "."));
+  return value > 0 ? value : null;
+}
+
+/**
+ * Peso y volumen del envío (HU-29). Son opcionales: si faltan, delivery-service usa el valor
+ * por defecto documentado (10 kg y 0,05 m³ por envío).
+ */
+export function parseLoad(weightRaw: unknown, volumeRaw: unknown): FieldResult<Load> {
+  const weightKg = parsePositiveNumber(weightRaw);
+  const volumeM3 = parsePositiveNumber(volumeRaw);
+  if (weightKg === null) return { ok: false, error: `peso_kg debe ser un número mayor que 0: "${String(weightRaw)}"` };
+  if (volumeM3 === null) return { ok: false, error: `volumen_m3 debe ser un número mayor que 0: "${String(volumeRaw)}"` };
+  return { ok: true, value: { weightKg, volumeM3 } };
+}
+
+/** Primer error de una lista de resultados de campos, o undefined si todos están bien. */
+export function firstError(...results: FieldResult<unknown>[]): string | undefined {
+  for (const r of results) if (!r.ok) return r.error;
+  return undefined;
 }

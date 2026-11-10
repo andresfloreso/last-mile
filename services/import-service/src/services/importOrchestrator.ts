@@ -72,6 +72,8 @@ export async function importShipmentRows(
         scheduledDate: row.scheduledDate,
         source,
         notes: row.notes,
+        weightKg: row.weightKg,
+        volumeM3: row.volumeM3,
       });
       created++;
     } catch (err) {

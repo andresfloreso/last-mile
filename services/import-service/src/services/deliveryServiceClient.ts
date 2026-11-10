@@ -30,6 +30,9 @@ export interface ShipmentPayload {
   scheduledDate: string;
   source: string;
   notes?: string;
+  /** HU-29: si faltan, delivery-service usa el valor por defecto. */
+  weightKg?: number;
+  volumeM3?: number;
 }
 
 export class DeliveryServiceClient {

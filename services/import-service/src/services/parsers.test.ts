@@ -29,6 +29,9 @@ describe("parseShipmentsCsv con tipo de local y modulación (HU-25)", () => {
     expect(rows[0].businessType).toBeUndefined();
     expect(rows[0].declaredWindowStart).toBeUndefined();
     expect(rows[0].scheduledDate).toBe("2026-12-01");
+    // HU-29: sin peso ni volumen, delivery-service aplica el valor por defecto.
+    expect(rows[0].weightKg).toBeUndefined();
+    expect(rows[0].volumeM3).toBeUndefined();
   });
 
   it("informa la fila y el motivo cuando el tipo o la modulación son inválidos", () => {
@@ -47,6 +50,40 @@ describe("parseShipmentsCsv con tipo de local y modulación (HU-25)", () => {
       { rowNumber: 3, message: expect.stringContaining("debe ser anterior a modulacion_hasta") },
       { rowNumber: 4, message: "La modulación necesita modulacion_desde y modulacion_hasta" },
     ]);
+  });
+});
+
+describe("peso y volumen (HU-29)", () => {
+  const H = "cliente,direccion,tracking,fecha_entrega,Peso kg,Volumen m3";
+
+  it("lee peso_kg y volumen_m3 con coma o punto decimal", () => {
+    const csv = `${H}\nA,Dir 1,PED-7,2026-12-01,"24,5",0.08\nB,Dir 2,PED-8,2026-12-01,12,\n`;
+    const { rows, errors } = parseShipmentsCsv(csv);
+    expect(errors).toEqual([]);
+    expect(rows[0]).toMatchObject({ weightKg: 24.5, volumeM3: 0.08 });
+    expect(rows[1].weightKg).toBe(12);
+    expect(rows[1].volumeM3).toBeUndefined();
+  });
+
+  it("un peso o volumen que no es un número positivo es error de la fila", () => {
+    const csv = [H, "A,Dir 1,PED-9,2026-12-01,0,0.1", "B,Dir 2,PED-10,2026-12-01,10,-1", "C,Dir 3,PED-11,2026-12-01,diez,"].join("\n");
+    const { rows, errors } = parseShipmentsCsv(csv);
+    expect(rows).toEqual([]);
+    expect(errors).toEqual([
+      { rowNumber: 2, message: 'peso_kg debe ser un número mayor que 0: "0"' },
+      { rowNumber: 3, message: 'volumen_m3 debe ser un número mayor que 0: "-1"' },
+      { rowNumber: 4, message: 'peso_kg debe ser un número mayor que 0: "diez"' },
+    ]);
+  });
+
+  it("en Excel acepta celdas numéricas", async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Envíos");
+    sheet.addRow(["cliente", "direccion", "tracking", "fecha_entrega", "peso_kg", "volumen_m3"]);
+    sheet.addRow(["A", "Dir 1", "PED-12", "2026-12-01", 30, 0.12]);
+    const { rows, errors } = await parseShipmentsExcel(Buffer.from(await workbook.xlsx.writeBuffer()));
+    expect(errors).toEqual([]);
+    expect(rows[0]).toMatchObject({ weightKg: 30, volumeM3: 0.12 });
   });
 });
 
@@ -75,7 +112,7 @@ describe("plantilla descargable", () => {
 
     const headers = (workbook.getWorksheet("Envíos")!.getRow(1).values as unknown[]).slice(1);
     expect(headers).toEqual(IMPORT_COLUMNS.map((c) => c.key));
-    expect(headers).toEqual(expect.arrayContaining(["tipo_local", "modulacion_desde", "modulacion_hasta"]));
+    expect(headers).toEqual(expect.arrayContaining(["tipo_local", "modulacion_desde", "modulacion_hasta", "peso_kg", "volumen_m3"]));
     expect(workbook.getWorksheet("Instrucciones")).toBeDefined();
   });
 
@@ -88,6 +125,8 @@ describe("plantilla descargable", () => {
       businessType: "BOTILLERIA",
       declaredWindowStart: "09:00",
       declaredWindowEnd: "12:00",
+      weightKg: 24.5,
+      volumeM3: 0.08,
     });
   });
 });
