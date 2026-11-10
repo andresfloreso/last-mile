@@ -99,9 +99,9 @@ docker compose down -v          # borra los datos (la semilla se vuelve a cargar
   `tipo:feature|chore|bug`, el milestone del sprint, los criterios de
   aceptación como checklist `- [ ]` y los puntos. Revisa `gh issue list`
   antes de crear uno, para no duplicar.
-- **Épicas:** E1 = HU-01..04 y chores de repo; E2 = HU-05..07; E3 = HU-08..10
-  y HU-25; E4 = HU-11..13; E5 = HU-14..17 y HU-27; E6 = HU-18..20 y HU-26;
-  E7 = HU-21..22; E8 = HU-23..24.
+- **Épicas:** E1 = HU-01..04, HU-31 y chores de repo; E2 = HU-05..07;
+  E3 = HU-08..10 y HU-25; E4 = HU-11..13; E5 = HU-14..17, HU-27..30 y HU-32;
+  E6 = HU-18..20 y HU-26; E7 = HU-21..22; E8 = HU-23..24; E9 = HU-33..35.
 - **Tablero** (GitHub Project "LastMile"): Backlog → En curso (al crear la
   rama) → En revisión (al abrir el PR) → Terminado (al mergear). Comenta en el
   issue el nombre de la rama y marca los criterios a medida que se cumplen.
