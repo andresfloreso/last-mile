@@ -28,7 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * HU-28: test de regresión del optimizador sobre la semilla (HU-31).
  *
  * <p>Arma la ruta de hoy y la del día cargado con el nearest-neighbor (línea base) y con el VRPTW, y
- * falla si el VRPTW deja más paradas fuera de su ventana real que la línea base. Sin OSRM (tiempos
+ * falla si el VRPTW deja más paradas fuera de su ventana real que la línea base, o si tarda más que su
+ * límite de tiempo. Sin OSRM (tiempos
  * estimados), así que corre igual en el CI. La tabla con OSRM real está en docs/plan/hu-28/.
  *
  * <p>Solo lee: no guarda el orden (no pasa por RouteService) y el método es @Transactional de solo
@@ -89,7 +90,13 @@ class RouteRegressionIT {
                 Duration.ofSeconds(10), Duration.ofSeconds(3));
 
         Metrics baseline = measure(nearestNeighbor.optimize(problem));
-        Metrics optimized = measure(vrptw.optimize(problem));
+        long start = System.nanoTime();
+        OptimizedRoute route = vrptw.optimize(problem);
+        Duration elapsed = Duration.ofNanos(System.nanoTime() - start);
+        Metrics optimized = measure(route);
+
+        assertThat(elapsed).as("el solver respeta su límite de 10 s (más la tabla y el armado)")
+                .isLessThan(Duration.ofSeconds(15));
 
         assertThat(optimized.optimizer()).as("el VRPTW encuentra una ruta factible").isEqualTo(RouteOptimizer.VRPTW);
         assertThat(optimized.outsideWindow())
