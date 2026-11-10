@@ -17,7 +17,8 @@ Medido el 2026-11-10 con `python infra/seed/tools/medir_ruta.py <fecha> --json <
 | Día cargado, antes (nearest-neighbor) | 40 | 72,7 | 20:14 | 4 | 4 | — |
 | **Día cargado, después (VRPTW)** | 40 | **69,9** (−2,8 km; −4 %) | **20:11** | **3** | **1** | `VRPTW` |
 
-Las respuestas completas están en [`vrptw-hoy.json`](vrptw-hoy.json) y
+Cada ruta (orden, ventana, horas y metros de cada tramo, sin la geometría de
+OSRM) está en [`vrptw-hoy.json`](vrptw-hoy.json) y
 [`vrptw-dia-cargado.json`](vrptw-dia-cargado.json). Las de antes están en
 [`nn-hoy.json`](nn-hoy.json) y [`nn-dia-cargado.json`](nn-dia-cargado.json).
 

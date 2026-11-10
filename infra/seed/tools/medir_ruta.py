@@ -52,8 +52,16 @@ def main():
         print(f'{s["position"]:>2} {s["serviceStart"]} [{s.get("windowStart","")[:5]}-{s.get("windowEnd","")[:5]}]'
               f'{" FUERA" if s.get("outsideWindow") else ""}  {s["customerName"]}')
     if "--json" in sys.argv:
-        json.dump({"resumen": res, "paradas": stops}, open(sys.argv[sys.argv.index("--json") + 1], "w", encoding="utf-8"),
-                  ensure_ascii=False, indent=1)
+        # Sin la geometría de OSRM (path, coordenadas): deja el diff revisable y alcanza para la tabla.
+        keep = ["position", "customerName", "address", "windowStart", "windowEnd", "orderPreference",
+                "shipmentCount", "estimatedArrival", "waitMinutes", "serviceStart", "estimatedDeparture",
+                "travelMinutes", "legDistanceMeters", "outsideWindow", "dayOffset", "timingSource",
+                "optimizer", "vehiclePlate"]
+        rows = [json.dumps({k: s[k] for k in keep if k in s}, ensure_ascii=False) for s in stops]
+        text = ['{', '  "resumen": ' + json.dumps(res, ensure_ascii=False) + ',', '  "paradas": [',
+                ',\n'.join('    ' + r for r in rows), '  ]', '}', '']
+        with open(sys.argv[sys.argv.index("--json") + 1], "w", encoding="utf-8", newline="\n") as out:
+            out.write('\n'.join(text))
 
 
 if __name__ == "__main__":

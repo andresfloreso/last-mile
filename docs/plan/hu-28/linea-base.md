@@ -14,7 +14,8 @@ final del Sprint 4 (HU-31, con paradas de HU-30 y carga de HU-29).
 - Dos fechas:
   - **hoy**: las 24 paradas de la demo; se generan con la fecha del día, con el mismo patrón;
   - **día cargado**: el 2027-01-04, con 40 paradas y 46 envíos.
-- La respuesta completa de cada ruta (orden, horas y tramos) está en
+- Cada ruta (orden, ventana, horas y metros de cada tramo, una parada por
+  línea y sin la geometría de OSRM) está en
   [`nn-hoy.json`](nn-hoy.json) y [`nn-dia-cargado.json`](nn-dia-cargado.json).
 
 ## Resultado
