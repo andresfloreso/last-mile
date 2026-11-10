@@ -83,6 +83,11 @@ const StopRow = forwardRef<HTMLLIElement, Props>(function StopRow({ stop, select
               )}
             </>
           )}
+          {stop.shipmentCount > 1 && (
+            <span className="rounded border border-line px-1.5 py-0.5 font-semibold tabular-nums text-ink">
+              {stop.shipmentCount} envíos
+            </span>
+          )}
           {stop.outsideWindow && (
             <span className="flex items-center gap-1 font-semibold text-reject">
               <ClockIcon className="h-3.5 w-3.5" />

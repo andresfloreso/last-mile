@@ -15,7 +15,9 @@ interface Props {
 export default function StopMarker({ stop, selected, draggable, onSelect, onDragEnd }: Props) {
   const icon = useMemo(() => stopIcon(stop, selected), [stop, selected]);
   if (stop.latitude == null || stop.longitude == null) return null;
-  const label = `Parada ${stop.position}: ${stop.name}, ${stop.eta}${stop.outsideWindow ? ", fuera de ventana" : ""}${
+  const label = `Parada ${stop.position}: ${stop.name}${
+    stop.shipmentCount > 1 ? ` (${stop.shipmentCount} envíos)` : ""
+  }, ${stop.eta}${stop.outsideWindow ? ", fuera de ventana" : ""}${
     stop.needsReview ? ", ubicación por revisar" : ""
   }`;
   return (
