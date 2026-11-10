@@ -221,7 +221,7 @@ class SeedDataIT {
                         Map.of("plate", "JRHL-48", "capacity_kg", 1200.0, "capacity_m3", 8.0,
                                 "start", "08:00:00", "end", "18:00:00", "active", true),
                         Map.of("plate", "KXPT-21", "capacity_kg", 3500.0, "capacity_m3", 18.0,
-                                "start", "08:00:00", "end", "20:00:00", "active", true));
+                                "start", "08:00:00", "end", "21:00:00", "active", true));
 
         // Todos los envíos semilla tienen peso y volumen según su tipo de local y sus bultos.
         assertThat(count("""
