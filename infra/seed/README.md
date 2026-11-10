@@ -60,9 +60,13 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
 - **24 envíos para hoy** (`SEED-<yyyymmdd>-01` … `-24`): uno por local de los
   locales 1–30, salvo los 6 que hoy no piden (3, 6, 7, 11, 16 y 29), para que
   **un camión alcance a hacer la ruta en el horario** (mañana 7, mediodía 7,
-  tarde 4, noche 6). Es la demo de la pantalla de rutas.
+  tarde 4, noche 6). Es la demo de la pantalla de rutas. Además, los locales
+  1 y 4 reciben un segundo pedido (`-25` y `-26`): **26 envíos en 24
+  paradas**, porque la ruta visita cada local una vez (HU-30).
 - **Día cargado: lunes 4 de enero de 2027** (`SEED-CARGA-20270104-01` … `-40`):
-  un envío por cada uno de los 40 locales, 10 por franja. Con un camión **no
+  un envío por cada uno de los 40 locales, 10 por franja, más un segundo pedido
+  en los locales 2, 5, 12, 19, 26 y 33 (`-41` … `-46`): 46 envíos en 40
+  paradas (HU-30). Con un camión **no
   caben todos dentro de su ventana real**, así que es el día con el que HU-28
   compara optimizadores (km, hora de término y paradas y minutos fuera de
   ventana). La fecha es fija para que no se mezcle con los envíos de "hoy". Si levantas el ambiente

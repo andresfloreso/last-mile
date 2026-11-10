@@ -116,7 +116,7 @@ carga datos de ejemplo de forma idempotente (detalle en [`infra/seed/`](infra/se
 
 - un usuario por rol (`admin@`, `despacho@`, `conductor@`, `operador@` y `cliente@lastmile.cl`), todos con la contraseña `lastmile123`;
 - 40 locales comerciales (botillerías, minimarkets, bares y restaurantes) en direcciones reales de Santiago, Providencia y Ñuñoa (HU-31), con tipo, modulación declarada y 60 días de historial de intentos; 14 declaran un horario distinto de su ventana real, y dentro de su ventana reciben entre 71% y 93% de las visitas;
-- 24 envíos para la fecha de hoy, en esa zona compacta, que un camión alcanza a repartir en el horario, saliendo de la bodega de Av. Italia 1300 (Providencia), y un día cargado fijo (4 ene 2027) con 40 envíos para comparar optimizadores.
+- 26 envíos para la fecha de hoy en 24 paradas (dos locales reciben dos pedidos y la ruta los visita una vez), en esa zona compacta, que un camión alcanza a repartir en el horario, saliendo de la bodega de Av. Italia 1300 (Providencia), y un día cargado fijo (4 ene 2027) con 40 paradas (46 envíos) para comparar optimizadores.
 
 | Quiero… | Comando |
 |---|---|
