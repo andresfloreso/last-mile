@@ -1,0 +1,1244 @@
+[
+ {
+  "local": 1,
+  "nombre": "Minimarket Don Lucho",
+  "direccion": "Merced 300",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.437229,
+   -70.640901
+  ],
+  "nominatim": {
+   "lat": -33.437229,
+   "lng": -70.6409005,
+   "osm": "node/1279505294",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.437229,
+   "lng": -70.6409005,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.437153316772,
+   "lng": -70.640533441045,
+   "tipo": "PointAddress",
+   "score": 97.04,
+   "m": 35.1,
+   "semilla_queda_al": "O"
+  },
+  "revisar": []
+ },
+ {
+  "local": 2,
+  "nombre": "Botillería El Roble",
+  "direccion": "Av. Providencia 2124",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.422072,
+   -70.611427
+  ],
+  "nominatim": {
+   "lat": -33.4220724,
+   "lng": -70.6114271,
+   "osm": "node/7206647185",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4220724,
+   "lng": -70.6114271,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.422172508865,
+   "lng": -70.611258806014,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 19.2,
+   "semilla_queda_al": "NO"
+  },
+  "revisar": []
+ },
+ {
+  "local": 3,
+  "nombre": "Restaurant El Encuentro",
+  "direccion": "Av. Providencia 2300",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.420578,
+   -70.607977
+  ],
+  "nominatim": {
+   "lat": -33.4205775,
+   "lng": -70.6079765,
+   "osm": "node/12401971968",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4205775,
+   "lng": -70.6079765,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.420744526417,
+   "lng": -70.608220901315,
+   "tipo": "StreetAddressExt",
+   "score": 93.81,
+   "m": 29.2,
+   "semilla_queda_al": "NE"
+  },
+  "revisar": []
+ },
+ {
+  "local": 4,
+  "nombre": "Bar La Esquina de Ñuñoa",
+  "direccion": "Av. Irarrázaval 3550",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.454179,
+   -70.593643
+  ],
+  "nominatim": {
+   "lat": -33.4541794,
+   "lng": -70.5936425,
+   "osm": "way/50825449",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4541794,
+   "lng": -70.5936425,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.454233791425,
+   "lng": -70.593665191249,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 6.4,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 5,
+  "nombre": "Minimarket Simón Bolívar",
+  "direccion": "Av. Simón Bolívar 3500",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.448593,
+   -70.594306
+  ],
+  "nominatim": {
+   "lat": -33.4485929,
+   "lng": -70.594306,
+   "osm": "way/108581337",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4485929,
+   "lng": -70.594306,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.448619896953,
+   "lng": -70.594273954703,
+   "tipo": "StreetAddress",
+   "score": 93.15,
+   "m": 4.2,
+   "semilla_queda_al": "NO"
+  },
+  "revisar": []
+ },
+ {
+  "local": 6,
+  "nombre": "Botillería Los Leones",
+  "direccion": "Av. Los Leones 400",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.423419,
+   -70.604389
+  ],
+  "nominatim": {
+   "lat": -33.4234186,
+   "lng": -70.6043894,
+   "osm": "way/108453473",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4234186,
+   "lng": -70.6043894,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.422765375336,
+   "lng": -70.604580637048,
+   "tipo": "StreetAddress",
+   "score": 94.91,
+   "m": 74.8,
+   "semilla_queda_al": "S"
+  },
+  "revisar": []
+ },
+ {
+  "local": 7,
+  "nombre": "Restaurant Lastarria",
+  "direccion": "José Victorino Lastarria 70",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.439582,
+   -70.641336
+  ],
+  "nominatim": {
+   "lat": -33.439582,
+   "lng": -70.6413363,
+   "osm": "node/1841266853",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4395643,
+   "lng": -70.6412635,
+   "place_rank": 30,
+   "m": 7.0
+  },
+  "esri": {
+   "lat": -33.43965099819,
+   "lng": -70.641326033809,
+   "tipo": "PointAddress",
+   "score": 97.04,
+   "m": 7.7,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 8,
+  "nombre": "Bar El Farol",
+  "direccion": "Lira 600",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.450374,
+   -70.638593
+  ],
+  "nominatim": {
+   "lat": -33.4503739,
+   "lng": -70.6385928,
+   "osm": "node/1279297154",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4503739,
+   "lng": -70.6385928,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.453071987707,
+   "lng": -70.649324965416,
+   "tipo": "StreetAddressExt",
+   "score": 95.94,
+   "m": 1039.9,
+   "semilla_queda_al": "E"
+  },
+  "revisar": []
+ },
+ {
+  "local": 9,
+  "nombre": "Minimarket Los Andes",
+  "direccion": "Av. Ricardo Lyon 2900",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.447757,
+   -70.602405
+  ],
+  "nominatim": {
+   "lat": -33.447757,
+   "lng": -70.6024048,
+   "osm": "way/108580094",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.447757,
+   "lng": -70.6024048,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.447671515526,
+   "lng": -70.602488397431,
+   "tipo": "StreetAddress",
+   "score": 94.91,
+   "m": 12.3,
+   "semilla_queda_al": "SE"
+  },
+  "revisar": []
+ },
+ {
+  "local": 10,
+  "nombre": "Botillería Santa Rosa",
+  "direccion": "Av. Santa Rosa 500",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.450207,
+   -70.644395
+  ],
+  "nominatim": {
+   "lat": -33.4502066,
+   "lng": -70.6443949,
+   "osm": "node/1279298753",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4502066,
+   "lng": -70.6443949,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.450431871494,
+   "lng": -70.644375617918,
+   "tipo": "StreetAddress",
+   "score": 98.09,
+   "m": 25.1,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 11,
+  "nombre": "Restaurant Nueva Providencia",
+  "direccion": "Av. Nueva Providencia 1900",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.42528,
+   -70.613628
+  ],
+  "nominatim": {
+   "lat": -33.4252797,
+   "lng": -70.6136283,
+   "osm": "node/1279580172",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4252797,
+   "lng": -70.6136283,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.42536740011,
+   "lng": -70.613691038952,
+   "tipo": "StreetAddressExt",
+   "score": 93.81,
+   "m": 11.3,
+   "semilla_queda_al": "NE"
+  },
+  "revisar": []
+ },
+ {
+  "local": 12,
+  "nombre": "Bar Dublé Almeyda",
+  "direccion": "Dublé Almeyda 2850",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.455885,
+   -70.601745
+  ],
+  "nominatim": {
+   "lat": -33.455885,
+   "lng": -70.6017453,
+   "osm": "way/108593934",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.455885,
+   "lng": -70.6017453,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.455964941589,
+   "lng": -70.601713722667,
+   "tipo": "StreetAddress",
+   "score": 93.86,
+   "m": 9.4,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 13,
+  "nombre": "Minimarket Carmen",
+  "direccion": "Carmen 500",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.450027,
+   -70.641394
+  ],
+  "nominatim": {
+   "lat": -33.4500268,
+   "lng": -70.6413936,
+   "osm": "node/1279297011",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4500268,
+   "lng": -70.6413936,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.449953137518,
+   "lng": -70.64162374092,
+   "tipo": "StreetAddress",
+   "score": 97.04,
+   "m": 22.8,
+   "semilla_queda_al": "E"
+  },
+  "revisar": []
+ },
+ {
+  "local": 14,
+  "nombre": "Botillería El Paradero",
+  "direccion": "Av. Irarrázaval 2100",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.453503,
+   -70.609235
+  ],
+  "nominatim": {
+   "lat": -33.4535028,
+   "lng": -70.6092353,
+   "osm": "way/108593872",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4535028,
+   "lng": -70.6092353,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.453467601656,
+   "lng": -70.609170119562,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 7.2,
+   "semilla_queda_al": "SO"
+  },
+  "revisar": []
+ },
+ {
+  "local": 15,
+  "nombre": "Restaurant Barrio Italia",
+  "direccion": "Av. Italia 1180",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.445361,
+   -70.625269
+  ],
+  "nominatim": {
+   "lat": -33.4453608,
+   "lng": -70.6252685,
+   "osm": "way/108391959",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4453608,
+   "lng": -70.6252685,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.445534408455,
+   "lng": -70.625239227443,
+   "tipo": "StreetAddress",
+   "score": 94.91,
+   "m": 19.5,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 16,
+  "nombre": "Bar Bellavista",
+  "direccion": "Pío Nono 150",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.432768,
+   -70.63611
+  ],
+  "nominatim": {
+   "lat": -33.4327684,
+   "lng": -70.6361099,
+   "osm": "way/112605457",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4327684,
+   "lng": -70.6361099,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.43621,
+   "lng": -70.60896,
+   "tipo": "Locality",
+   "score": 91.11,
+   "m": 2548.3,
+   "semilla_queda_al": "O"
+  },
+  "revisar": []
+ },
+ {
+  "local": 17,
+  "nombre": "Minimarket Cañas",
+  "direccion": "José Domingo Cañas 2200",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.456723,
+   -70.608382
+  ],
+  "nominatim": {
+   "lat": -33.4567229,
+   "lng": -70.6083819,
+   "osm": "node/1245557481",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4563876,
+   "lng": -70.6170976,
+   "place_rank": 30,
+   "m": 809.4
+  },
+  "esri": {
+   "lat": -33.456729608553,
+   "lng": -70.60908182939,
+   "tipo": "StreetAddressExt",
+   "score": 92.76,
+   "m": 64.9,
+   "semilla_queda_al": "E"
+  },
+  "revisar": []
+ },
+ {
+  "local": 18,
+  "nombre": "Botillería Portugal",
+  "direccion": "Av. Portugal 1000",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.455322,
+   -70.633432
+  ],
+  "nominatim": {
+   "lat": -33.4553217,
+   "lng": -70.6334323,
+   "osm": "node/1279297957",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4553217,
+   "lng": -70.6334323,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.455088510598,
+   "lng": -70.633485917467,
+   "tipo": "StreetAddress",
+   "score": 98.09,
+   "m": 26.4,
+   "semilla_queda_al": "S"
+  },
+  "revisar": []
+ },
+ {
+  "local": 19,
+  "nombre": "Restaurant Alameda",
+  "direccion": "Av. Libertador Bernardo O'Higgins 1302",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.445884,
+   -70.653969
+  ],
+  "nominatim": {
+   "lat": -33.4458845,
+   "lng": -70.6539694,
+   "osm": "node/10287487009",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4458845,
+   "lng": -70.6539694,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.444856599235,
+   "lng": -70.653764530081,
+   "tipo": "StreetAddressExt",
+   "score": 96.99,
+   "m": 115.8,
+   "semilla_queda_al": "S"
+  },
+  "revisar": []
+ },
+ {
+  "local": 20,
+  "nombre": "Bar Manuel Montt",
+  "direccion": "Av. Manuel Montt 1050",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.437644,
+   -70.615823
+  ],
+  "nominatim": {
+   "lat": -33.4376444,
+   "lng": -70.6158233,
+   "osm": "way/112586145",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4376444,
+   "lng": -70.6158233,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.437431086275,
+   "lng": -70.615916673055,
+   "tipo": "StreetAddress",
+   "score": 94.91,
+   "m": 25.2,
+   "semilla_queda_al": "S"
+  },
+  "revisar": []
+ },
+ {
+  "local": 21,
+  "nombre": "Minimarket Pedro de Valdivia",
+  "direccion": "Av. Pedro de Valdivia 1215",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.434241,
+   -70.608945
+  ],
+  "nominatim": {
+   "lat": -33.434241,
+   "lng": -70.6089447,
+   "osm": "way/297293336",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.434241,
+   "lng": -70.6089447,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.434277779159,
+   "lng": -70.608965601124,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 4.5,
+   "semilla_queda_al": "NE"
+  },
+  "revisar": []
+ },
+ {
+  "local": 22,
+  "nombre": "Botillería Manuel Montt",
+  "direccion": "Av. Manuel Montt 2600",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.451307,
+   -70.61279
+  ],
+  "nominatim": {
+   "lat": -33.4513068,
+   "lng": -70.6127899,
+   "osm": "node/4464061344",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4513068,
+   "lng": -70.6127899,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.4513220859,
+   "lng": -70.612687585229,
+   "tipo": "PointAddress",
+   "score": 93.15,
+   "m": 9.6,
+   "semilla_queda_al": "O"
+  },
+  "revisar": []
+ },
+ {
+  "local": 23,
+  "nombre": "Restaurant Monjitas",
+  "direccion": "Monjitas 500",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.436711,
+   -70.644546
+  ],
+  "nominatim": {
+   "lat": -33.4367112,
+   "lng": -70.6445463,
+   "osm": "way/112603595",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4367112,
+   "lng": -70.6445463,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.436478681089,
+   "lng": -70.643617202822,
+   "tipo": "StreetAddress",
+   "score": 97.04,
+   "m": 90.0,
+   "semilla_queda_al": "O"
+  },
+  "revisar": []
+ },
+ {
+  "local": 24,
+  "nombre": "Bar Bilbao",
+  "direccion": "Av. Francisco Bilbao 500",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.441534,
+   -70.625609
+  ],
+  "nominatim": {
+   "lat": -33.441534,
+   "lng": -70.6256092,
+   "osm": "way/108391865",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.441534,
+   "lng": -70.6256092,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.441781018315,
+   "lng": -70.626032325131,
+   "tipo": "StreetAddress",
+   "score": 94.91,
+   "m": 47.9,
+   "semilla_queda_al": "NE"
+  },
+  "revisar": []
+ },
+ {
+  "local": 25,
+  "nombre": "Minimarket Plaza Ñuñoa",
+  "direccion": "Jorge Washington 26",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.454837,
+   -70.594391
+  ],
+  "nominatim": {
+   "lat": -33.4548375,
+   "lng": -70.5943911,
+   "osm": "way/51966161",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4548375,
+   "lng": -70.5943911,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.454914904877,
+   "lng": -70.594268017725,
+   "tipo": "PointAddress",
+   "score": 93.86,
+   "m": 14.3,
+   "semilla_queda_al": "NO"
+  },
+  "revisar": []
+ },
+ {
+  "local": 26,
+  "nombre": "Botillería Chile España",
+  "direccion": "Chile España 400",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.450969,
+   -70.598213
+  ],
+  "nominatim": {
+   "lat": -33.4509692,
+   "lng": -70.5982128,
+   "osm": "node/1245583090",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4509692,
+   "lng": -70.5982128,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.451253227683,
+   "lng": -70.598203178193,
+   "tipo": "StreetAddress",
+   "score": 93.86,
+   "m": 31.6,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 27,
+  "nombre": "Restaurant San Diego",
+  "direccion": "San Diego 860",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.456309,
+   -70.649562
+  ],
+  "nominatim": {
+   "lat": -33.4563088,
+   "lng": -70.6495619,
+   "osm": "way/112583600",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4563088,
+   "lng": -70.6495619,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.456346785396,
+   "lng": -70.650409837556,
+   "tipo": "PointAddress",
+   "score": 93.86,
+   "m": 78.8,
+   "semilla_queda_al": "E"
+  },
+  "revisar": []
+ },
+ {
+  "local": 28,
+  "nombre": "Bar El Tranque",
+  "direccion": "Arturo Prat 800",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.455309,
+   -70.647987
+  ],
+  "nominatim": {
+   "lat": -33.4553086,
+   "lng": -70.6479869,
+   "osm": "node/1279299555",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4553086,
+   "lng": -70.6479869,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.546082851298,
+   "lng": -70.66065537869,
+   "tipo": "StreetName",
+   "score": 97.41,
+   "m": 10161.7,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 29,
+  "nombre": "Minimarket Irarrázaval",
+  "direccion": "Av. Irarrázaval 3000",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.454343,
+   -70.599834
+  ],
+  "nominatim": {
+   "lat": -33.4543429,
+   "lng": -70.5998339,
+   "osm": "way/264684161",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4543429,
+   "lng": -70.5998339,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.454442081719,
+   "lng": -70.599834020529,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 11.0,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 30,
+  "nombre": "Botillería Providencia",
+  "direccion": "Av. Providencia 1308",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.428584,
+   -70.620205
+  ],
+  "nominatim": {
+   "lat": -33.4285842,
+   "lng": -70.6202047,
+   "osm": "node/673027173",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4285842,
+   "lng": -70.6202047,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.428539486336,
+   "lng": -70.620249738274,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 6.5,
+   "semilla_queda_al": "SE"
+  },
+  "revisar": []
+ },
+ {
+  "local": 31,
+  "nombre": "Restaurant El Mirador",
+  "direccion": "Av. Providencia 2594",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.418501,
+   -70.603204
+  ],
+  "nominatim": {
+   "lat": -33.4185013,
+   "lng": -70.6032037,
+   "osm": "way/243988544",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4185013,
+   "lng": -70.6032037,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.418507479792,
+   "lng": -70.603179238086,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 2.4,
+   "semilla_queda_al": "O"
+  },
+  "revisar": []
+ },
+ {
+  "local": 32,
+  "nombre": "Bar La Terraza",
+  "direccion": "Av. Manuel Montt 500",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.432795,
+   -70.617536
+  ],
+  "nominatim": {
+   "lat": -33.4327946,
+   "lng": -70.6175355,
+   "osm": "node/768975894",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4327946,
+   "lng": -70.6175355,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.432739280831,
+   "lng": -70.617499216747,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 7.1,
+   "semilla_queda_al": "SO"
+  },
+  "revisar": []
+ },
+ {
+  "local": 33,
+  "nombre": "Minimarket Valdivia Norte",
+  "direccion": "Av. Pedro de Valdivia 100",
+  "comuna": "Providencia",
+  "semilla": [
+   -33.424542,
+   -70.611415
+  ],
+  "nominatim": {
+   "lat": -33.4245422,
+   "lng": -70.6114152,
+   "osm": "way/298673788",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4245422,
+   "lng": -70.6114152,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.424551502534,
+   "lng": -70.611399538168,
+   "tipo": "PointAddress",
+   "score": 94.91,
+   "m": 1.8,
+   "semilla_queda_al": "NO"
+  },
+  "revisar": []
+ },
+ {
+  "local": 34,
+  "nombre": "Botillería Pedro de Valdivia",
+  "direccion": "Av. Pedro de Valdivia 3000",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.449881,
+   -70.60522
+  ],
+  "nominatim": {
+   "lat": -33.4498806,
+   "lng": -70.6052201,
+   "osm": "way/108593923",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4498806,
+   "lng": -70.6052201,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.450001105686,
+   "lng": -70.605205186068,
+   "tipo": "StreetAddress",
+   "score": 94.91,
+   "m": 13.4,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 35,
+  "nombre": "Restaurant Suecia",
+  "direccion": "Av. Suecia 2900",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.446332,
+   -70.600794
+  ],
+  "nominatim": {
+   "lat": -33.4463324,
+   "lng": -70.6007943,
+   "osm": "node/1245461704",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4463324,
+   "lng": -70.6007943,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.446513079545,
+   "lng": -70.600782001394,
+   "tipo": "StreetAddressExt",
+   "score": 93.81,
+   "m": 20.2,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 36,
+  "nombre": "Bar El Clavel",
+  "direccion": "Av. Irarrázaval 2500",
+  "comuna": "Ñuñoa",
+  "semilla": [
+   -33.453964,
+   -70.605204
+  ],
+  "nominatim": {
+   "lat": -33.4539642,
+   "lng": -70.6052036,
+   "osm": "way/108593868",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4539642,
+   "lng": -70.6052036,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.454011880128,
+   "lng": -70.605188030308,
+   "tipo": "StreetAddress",
+   "score": 94.91,
+   "m": 5.5,
+   "semilla_queda_al": "N"
+  },
+  "revisar": []
+ },
+ {
+  "local": 37,
+  "nombre": "Minimarket Portugal",
+  "direccion": "Av. Portugal 700",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.451812,
+   -70.634275
+  ],
+  "nominatim": {
+   "lat": -33.4518119,
+   "lng": -70.6342754,
+   "osm": "way/112584088",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4518119,
+   "lng": -70.6342754,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.451685055496,
+   "lng": -70.63446276549,
+   "tipo": "StreetAddressExt",
+   "score": 96.99,
+   "m": 22.4,
+   "semilla_queda_al": "SE"
+  },
+  "revisar": []
+ },
+ {
+  "local": 38,
+  "nombre": "Botillería Carmen",
+  "direccion": "Carmen 800",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.453905,
+   -70.640345
+  ],
+  "nominatim": {
+   "lat": -33.4539046,
+   "lng": -70.640345,
+   "osm": "node/1279296996",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4539046,
+   "lng": -70.640345,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.45507720086,
+   "lng": -70.640233165744,
+   "tipo": "StreetAddress",
+   "score": 93.86,
+   "m": 130.8,
+   "semilla_queda_al": "N"
+  },
+  "revisar": [
+   "esri a 131 m (StreetAddress; la semilla queda al N)"
+  ]
+ },
+ {
+  "local": 39,
+  "nombre": "Restaurant Santa Isabel",
+  "direccion": "Santa Isabel 300",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.448313,
+   -70.635424
+  ],
+  "nominatim": {
+   "lat": -33.4483129,
+   "lng": -70.6354242,
+   "osm": "node/1279299282",
+   "m": 0.0
+  },
+  "nominatim_libre": {
+   "lat": -33.4483129,
+   "lng": -70.6354242,
+   "place_rank": 30,
+   "m": 0.0
+  },
+  "esri": {
+   "lat": -33.448187948742,
+   "lng": -70.635065547049,
+   "tipo": "StreetAddress",
+   "score": 97.04,
+   "m": 36.0,
+   "semilla_queda_al": "SO"
+  },
+  "revisar": []
+ },
+ {
+  "local": 40,
+  "nombre": "Bar Merced",
+  "direccion": "Merced 700",
+  "comuna": "Santiago",
+  "semilla": [
+   -33.438161,
+   -70.646772
+  ],
+  "nominatim": {
+   "lat": -33.4381613,
+   "lng": -70.6467725,
+   "osm": "way/112603611",
+   "m": 0.1
+  },
+  "nominatim_libre": {
+   "lat": -33.4381613,
+   "lng": -70.6467725,
+   "place_rank": 30,
+   "m": 0.1
+  },
+  "esri": {
+   "lat": -33.438068528785,
+   "lng": -70.646550693928,
+   "tipo": "StreetAddress",
+   "score": 97.04,
+   "m": 23.0,
+   "semilla_queda_al": "SO"
+  },
+  "revisar": []
+ }
+]
