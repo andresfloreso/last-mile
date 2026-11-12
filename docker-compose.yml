@@ -92,6 +92,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/deliverydb
       SPRING_DATASOURCE_USERNAME: lastmile
@@ -102,6 +104,11 @@ services:
       NOMINATIM_USER_AGENT: ${NOMINATIM_USER_AGENT:-LastMilePlatform/1.0 (contacto@lastmile.cl)}
       GEOCODING_MIN_INTERVAL: ${GEOCODING_MIN_INTERVAL:-1s}
       GEOCODING_MIN_PLACE_RANK: ${GEOCODING_MIN_PLACE_RANK:-28}
+      # HU-12: perfil horario de cada local en Redis (caché con TTL).
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env (ver .env.example)}
+      TIME_WINDOW_HALF_LIFE_DAYS: ${TIME_WINDOW_HALF_LIFE_DAYS:-90}
+      TIME_WINDOW_CACHE_TTL: ${TIME_WINDOW_CACHE_TTL:-6h}
     ports:
       - "8082:8082"
     healthcheck:
