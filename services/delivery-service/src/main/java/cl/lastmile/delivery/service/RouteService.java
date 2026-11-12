@@ -35,6 +35,7 @@ public class RouteService {
     private final ShipmentRepository shipmentRepository;
     private final VehicleRepository vehicleRepository;
     private final RouteOptimizer routeOptimizer;
+    private final RouteStateService routeStateService;
 
     /**
      * Ruta del día por paradas (HU-30), ordenada por el optimizador (HU-28).
@@ -84,6 +85,7 @@ public class RouteService {
     @Transactional
     public ConsolidatedRoute buildRouteForDate(LocalDate date, double depotLat, double depotLng,
                                                LocalTime departure, UnloadTime unload, String vehicleId) {
+        routeStateService.checkEditable(date); // HU-17: una ruta confirmada no se rearma
         Vehicle vehicle = vehicle(vehicleId);
         List<Shipment> shipments = shipmentRepository.findByScheduledDateAndStatusIn(date, ROUTABLE);
         List<DeliveryStop> stops = StopConsolidator.consolidate(shipments);
@@ -104,6 +106,7 @@ public class RouteService {
             route.add(withPackages(stop, group.packageCount()));
             loads.put(stop.shipmentId(), group.load());
         }
+        routeStateService.recordBuild(date, optimized.optimizer(), optimized.note(), vehicle, shipments);
         shipmentRepository.saveAll(shipments);
 
         return new ConsolidatedRoute(route, loads, optimized.optimizer(), optimized.note(),

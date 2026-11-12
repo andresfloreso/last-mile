@@ -11,7 +11,8 @@ spring:
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             - Path=/api/auth/**
-        # Gestión de usuarios (HU-05): auth-service exige rol ADMIN con @PreAuthorize.
+        # Gestión de usuarios (HU-05): auth-service exige ADMIN con @PreAuthorize; la lista de
+        # conductores (HU-17) también la ve DISPATCHER.
         - id: auth-service-users
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:

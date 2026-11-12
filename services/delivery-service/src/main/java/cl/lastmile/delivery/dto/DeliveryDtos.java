@@ -5,6 +5,7 @@ import cl.lastmile.delivery.algorithm.RouteOptimizationService;
 import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.model.DeclaredWindow;
 import cl.lastmile.delivery.model.DeliveryAttempt;
+import cl.lastmile.delivery.model.Route;
 import cl.lastmile.delivery.model.Shipment;
 import cl.lastmile.delivery.model.Vehicle;
 import cl.lastmile.delivery.service.StopConsolidator;
@@ -129,6 +130,47 @@ public class DeliveryDtos {
             boolean reoptimize,
             @Schema(description = "Camión para reoptimizar (capacidad y jornada). Por defecto, el activo de mayor capacidad")
             String vehicleId
+    ) {}
+
+    @Schema(description = "Estado de la ruta del día (HU-17)")
+    public record RouteStateResponse(
+            UUID id,
+            LocalDate date,
+            @Schema(description = "DRAFT (borrador), CONFIRMED (confirmada), IN_PROGRESS (en curso) o CLOSED (cerrada)",
+                    allowableValues = {"DRAFT", "CONFIRMED", "IN_PROGRESS", "CLOSED"})
+            String status,
+            @Schema(description = "true si la ruta se puede rearmar o reordenar (solo en borrador)")
+            boolean editable,
+            @Schema(description = "Quién ordenó la ruta al armarla; null si se armó antes de HU-17", allowableValues = {"VRPTW", "NEAREST_NEIGHBOR"})
+            String optimizer,
+            @Schema(description = "Por qué se usó el fallback al armarla; null si no hubo aviso")
+            String optimizerNote,
+            @Schema(description = "Camión con que se armó; null si no había camiones", example = "KXPT-21")
+            String vehiclePlate,
+            @Schema(description = "Id del conductor asignado (usuario de auth-service); null en borrador")
+            UUID driverId,
+            @Schema(description = "Nombre del conductor asignado", example = "Pedro Conductor")
+            String driverName,
+            @Schema(description = "Cuándo se confirmó; null en borrador")
+            Instant confirmedAt
+    ) {
+        /** Debe invocarse dentro de una transacción: inicializa el camión LAZY. */
+        public static RouteStateResponse from(Route r) {
+            return new RouteStateResponse(r.getId(), r.getDate(), r.getStatus().name(), r.isEditable(),
+                    r.getOptimizer(), r.getOptimizerNote(), r.getVehicle() == null ? null : r.getVehicle().getPlate(),
+                    r.getDriverId(), r.getDriverName(), r.getConfirmedAt());
+        }
+    }
+
+    @Schema(description = "Cambio de estado de la ruta del día (HU-17)")
+    public record RouteStateRequest(
+            @NotNull LocalDate date,
+            @NotBlank @Schema(description = "Estado nuevo", allowableValues = {"DRAFT", "CONFIRMED", "IN_PROGRESS", "CLOSED"})
+            String status,
+            @Schema(description = "Conductor (id de usuario en auth-service, rol DRIVER). Obligatorio para confirmar")
+            String driverId,
+            @Size(max = 120) @Schema(description = "Nombre del conductor, para mostrarlo", example = "Pedro Conductor")
+            String driverName
     ) {}
 
     @Schema(description = "Orden de la ruta que guarda el despachador (HU-15)")
