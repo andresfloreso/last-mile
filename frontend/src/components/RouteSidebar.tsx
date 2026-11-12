@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { RouteSummary, StopView } from "@/lib/routeView";
+import type { RouteState } from "@/types";
+import { statusChip } from "@/lib/routeState";
 import { listOrder, matchesSearch } from "@/lib/routeView";
 import { longDate } from "@/lib/timeWindows";
 import { DEPARTURE_TIME } from "@/lib/config";
@@ -33,7 +35,15 @@ interface Props {
   editStarting?: boolean;
   /** No se pudo empezar a editar. */
   editError?: string | null;
+  /** HU-17: estado de la ruta guardada; null si no está armada o aún no se carga. */
+  routeState?: RouteState | null;
+  /** HU-17: abre "Confirmar y asignar". */
+  onConfirm?: () => void;
+  /** HU-17: vuelve una ruta confirmada a borrador. */
+  onReopen?: () => void;
+  stateBusy?: boolean;
 }
+
 
 function Skeleton() {
   return (
@@ -56,6 +66,9 @@ export default function RouteSidebar(props: Props) {
   const { date, state, error, stops, summary, selectedId, onSelect, onBuild, onRetry, reoptimizing, canBuild, unrouted, onEdit } = props;
   const [query, setQuery] = useState("");
   const visible = useMemo(() => listOrder(stops).filter((s) => matchesSearch(s, query)), [stops, query]);
+  const chip = statusChip(props.routeState);
+  // HU-17: solo un borrador se rearma o se reordena.
+  const editable = props.routeState ? props.routeState.editable : true;
 
   return (
     <aside className="flex h-full w-full flex-col bg-panel" aria-label="Ruta del día">
@@ -66,9 +79,22 @@ export default function RouteSidebar(props: Props) {
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Camión 1 · Salida {DEPARTURE_TIME}</p>
               <h1 className="text-22 font-bold text-ink">{longDate(date)}</h1>
             </div>
-            {/* Estados de ruta llegan con HU-17; por ahora toda ruta es un borrador. */}
-            <span className="rounded-md bg-warning-bg px-2 py-0.5 text-xs font-semibold text-warning-ink">Borrador</span>
+            <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${chip.className}`} data-testid="route-status">
+              {chip.text}
+            </span>
           </div>
+          {props.routeState && !props.routeState.editable && (
+            <p className="rounded-lg bg-tile px-3 py-2 text-13 text-ink" role="status">
+              {props.routeState.driverName ? (
+                <>
+                  Asignada a <span className="font-semibold">{props.routeState.driverName}</span>.{" "}
+                </>
+              ) : null}
+              {props.routeState.status === "CONFIRMED"
+                ? "Ya no se reordena: vuélvela a borrador para cambiarla."
+                : "Ya no se puede cambiar."}
+            </p>
+          )}
 
           {state === "loading" ? (
             <div className="grid grid-cols-2 gap-2" aria-hidden="true">
@@ -156,7 +182,7 @@ export default function RouteSidebar(props: Props) {
             {props.editError}
           </p>
         )}
-        {canBuild && onEdit && (
+        {canBuild && onEdit && editable && (
           <button
             type="button"
             onClick={onEdit}
@@ -170,7 +196,8 @@ export default function RouteSidebar(props: Props) {
           <button
             type="button"
             onClick={onBuild}
-            disabled={reoptimizing || state !== "ready"}
+            disabled={reoptimizing || state !== "ready" || !editable}
+            title={editable ? undefined : "La ruta está confirmada: vuélvela a borrador para reoptimizarla"}
             className="h-11 flex-1 rounded-lg border border-border text-sm font-semibold text-ink hover:bg-tile disabled:opacity-60"
           >
             {reoptimizing ? "Reoptimizando…" : "Reoptimizar"}
@@ -178,20 +205,27 @@ export default function RouteSidebar(props: Props) {
         ) : (
           <p className="flex h-11 flex-1 items-center justify-center rounded-lg bg-tile text-13 text-muted">Solo lectura</p>
         )}
-        {/* Un botón deshabilitado no muestra su title en todos los navegadores: el tooltip va en el contenedor. */}
-        <span className="flex-1" title="Disponible en HU-17">
+        {canBuild && props.routeState?.status === "CONFIRMED" ? (
           <button
             type="button"
-            disabled
-            aria-describedby="confirmar-hu17"
-            className="h-11 w-full cursor-not-allowed rounded-lg bg-primary text-sm font-semibold text-primary-ink opacity-60"
+            onClick={props.onReopen}
+            disabled={props.stateBusy}
+            className="h-11 flex-1 rounded-lg border border-border text-sm font-semibold text-ink hover:bg-tile disabled:opacity-60"
           >
-            Confirmar y asignar
+            Volver a borrador
           </button>
-          <span id="confirmar-hu17" className="sr-only">
-            Disponible en HU-17
-          </span>
-        </span>
+        ) : (
+          canBuild && (
+            <button
+              type="button"
+              onClick={props.onConfirm}
+              disabled={props.stateBusy || state !== "ready" || !editable || !props.onConfirm}
+              className="h-11 flex-1 rounded-lg bg-primary text-sm font-semibold text-primary-ink disabled:opacity-60"
+            >
+              Confirmar y asignar
+            </button>
+          )
+        )}
       </div>
     </aside>
   );
