@@ -17,7 +17,7 @@ código y es la fuente de verdad, así que no se edita a mano.
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
 | POST | `/api/auth/login` | Público | Devuelve access token y refresh token |
-| POST | `/api/auth/refresh` | Público (refresh token) | Renueva el access token |
+| POST | `/api/auth/refresh` | Público (refresh token) | Renueva el access token y el refresh token. Responde `401` si el refresh token venció o el usuario está deshabilitado. El frontend lo llama solo ante un `401` y reintenta la request (HU-06) |
 | POST | `/api/users` | `ADMIN` | Crea un usuario con cualquier rol (HU-05). Es la única forma de crear cuentas |
 | POST | `/api/auth/register` | Desactivado (404) | LastMile es B2B: no hay registro público (#44). Solo existe con `PUBLIC_REGISTRATION_ENABLED=true`, y entonces crea **CLIENT** (el campo `role` se ignora) |
 

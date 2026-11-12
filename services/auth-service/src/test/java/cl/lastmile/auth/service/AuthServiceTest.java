@@ -91,4 +91,33 @@ class AuthServiceTest {
         verify(userRepository).save(saved.capture());
         assertThat(saved.getValue().getPasswordHash()).isEqualTo("$2a$12$hash");
     }
+
+    /** HU-06: el refresh renueva la sesión de un usuario activo, pero no la de uno deshabilitado. */
+    @Test
+    void refreshRenuevaSoloAUsuariosHabilitados() {
+        JwtUtil jwt = new JwtUtil("test_secret_key_with_at_least_32_characters!!", 60_000, 120_000);
+        UUID id = UUID.randomUUID();
+        User user = User.builder().fullName("Ana").email("ana@lastmile.cl").passwordHash("hash").role(User.Role.DISPATCHER).build();
+        user.setId(id);
+        when(userRepository.findById(id)).thenReturn(java.util.Optional.of(user));
+        String refresh = jwt.generateRefreshToken(id.toString());
+
+        var renewed = authService.refresh(refresh);
+        assertThat(renewed.accessToken()).isNotBlank();
+        assertThat(renewed.user().email()).isEqualTo("ana@lastmile.cl");
+
+        user.setEnabled(false);
+        assertThatThrownBy(() -> authService.refresh(refresh))
+                .isInstanceOf(cl.lastmile.auth.exception.InvalidCredentialsException.class)
+                .hasMessageContaining("deshabilitado");
+    }
+
+    /** HU-06: un access token no sirve como refresh token. */
+    @Test
+    void refreshRechazaUnAccessToken() {
+        JwtUtil jwt = new JwtUtil("test_secret_key_with_at_least_32_characters!!", 60_000, 120_000);
+        String access = jwt.generateAccessToken(UUID.randomUUID().toString(), "ana@lastmile.cl", "DISPATCHER");
+        assertThatThrownBy(() -> authService.refresh(access))
+                .isInstanceOf(cl.lastmile.auth.exception.InvalidCredentialsException.class);
+    }
 }
