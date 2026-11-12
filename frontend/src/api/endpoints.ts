@@ -3,9 +3,13 @@ import type {
   AuthResponse,
   Customer,
   DraftStop,
+  Driver,
   GeocodeResult,
   ImportSummary,
   Page,
+  RoutePreview,
+  RouteState,
+  RouteStatus,
   RouteStop,
   Shipment,
   ShipmentQuery,
@@ -29,6 +33,26 @@ export const routesApi = {
     apiClient
       .post<RouteStop[]>("/api/routes/build", { date, depotLat, depotLng, departureTime, stopMinutes })
       .then((r) => r.data),
+  /**
+   * HU-15: la ruta guardada en otro orden, con hora estimada e indicadores; no guarda nada. Con
+   * reoptimize, las paradas de pinned quedan en su lugar y el optimizador ordena las demás.
+   */
+  preview: (req: {
+    date: string;
+    depotLat: number;
+    depotLng: number;
+    departureTime?: string;
+    order: string[];
+    pinned?: string[];
+    reoptimize?: boolean;
+  }) => apiClient.post<RoutePreview>("/api/routes/preview", req).then((r) => r.data),
+  /** HU-17: estado de la ruta (borrador, confirmada, en curso, cerrada) y su conductor; 404 si no está armada. */
+  state: (date: string) => apiClient.get<RouteState>("/api/routes/state", { params: { date } }).then((r) => r.data),
+  /** HU-17: confirma y asigna (driverId obligatorio), vuelve a borrador o avanza el estado. */
+  changeState: (req: { date: string; status: RouteStatus; driverId?: string; driverName?: string }) =>
+    apiClient.put<RouteState>("/api/routes/state", req).then((r) => r.data),
+  /** HU-15: guarda el orden armado a mano. */
+  saveOrder: (date: string, order: string[]) => apiClient.put<void>("/api/routes/order", { date, order }).then(() => undefined),
 };
 
 export const importApi = {
@@ -118,6 +142,11 @@ export const shipmentsApi = {
 
   /** Todos los envíos de un día, para armar la ruta (el backend admite hasta 500 por página). */
   listByDate: (date: string) => shipmentsApi.list({ date, size: 500 }).then((p) => p.content),
+};
+
+export const usersApi = {
+  /** HU-17: conductores activos, para asignarles la ruta (ADMIN y DISPATCHER). */
+  drivers: () => apiClient.get<Driver[]>("/api/users/drivers").then((r) => r.data),
 };
 
 export const customersApi = {

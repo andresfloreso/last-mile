@@ -73,6 +73,34 @@ export const ListIcon = (p: IconProps) => (
 );
 
 /** Logo: cuadrado de 28 px con una línea de ruta. */
+/** HU-15: candado cerrado (parada fijada). */
+export const LockIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </Svg>
+);
+
+/** HU-15: candado abierto (parada libre). */
+export const UnlockIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 7.5-2" />
+  </Svg>
+);
+
+/** HU-15: asa para arrastrar una parada. */
+export const GripIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="9" cy="6" r="1" />
+    <circle cx="15" cy="6" r="1" />
+    <circle cx="9" cy="12" r="1" />
+    <circle cx="15" cy="12" r="1" />
+    <circle cx="9" cy="18" r="1" />
+    <circle cx="15" cy="18" r="1" />
+  </Svg>
+);
+
 export function Logo() {
   return (
     <span className="flex h-7 w-7 items-center justify-center rounded-md bg-ink text-page" aria-hidden="true">

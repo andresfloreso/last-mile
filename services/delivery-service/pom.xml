@@ -67,6 +67,12 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!-- HU-12: caché del perfil horario de cada local -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+
     <!-- Cliente HTTP reactivo para consultar Nominatim (geocoding) y OSRM (ruteo real) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
