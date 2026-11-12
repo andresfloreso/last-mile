@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Layout from "@/components/Layout";
 import RouteSidebar, { type LoadState } from "@/components/RouteSidebar";
+import RouteEditorPanel from "@/components/RouteEditorPanel";
+import ConfirmRouteDialog from "@/components/ConfirmRouteDialog";
 import RouteMap from "@/components/RouteMap";
 import DayTimeline from "@/components/DayTimeline";
 import type { DeclaredWindowPayload } from "@/lib/declaredWindow";
 import { CloseIcon, ListIcon } from "@/components/icons";
 import { customersApi, routesApi, shipmentsApi } from "@/api/endpoints";
 import { buildStopViews, summarize } from "@/lib/routeView";
+import { draftLine } from "@/lib/routeEdit";
+import { useRouteEditor } from "@/hooks/useRouteEditor";
 import { DEPARTURE_TIME, DEPOT } from "@/lib/config";
 import { canBuildRoutes, canViewRoutes, unroutedCount } from "@/lib/routeAccess";
 import { useAuthStore } from "@/store/authStore";
 import { useRouteDateStore } from "@/store/routeDateStore";
 import { useThemeStore } from "@/store/themeStore";
-import type { RouteStop, Shipment, TimeWindow } from "@/types";
+import type { Driver, RouteState, RouteStop, Shipment, TimeWindow } from "@/types";
 
 function errorMessage(e: unknown): string {
   const err = e as { response?: { status?: number; data?: { message?: string } } };
@@ -58,6 +62,10 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
   const [relocatingId, setRelocatingId] = useState<string | null>(null);
   const [reoptimizing, setReoptimizing] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // HU-17: estado de la ruta guardada (borrador, confirmada…) y su conductor.
+  const [routeState, setRouteState] = useState<RouteState | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [stateBusy, setStateBusy] = useState(false);
   const loadId = useRef(0);
 
   const loadTimeWindows = useCallback(async (list: Shipment[], id: number) => {
@@ -85,6 +93,7 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
         if (page.totalElements === 0) {
           setShipments([]);
           setRoute([]);
+          setRouteState(null);
           setTimeWindows(new Map());
           setState("empty");
           return;
@@ -93,8 +102,11 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
           ? await routesApi.build(date, DEPOT.lat, DEPOT.lng, DEPARTURE_TIME)
           : await routesApi.saved(date, DEPOT.lat, DEPOT.lng, DEPARTURE_TIME);
         if (id !== loadId.current) return;
+        const routeInfo = stops.length === 0 ? null : await routesApi.state(date).catch(() => null);
+        if (id !== loadId.current) return;
         setShipments(page.content);
         setRoute(stops);
+        setRouteState(routeInfo);
         setState(stops.length === 0 ? "unbuilt" : "ready");
         loadTimeWindows(page.content, id);
       } catch (e) {
@@ -108,13 +120,44 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
     [date, loadTimeWindows]
   );
 
+  // HU-15: armado manual. Al guardar, se vuelve a leer la ruta guardada.
+  const editor = useRouteEditor(date, () => load(false));
+  const { exit: exitEditor, current: editCurrent, baseline: editBaseline } = editor;
+
   useEffect(() => {
     setSelectedId(null);
     setRelocatingId(null);
+    exitEditor();
     load();
-  }, [load]);
+  }, [load, exitEditor]);
 
-  const stops = useMemo(() => buildStopViews(route, shipments, timeWindows), [route, shipments, timeWindows]);
+  const savedStops = useMemo(() => buildStopViews(route, shipments, timeWindows), [route, shipments, timeWindows]);
+  const editStops = useMemo(
+    () => (editCurrent ? buildStopViews(editCurrent.stops, shipments, timeWindows) : []),
+    [editCurrent, shipments, timeWindows]
+  );
+  const baselineStops = useMemo(
+    () => (editBaseline ? buildStopViews(editBaseline.stops, shipments, timeWindows) : []),
+    [editBaseline, shipments, timeWindows]
+  );
+  const editing = editor.editing;
+  const stops = editing ? editStops : savedStops;
+  /** Mientras se arrastra, la lista va en el orden provisional. */
+  const shownEditStops = useMemo(() => {
+    if (!editor.draft) return editStops;
+    const byId = new Map(editStops.map((s) => [s.shipmentId, s]));
+    return editor.draft.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+  }, [editor.draft, editStops]);
+  const dragLine = useMemo(
+    () => (editing && editor.draft ? draftLine(editor.draft, editStops, [DEPOT.lat, DEPOT.lng]) : null),
+    [editing, editor.draft, editStops]
+  );
+  const ghostLine = useMemo(() => {
+    if (!editing || !editor.dirty || !editor.baseline) return null;
+    const line = baselineStops.flatMap((s, i) => (i === 0 ? s.path : s.path.slice(1)));
+    const back = editor.baseline.summary.returnPath;
+    return line.length > 1 ? [...line, ...back.slice(1)] : null;
+  }, [editing, editor.dirty, editor.baseline, baselineStops]);
   const summary = useMemo(() => (state === "ready" ? summarize(stops, route) : null), [state, stops, route]);
   const unrouted = useMemo(
     () => (state === "ready" ? unroutedCount(shipments.map((s) => s.id), route.flatMap((r) => r.shipmentIds ?? [r.shipmentId])) : 0),
@@ -173,7 +216,28 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
     }
   }
 
-  const sidebar = (
+  /** HU-17: confirma la ruta con el conductor elegido. */
+  async function confirmRoute(driver: Driver) {
+    const next = await routesApi.changeState({ date, status: "CONFIRMED", driverId: driver.id, driverName: driver.fullName });
+    setRouteState(next);
+    setConfirming(false);
+  }
+
+  /** HU-17: una ruta confirmada vuelve a borrador para poder cambiarla. */
+  async function reopenRoute() {
+    setStateBusy(true);
+    try {
+      setRouteState(await routesApi.changeState({ date, status: "DRAFT" }));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setStateBusy(false);
+    }
+  }
+
+  const sidebar = editing ? (
+    <RouteEditorPanel date={date} editor={editor} stops={shownEditStops} selectedId={selectedId} onSelect={selectFromList} />
+  ) : (
     <RouteSidebar
       date={date}
       state={state}
@@ -187,11 +251,21 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
       reoptimizing={reoptimizing}
       canBuild={canBuild}
       unrouted={unrouted}
+      onEdit={() => editor.start(route.map((r) => r.shipmentId))}
+      editStarting={editor.busy === "start"}
+      editError={editor.error}
+      routeState={routeState}
+      onConfirm={() => setConfirming(true)}
+      onReopen={reopenRoute}
+      stateBusy={stateBusy}
     />
   );
 
   return (
     <Layout fullBleed>
+      {confirming && (
+        <ConfirmRouteDialog currentDriverId={routeState?.driverId ?? null} onConfirm={confirmRoute} onClose={() => setConfirming(false)} />
+      )}
       <div className="flex h-full">
         {/* Desktop (≥1280 px): panel fijo de 400 px. */}
         <div className="hidden w-[400px] shrink-0 border-r border-line xl:block">{sidebar}</div>
@@ -236,6 +310,9 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
               onSaveDeclared={saveDeclared}
               onStartRelocate={() => selected && setRelocatingId(selected.shipmentId)}
               onRelocated={relocate}
+              returnPath={editing ? editor.current?.summary.returnPath : undefined}
+              ghostLine={ghostLine}
+              draftLine={dragLine}
               leftAction={
                 <button
                   type="button"

@@ -1,5 +1,6 @@
 package cl.lastmile.delivery.service;
 
+import cl.lastmile.delivery.algorithm.TimeWindowLearningService;
 import cl.lastmile.delivery.exception.BadRequestException;
 import cl.lastmile.delivery.exception.ConflictException;
 import cl.lastmile.delivery.dto.DeliveryDtos.*;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,6 +37,7 @@ public class ShipmentService {
     private final CustomerRepository customerRepository;
     private final DeliveryAttemptRepository deliveryAttemptRepository;
     private final GeocodingService geocodingService;
+    private final TimeWindowLearningService learningService;
 
     /** Peso y volumen de un envío nuevo que no los informa (HU-29). */
     @Value("${shipments.default-weight-kg:" + ShipmentDefaults.WEIGHT_KG + "}")
@@ -214,6 +218,7 @@ public class ShipmentService {
                 .build();
 
         deliveryAttemptRepository.save(attempt);
+        forgetProfileAfterCommit(customer.getId());
 
         shipment.setStatus(outcome == DeliveryAttempt.AttemptOutcome.ACCEPTED
                 ? Shipment.ShipmentStatus.DELIVERED
@@ -235,5 +240,23 @@ public class ShipmentService {
     private static double positive(double value, String field) {
         if (!(value > 0)) throw new BadRequestException(field + " debe ser mayor que 0");
         return value;
+    }
+
+    /**
+     * HU-12: el intento cambia la ventana real del local, así que su perfil guardado deja de servir. Se
+     * invalida ahora y otra vez al confirmar la transacción, para que una lectura concurrente no vuelva a
+     * guardar el perfil sin el intento nuevo.
+     */
+    private void forgetProfileAfterCommit(UUID customerId) {
+        learningService.forget(customerId);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            learningService.forget(customerId);
+                        }
+                    });
+        }
     }
 }

@@ -1,10 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, TileLayer } from "react-leaflet";
-import type L from "leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { TimeWindow } from "@/types";
 import type { StopView } from "@/lib/routeView";
-import { DEPOT, TILE_ATTRIBUTION, TILE_MAX_NATIVE_ZOOM, TILE_URL } from "@/lib/config";
+import { DEPARTURE_TIME, DEPOT, TILE_ATTRIBUTION, TILE_MAX_NATIVE_ZOOM, TILE_URL } from "@/lib/config";
+import { routeSegments } from "@/lib/routeEdit";
+import { BANDS } from "@/lib/timeWindows";
 import type { Theme } from "@/store/themeStore";
 import StopMarker from "@/components/StopMarker";
 import { depotIcon } from "@/lib/markerIcons";
@@ -28,6 +30,12 @@ interface Props {
   onRelocated: (lat: number, lng: number) => void;
   /** Botón para abrir el panel en tablet (se dibuja bajo la leyenda). */
   leftAction?: React.ReactNode;
+  /** HU-15: vuelta a la bodega desde la última parada, si se conoce (armado manual). */
+  returnPath?: [number, number][];
+  /** HU-15: la ruta antes de los cambios sin guardar, en gris punteado. */
+  ghostLine?: [number, number][] | null;
+  /** HU-15: la línea mientras se arrastra una parada (orden provisional, aún sin horas). */
+  draftLine?: [number, number][] | null;
 }
 
 /** Margen alrededor de la tarjeta dentro del cual un marcador se considera tapado. */
@@ -39,9 +47,25 @@ const COVER_MARGIN = 24;
  */
 const ROUTE_SMOOTH_FACTOR = 1.5;
 
-/** Ruta en el color de la polilínea del tema (token --color-route). */
-function routeColor(): string {
-  return getComputedStyle(document.documentElement).getPropertyValue("--color-route").trim();
+/**
+ * Margen que Leaflet dibuja fuera de la pantalla, como fracción del mapa visible (#86). Leaflet solo
+ * vuelve a dibujar las líneas al soltar el mapa: con el margen por defecto (0,1), al arrastrar más de un
+ * 10 % la línea aparece cortada y se completa al soltar. Con 1, cubre un arrastre de una pantalla entera.
+ */
+const ROUTE_PADDING = 1;
+
+/** Valor de un token CSS del tema (por ejemplo --color-route o --band-morning). */
+function cssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/** Colores de la línea: la ruta (mientras se arrastra), cada franja (HU-15) y la ruta original en gris. */
+function lineColors() {
+  return {
+    route: cssVar("--color-route"),
+    ghost: cssVar("--color-muted"),
+    bands: Object.fromEntries(BANDS.map((b) => [b.id, cssVar(`--band-${b.id}`)])) as Record<string, string>,
+  };
 }
 
 export default function RouteMap(props: Props) {
@@ -49,19 +73,24 @@ export default function RouteMap(props: Props) {
   const [map, setMap] = useState<L.Map | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
-  const [color, setColor] = useState(routeColor);
+  const [colors, setColors] = useState(lineColors);
+  // La polilínea va en SVG y no en el canvas de preferCanvas (#86): con un margen de una pantalla, un canvas
+  // tendría 9 veces los píxeles del mapa; el SVG solo guarda el trazado, ya simplificado por zoom (HU-32).
+  const routeRenderer = useMemo(() => L.svg({ padding: ROUTE_PADDING }), []);
 
   const selected = stops.find((s) => s.shipmentId === selectedId) ?? null;
   const ordered = useMemo(() => [...stops].sort((a, b) => a.position - b.position), [stops]);
-  const polyline = useMemo(() => ordered.flatMap((s) => s.path), [ordered]);
+  // HU-15: la línea va por tramos, del color de la hora a la que el camión los maneja.
+  const segments = useMemo(() => routeSegments(ordered, DEPARTURE_TIME, props.returnPath), [ordered, props.returnPath]);
   const located = useMemo(
     () => ordered.filter((s) => s.latitude != null && s.longitude != null).map((s) => [s.latitude!, s.longitude!] as [number, number]),
     [ordered]
   );
-  const stopsKey = ordered.map((s) => s.shipmentId).join(",");
+  // Encuadra cuando cambian las paradas, no su orden (HU-15: al editar, el mapa no salta en cada cambio).
+  const stopsKey = ordered.map((s) => s.shipmentId).sort().join(",");
 
   // El color de la polilínea sigue al tema (los tokens cambian al cambiar la clase "dark").
-  useEffect(() => setColor(routeColor()), [theme]);
+  useEffect(() => setColors(lineColors()), [theme]);
 
   // Encuadra la ruta completa (con la bodega) al cargar una ruta nueva.
   useEffect(() => {
@@ -114,7 +143,32 @@ export default function RouteMap(props: Props) {
           maxZoom={19}
           maxNativeZoom={TILE_MAX_NATIVE_ZOOM}
         />
-        {polyline.length > 1 && <Polyline positions={polyline} pathOptions={{ color, weight: 5, opacity: 0.9 }} smoothFactor={ROUTE_SMOOTH_FACTOR} />}
+        {props.ghostLine && props.ghostLine.length > 1 && (
+          <Polyline
+            positions={props.ghostLine}
+            renderer={routeRenderer}
+            pathOptions={{ color: colors.ghost, weight: 4, opacity: 0.8, dashArray: "6 8" }}
+            smoothFactor={ROUTE_SMOOTH_FACTOR}
+          />
+        )}
+        {props.draftLine && props.draftLine.length > 1 ? (
+          <Polyline
+            positions={props.draftLine}
+            renderer={routeRenderer}
+            pathOptions={{ color: colors.route, weight: 5, opacity: 0.9 }}
+            smoothFactor={ROUTE_SMOOTH_FACTOR}
+          />
+        ) : (
+          segments.map((seg, i) => (
+            <Polyline
+              key={`${i}-${seg.band}-${seg.positions.length}`}
+              positions={seg.positions}
+              renderer={routeRenderer}
+              pathOptions={{ color: colors.bands[seg.band], weight: 5, opacity: 0.9 }}
+              smoothFactor={ROUTE_SMOOTH_FACTOR}
+            />
+          ))
+        )}
         <Marker position={[DEPOT.lat, DEPOT.lng]} icon={depotIcon()} title="Bodega" alt="Bodega" keyboard={false} />
         {ordered.map((s) => (
           <StopMarker
@@ -131,7 +185,7 @@ export default function RouteMap(props: Props) {
       {/* Capas sobre el mapa. El mapa tiene su propio contexto de apilamiento (index.css). */}
       <div className="pointer-events-none absolute inset-0 z-10">
         <div className="pointer-events-auto absolute left-4 top-4 flex max-w-[calc(100%-120px)] flex-col items-start gap-2">
-          <WindowLegend />
+          <WindowLegend showGhost={!!props.ghostLine} />
           {props.leftAction}
         </div>
 

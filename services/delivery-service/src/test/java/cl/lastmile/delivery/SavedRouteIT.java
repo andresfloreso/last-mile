@@ -110,7 +110,9 @@ class SavedRouteIT {
             assertThat(got.get("windowStart").asText()).isEqualTo(exp.get("windowStart").asText());
             assertThat(got.get("shipmentIds")).isEqualTo(exp.get("shipmentIds"));
             assertThat(got.get("weightKg").asDouble()).isEqualTo(exp.get("weightKg").asDouble());
-            assertThat(got.get("optimizer").isNull()).as("el optimizador no se guarda").isTrue();
+            // HU-17: el optimizador y el camión se guardan con la ruta.
+            assertThat(got.get("optimizer").asText()).isEqualTo(exp.get("optimizer").asText());
+            assertThat(got.get("vehiclePlate").asText()).isEqualTo(exp.get("vehiclePlate").asText());
         }
     }
 

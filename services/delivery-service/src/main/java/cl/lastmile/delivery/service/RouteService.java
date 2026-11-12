@@ -2,6 +2,7 @@ package cl.lastmile.delivery.service;
 
 import cl.lastmile.delivery.algorithm.RouteOptimizationService.RouteStop;
 import cl.lastmile.delivery.algorithm.optimizer.RouteOptimizer;
+import cl.lastmile.delivery.algorithm.optimizer.UnloadTime;
 import cl.lastmile.delivery.algorithm.optimizer.RouteOptimizer.OptimizedRoute;
 import cl.lastmile.delivery.algorithm.optimizer.RouteOptimizer.RouteProblem;
 import cl.lastmile.delivery.exception.BadRequestException;
@@ -20,9 +21,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -32,6 +35,7 @@ public class RouteService {
     private final ShipmentRepository shipmentRepository;
     private final VehicleRepository vehicleRepository;
     private final RouteOptimizer routeOptimizer;
+    private final RouteStateService routeStateService;
 
     /**
      * Ruta del día por paradas (HU-30), ordenada por el optimizador (HU-28).
@@ -56,7 +60,14 @@ public class RouteService {
     }
 
     /**
-     * Agrupa los envíos de la fecha en paradas (uno por local), las ordena con el
+     * Estados que la ruta puede tomar y reordenar (#70). Un envío entregado, rechazado, reagendado o ya en
+     * reparto no entra a la ruta y armarla nunca le cambia el estado.
+     */
+    public static final Set<Shipment.ShipmentStatus> ROUTABLE =
+            EnumSet.of(Shipment.ShipmentStatus.PENDING, Shipment.ShipmentStatus.ROUTED);
+
+    /**
+     * Agrupa los envíos de la fecha que todavía se pueden repartir ({@link #ROUTABLE}) en paradas (uno por local), las ordena con el
      * {@link RouteOptimizer} configurado y guarda la posición de la parada en cada uno de sus envíos.
      *
      * @param vehicleId camión de la ruta; null usa el activo de mayor capacidad (o ninguno si no hay)
@@ -64,18 +75,25 @@ public class RouteService {
     @Transactional
     public ConsolidatedRoute buildRouteForDate(LocalDate date, double depotLat, double depotLng,
                                                LocalTime departure, int stopMinutes, String vehicleId) {
+        return buildRouteForDate(date, depotLat, depotLng, departure, UnloadTime.fixed(stopMinutes), vehicleId);
+    }
+
+    /**
+     * Igual, con el tiempo de descarga de HU-15 en cada parada: base + minutos por bulto + ajuste del
+     * local. El optimizador lo usa para calcular a qué hora llega a cada parada.
+     */
+    @Transactional
+    public ConsolidatedRoute buildRouteForDate(LocalDate date, double depotLat, double depotLng,
+                                               LocalTime departure, UnloadTime unload, String vehicleId) {
+        routeStateService.checkEditable(date); // HU-17: una ruta confirmada no se rearma
         Vehicle vehicle = vehicle(vehicleId);
-        List<Shipment> shipments = shipmentRepository.findByScheduledDate(date);
+        List<Shipment> shipments = shipmentRepository.findByScheduledDateAndStatusIn(date, ROUTABLE);
         List<DeliveryStop> stops = StopConsolidator.consolidate(shipments);
 
         Map<UUID, DeliveryStop> stopByRepresentative = new LinkedHashMap<>();
         stops.forEach(s -> stopByRepresentative.put(s.representative().getId(), s));
 
-        OptimizedRoute optimized = routeOptimizer.optimize(new RouteProblem(
-                stops.stream().map(s -> new RouteOptimizer.Stop(s.representative(), s.weightKg(), s.volumeM3())).toList(),
-                depotLat, depotLng, departure, stopMinutes,
-                vehicle == null ? null : new RouteOptimizer.Vehicle(vehicle.getPlate(), vehicle.getCapacityKg(),
-                        vehicle.getCapacityM3(), vehicle.getShiftEnd())));
+        OptimizedRoute optimized = routeOptimizer.optimize(problem(stops, depotLat, depotLng, departure, unload, vehicle));
 
         List<RouteStop> route = new ArrayList<>();
         Map<UUID, StopLoad> loads = new LinkedHashMap<>();
@@ -88,13 +106,26 @@ public class RouteService {
             route.add(withPackages(stop, group.packageCount()));
             loads.put(stop.shipmentId(), group.load());
         }
+        routeStateService.recordBuild(date, optimized.optimizer(), optimized.note(), vehicle, shipments);
         shipmentRepository.saveAll(shipments);
 
         return new ConsolidatedRoute(route, loads, optimized.optimizer(), optimized.note(),
                 vehicle == null ? null : vehicle.getPlate());
     }
 
-    private Vehicle vehicle(String vehicleId) {
+    /** El problema del optimizador para estas paradas, con el tiempo de descarga de cada una (HU-15). */
+    static RouteProblem problem(List<DeliveryStop> stops, double depotLat, double depotLng, LocalTime departure,
+                                UnloadTime unload, Vehicle vehicle) {
+        return new RouteProblem(
+                stops.stream().map(s -> new RouteOptimizer.Stop(s.representative(), s.weightKg(), s.volumeM3(),
+                        unload.seconds(s.packageCount(), s.load().unloadExtraMinutes()))).toList(),
+                depotLat, depotLng, departure, unload.baseMinutes(),
+                vehicle == null ? null : new RouteOptimizer.Vehicle(vehicle.getPlate(), vehicle.getCapacityKg(),
+                        vehicle.getCapacityM3(), vehicle.getShiftEnd()));
+    }
+
+    /** El camión pedido, o el activo de mayor capacidad si no se pide ninguno (null si no hay). */
+    Vehicle vehicle(String vehicleId) {
         if (vehicleId == null || vehicleId.isBlank()) {
             return vehicleRepository.findByActiveTrueOrderByPlateAsc().stream()
                     .max(Comparator.comparingDouble(Vehicle::getCapacityKg))

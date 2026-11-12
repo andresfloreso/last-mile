@@ -28,10 +28,18 @@ public interface RouteOptimizer {
 
     /**
      * Una parada a ordenar: el envío representante (HU-30) y lo que se entrega en ella (HU-29).
+     *
+     * @param serviceSeconds tiempo de descarga en la parada (HU-15: {@link UnloadTime}); menos de 0 usa
+     *                       {@link RouteProblem#stopMinutes()}
      */
-    record Stop(Shipment representative, double weightKg, double volumeM3) {
+    record Stop(Shipment representative, double weightKg, double volumeM3, int serviceSeconds) {
         public Stop {
             Objects.requireNonNull(representative);
+        }
+
+        /** Parada con el tiempo de descarga fijo del problema. */
+        public Stop(Shipment representative, double weightKg, double volumeM3) {
+            this(representative, weightKg, volumeM3, -1);
         }
     }
 
@@ -41,6 +49,7 @@ public interface RouteOptimizer {
     /**
      * El problema de un día.
      *
+     * @param stopMinutes minutos de descarga de una parada sin {@link Stop#serviceSeconds()} propio
      * @param vehicle null si no hay camiones registrados: la ruta se ordena sin capacidad ni jornada
      */
     record RouteProblem(List<Stop> stops, double depotLat, double depotLng,

@@ -43,6 +43,10 @@ public class Shipment {
     /** Posición sugerida dentro de la ruta del camión (1 = primero a entregar). */
     private Integer routePosition;
 
+    /** Ruta a la que pertenece el envío (HU-17); null si nunca se armó su ruta. */
+    @Column(name = "route_id")
+    private UUID routeId;
+
     /** Entrega o recogida — igual que el selector "Tipo" de la app de referencia. */
     @Enumerated(EnumType.STRING)
     @Builder.Default

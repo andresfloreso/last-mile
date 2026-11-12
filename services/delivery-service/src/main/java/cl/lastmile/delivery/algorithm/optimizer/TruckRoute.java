@@ -79,7 +79,7 @@ public class TruckRoute {
                 late++;
                 lateSeconds += serviceStart - v.windowEndSec();
             }
-            clock = serviceStart + stopSec;
+            clock = serviceStart + (v.serviceSec() >= 0 ? v.serviceSec() : stopSec);
             kg += v.weightKg();
             m3 += v.volumeM3();
         }

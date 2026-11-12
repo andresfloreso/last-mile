@@ -63,14 +63,17 @@ CREATE TEMP TABLE seed_customer (
 -- (Nominatim, con el número exacto) y verificadas: cada punto queda a menos de
 -- 40 m de una calle (OSRM /nearest) y fuera de parques, estadios, canchas y
 -- hospitales (Overpass). Ver infra/seed/README.md.
+-- Sprint 5 (#85): los locales 2, 4, 19, 29, 31, 32, 33 y 38 quedaban más cerca
+-- de una calle transversal que de la suya, y OSRM los enganchaba a esa calle.
+-- Se movieron al punto de su propia calle que devuelve OSRM /nearest.
 -- El patrón rota con idx % 4 para repartir las ventanas (10 locales por
 -- franja). Hoy piden 24 de los locales 1–30 (no piden 3, 6, 7, 11, 16 ni 29);
 -- el día cargado (sección 4) piden los 40.
 INSERT INTO seed_customer (idx, full_name, business_type, address, commune, lat, lng, pattern, modulacion_distinta) VALUES
     ( 1, 'Minimarket Don Lucho',         'MINIMARKET', 'Merced 300',                              'Santiago',    -33.437229, -70.640901, 'MORNING',   false),
-    ( 2, 'Botillería El Roble',          'BOTILLERIA', 'Av. Providencia 2124',                    'Providencia', -33.422072, -70.611427, 'MIDDAY',    false),
+    ( 2, 'Botillería El Roble',          'BOTILLERIA', 'Av. Providencia 2124',                    'Providencia', -33.422530, -70.611005, 'MIDDAY',    false),
     ( 3, 'Restaurant El Encuentro',      'RESTAURANT', 'Av. Providencia 2300',                    'Providencia', -33.420578, -70.607977, 'AFTERNOON', true),
-    ( 4, 'Bar La Esquina de Ñuñoa',      'BAR',        'Av. Irarrázaval 3550',                    'Ñuñoa',       -33.454179, -70.593643, 'EVENING',   true),
+    ( 4, 'Bar La Esquina de Ñuñoa',      'BAR',        'Av. Irarrázaval 3550',                    'Ñuñoa',       -33.455233, -70.593678, 'EVENING',   true),
     ( 5, 'Minimarket Simón Bolívar',     'MINIMARKET', 'Av. Simón Bolívar 3500',                  'Ñuñoa',       -33.448593, -70.594306, 'MORNING',   false),
     ( 6, 'Botillería Los Leones',        'BOTILLERIA', 'Av. Los Leones 400',                      'Providencia', -33.423419, -70.604389, 'MIDDAY',    true),
     ( 7, 'Restaurant Lastarria',         'RESTAURANT', 'José Victorino Lastarria 70',             'Santiago',    -33.439582, -70.641336, 'AFTERNOON', false),
@@ -85,7 +88,7 @@ INSERT INTO seed_customer (idx, full_name, business_type, address, commune, lat,
     (16, 'Bar Bellavista',               'BAR',        'Pío Nono 150',                            'Providencia', -33.432768, -70.636110, 'EVENING',   false),
     (17, 'Minimarket Cañas',             'MINIMARKET', 'José Domingo Cañas 2200',                 'Ñuñoa',       -33.456723, -70.608382, 'MORNING',   false),
     (18, 'Botillería Portugal',          'BOTILLERIA', 'Av. Portugal 1000',                       'Santiago',    -33.455322, -70.633432, 'MIDDAY',    true),
-    (19, 'Restaurant Alameda',           'RESTAURANT', 'Av. Libertador Bernardo O''Higgins 1302', 'Santiago',    -33.445884, -70.653969, 'AFTERNOON', false),
+    (19, 'Restaurant Alameda',           'RESTAURANT', 'Av. Libertador Bernardo O''Higgins 1302', 'Santiago',    -33.444953, -70.654294, 'AFTERNOON', false),
     (20, 'Bar Manuel Montt',             'BAR',        'Av. Manuel Montt 1050',                   'Providencia', -33.437644, -70.615823, 'EVENING',   false),
     (21, 'Minimarket Pedro de Valdivia', 'MINIMARKET', 'Av. Pedro de Valdivia 1215',              'Providencia', -33.434241, -70.608945, 'MORNING',   true),
     (22, 'Botillería Manuel Montt',      'BOTILLERIA', 'Av. Manuel Montt 2600',                   'Ñuñoa',       -33.451307, -70.612790, 'MIDDAY',    false),
@@ -95,16 +98,16 @@ INSERT INTO seed_customer (idx, full_name, business_type, address, commune, lat,
     (26, 'Botillería Chile España',      'BOTILLERIA', 'Chile España 400',                        'Ñuñoa',       -33.450969, -70.598213, 'MIDDAY',    false),
     (27, 'Restaurant San Diego',         'RESTAURANT', 'San Diego 860',                           'Santiago',    -33.456309, -70.649562, 'AFTERNOON', true),
     (28, 'Bar El Tranque',               'BAR',        'Arturo Prat 800',                         'Santiago',    -33.455309, -70.647987, 'EVENING',   false),
-    (29, 'Minimarket Irarrázaval',       'MINIMARKET', 'Av. Irarrázaval 3000',                    'Ñuñoa',       -33.454343, -70.599834, 'MORNING',   false),
+    (29, 'Minimarket Irarrázaval',       'MINIMARKET', 'Av. Irarrázaval 3000',                    'Ñuñoa',       -33.454629, -70.599889, 'MORNING',   false),
     (30, 'Botillería Providencia',       'BOTILLERIA', 'Av. Providencia 1308',                    'Providencia', -33.428584, -70.620205, 'MIDDAY',    true),
-    (31, 'Restaurant El Mirador',        'RESTAURANT', 'Av. Providencia 2594',                    'Providencia', -33.418501, -70.603204, 'AFTERNOON', false),
-    (32, 'Bar La Terraza',               'BAR',        'Av. Manuel Montt 500',                    'Providencia', -33.432795, -70.617536, 'EVENING',   false),
-    (33, 'Minimarket Valdivia Norte',    'MINIMARKET', 'Av. Pedro de Valdivia 100',               'Providencia', -33.424542, -70.611415, 'MORNING',   true),
+    (31, 'Restaurant El Mirador',        'RESTAURANT', 'Av. Providencia 2594',                    'Providencia', -33.418832, -70.603018, 'AFTERNOON', false),
+    (32, 'Bar La Terraza',               'BAR',        'Av. Manuel Montt 500',                    'Providencia', -33.432852, -70.617658, 'EVENING',   false),
+    (33, 'Minimarket Valdivia Norte',    'MINIMARKET', 'Av. Pedro de Valdivia 100',               'Providencia', -33.424693, -70.611952, 'MORNING',   true),
     (34, 'Botillería Pedro de Valdivia', 'BOTILLERIA', 'Av. Pedro de Valdivia 3000',              'Ñuñoa',       -33.449881, -70.605220, 'MIDDAY',    false),
     (35, 'Restaurant Suecia',            'RESTAURANT', 'Av. Suecia 2900',                         'Ñuñoa',       -33.446332, -70.600794, 'AFTERNOON', false),
     (36, 'Bar El Clavel',                'BAR',        'Av. Irarrázaval 2500',                    'Ñuñoa',       -33.453964, -70.605204, 'EVENING',   true),
     (37, 'Minimarket Portugal',          'MINIMARKET', 'Av. Portugal 700',                        'Santiago',    -33.451812, -70.634275, 'MORNING',   false),
-    (38, 'Botillería Carmen',            'BOTILLERIA', 'Carmen 800',                              'Santiago',    -33.453905, -70.640345, 'MIDDAY',    false),
+    (38, 'Botillería Carmen',            'BOTILLERIA', 'Carmen 800',                              'Santiago',    -33.453935, -70.640505, 'MIDDAY',    false),
     (39, 'Restaurant Santa Isabel',      'RESTAURANT', 'Santa Isabel 300',                        'Santiago',    -33.448313, -70.635424, 'AFTERNOON', true),
     (40, 'Bar Merced',                   'BAR',        'Merced 700',                              'Santiago',    -33.438161, -70.646772, 'EVENING',   false);
 
@@ -165,6 +168,14 @@ ON CONFLICT (id) DO UPDATE SET
     declared_window_end    = EXCLUDED.declared_window_end,
     declared_window2_start = EXCLUDED.declared_window2_start,
     declared_window2_end   = EXCLUDED.declared_window2_end;
+
+-- HU-15: ajuste del tiempo de descarga de dos locales de calle angosta, sin
+-- dónde estacionar el camión (la base y los minutos por bulto son de la config).
+UPDATE customers c
+SET unload_extra_minutes = a.extra, unload_note = a.note
+FROM (VALUES ('SEED-C10', 10, 'estacionamiento difícil'),
+             ('SEED-C14', 5,  'descarga por pasaje lateral')) AS a(code, extra, note)
+WHERE c.external_code = a.code;
 
 -- ---------------------------------------------------------------------
 -- 2. Historial de 60 días (una sola vez)
