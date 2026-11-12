@@ -177,6 +177,11 @@ request por segundo y con un User-Agent genérico:
 python -I infra/seed/tools/verificar_direcciones.py infra/seed/tools/direcciones.json /tmp/resultado.json
 ```
 
+**Enganche a la calle (Sprint 5, #85).** `tools/revisar_enganche.py` revisa que
+OSRM enganche cada local en la calle de su dirección y no en la transversal.
+Los locales de esquina 2, 4, 19, 29, 31, 32, 33 y 38 se movieron entre 13 y
+117 m al punto de su propia calle (ver `docs/plan/vueltas-ruta/medicion.md`).
+
 El resultado con el que se armó la semilla está en
 `tools/direcciones-verificadas.json` (coordenadas, dirección según OSM,
 distancia a la calle y calle más cercana). En la semilla anterior, por ejemplo,
