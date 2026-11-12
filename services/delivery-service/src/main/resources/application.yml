@@ -72,6 +72,16 @@ routing:
     engine: timefold             # timefold (VRPTW de un camión) o nearest-neighbor (HU-04)
     time-limit: 10s              # tiempo máximo del solver
     unimproved-time-limit: 3s    # corta antes si pasa este tiempo sin mejorar
+    # Prototipo de HU-37 (docs/plan/analisis-ventanas-flexibles.md): "risk" ordena por riesgo de no
+    # entrega, jornada, espera y km en vez de forzar la ventana real. Apagado hasta validarlo con logística.
+    objective: windows           # windows (por defecto) o risk
+    risk:                        # supuestos en pesos, para conversar con logística
+      failed-delivery: 60000     # una entrega que no se concreta en primera visita
+      per-km: 700
+      per-shift-minute: 250      # minuto de jornada (conductor y peoneta)
+      per-wait-minute: 50        # recargo por minuto esperando frente a un local
+      max-wait-minutes: 120
+      max-departure-delay-minutes: 180
 
 shipments:
   # HU-29: peso y volumen de un envío que no los informa (API o planilla sin peso_kg / volumen_m3).

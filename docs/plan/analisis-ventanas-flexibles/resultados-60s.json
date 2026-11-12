@@ -1,0 +1,1344 @@
+{
+  "dia-cargado" : {
+    "fecha" : "2027-01-04",
+    "hoy" : {
+      "paradas" : 40,
+      "km" : 69.69,
+      "kmConVuelta" : 72.324,
+      "salida" : "08:00",
+      "ultimaEntrega" : "20:11",
+      "vuelta" : "20:16",
+      "jornadaMin" : 736,
+      "esperaMin" : 204,
+      "primeraVisitaEsperada" : 0.696875,
+      "entregasFallidasEsperadas" : 12.125,
+      "fueraDeVentana" : 1,
+      "detalle" : [ {
+        "pos" : 1,
+        "local" : "Minimarket Portugal",
+        "lat" : -33.451812,
+        "lng" : -70.634275,
+        "ventana" : "09:00–11:00",
+        "llega" : "08:03",
+        "descarga" : "09:00",
+        "esperaMin" : 56,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 2,
+        "local" : "Minimarket Carmen",
+        "lat" : -33.450027,
+        "lng" : -70.641394,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:13",
+        "descarga" : "09:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 3,
+        "local" : "Minimarket Don Lucho",
+        "lat" : -33.437229,
+        "lng" : -70.640901,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:28",
+        "descarga" : "09:28",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 4,
+        "local" : "Minimarket Valdivia Norte",
+        "lat" : -33.424542,
+        "lng" : -70.611415,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:43",
+        "descarga" : "09:43",
+        "esperaMin" : 0,
+        "probabilidad" : 0.68
+      }, {
+        "pos" : 5,
+        "local" : "Minimarket Pedro de Valdivia",
+        "lat" : -33.434241,
+        "lng" : -70.608945,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:56",
+        "descarga" : "09:56",
+        "esperaMin" : 0,
+        "probabilidad" : 0.68
+      }, {
+        "pos" : 6,
+        "local" : "Minimarket Cañas",
+        "lat" : -33.456723,
+        "lng" : -70.608382,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:10",
+        "descarga" : "10:10",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 7,
+        "local" : "Minimarket Irarrázaval",
+        "lat" : -33.454343,
+        "lng" : -70.599834,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:23",
+        "descarga" : "10:23",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 8,
+        "local" : "Minimarket Los Andes",
+        "lat" : -33.447757,
+        "lng" : -70.602405,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:35",
+        "descarga" : "10:35",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 9,
+        "local" : "Minimarket Simón Bolívar",
+        "lat" : -33.448593,
+        "lng" : -70.594306,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:47",
+        "descarga" : "10:47",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 10,
+        "local" : "Minimarket Plaza Ñuñoa",
+        "lat" : -33.454837,
+        "lng" : -70.594391,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:59",
+        "descarga" : "10:59",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 11,
+        "local" : "Botillería Chile España",
+        "lat" : -33.450969,
+        "lng" : -70.598213,
+        "ventana" : "12:00–14:00",
+        "llega" : "11:11",
+        "descarga" : "12:00",
+        "esperaMin" : 48,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 12,
+        "local" : "Botillería Pedro de Valdivia",
+        "lat" : -33.449881,
+        "lng" : -70.60522,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:12",
+        "descarga" : "12:12",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 13,
+        "local" : "Botillería El Paradero",
+        "lat" : -33.453503,
+        "lng" : -70.609235,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:24",
+        "descarga" : "12:24",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 14,
+        "local" : "Botillería Manuel Montt",
+        "lat" : -33.451307,
+        "lng" : -70.61279,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:36",
+        "descarga" : "12:36",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 15,
+        "local" : "Botillería Portugal",
+        "lat" : -33.455322,
+        "lng" : -70.633432,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:51",
+        "descarga" : "12:51",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 16,
+        "local" : "Botillería Carmen",
+        "lat" : -33.453905,
+        "lng" : -70.640345,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:03",
+        "descarga" : "13:03",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 17,
+        "local" : "Botillería Santa Rosa",
+        "lat" : -33.450207,
+        "lng" : -70.644395,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:15",
+        "descarga" : "13:15",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 18,
+        "local" : "Botillería Providencia",
+        "lat" : -33.428584,
+        "lng" : -70.620205,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:32",
+        "descarga" : "13:32",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 19,
+        "local" : "Botillería El Roble",
+        "lat" : -33.422072,
+        "lng" : -70.611427,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:46",
+        "descarga" : "13:46",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 20,
+        "local" : "Botillería Los Leones",
+        "lat" : -33.423419,
+        "lng" : -70.604389,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:59",
+        "descarga" : "13:59",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 21,
+        "local" : "Restaurant El Mirador",
+        "lat" : -33.418501,
+        "lng" : -70.603204,
+        "ventana" : "15:00–17:00",
+        "llega" : "14:11",
+        "descarga" : "15:00",
+        "esperaMin" : 48,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 22,
+        "local" : "Restaurant El Encuentro",
+        "lat" : -33.420578,
+        "lng" : -70.607977,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:11",
+        "descarga" : "15:11",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 23,
+        "local" : "Restaurant Nueva Providencia",
+        "lat" : -33.42528,
+        "lng" : -70.613628,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:22",
+        "descarga" : "15:22",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 24,
+        "local" : "Restaurant Suecia",
+        "lat" : -33.446332,
+        "lng" : -70.600794,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:37",
+        "descarga" : "15:37",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 25,
+        "local" : "Restaurant Barrio Italia",
+        "lat" : -33.445361,
+        "lng" : -70.625269,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:53",
+        "descarga" : "15:53",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 26,
+        "local" : "Restaurant Santa Isabel",
+        "lat" : -33.448313,
+        "lng" : -70.635424,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:07",
+        "descarga" : "16:07",
+        "esperaMin" : 0,
+        "probabilidad" : 0.64
+      }, {
+        "pos" : 27,
+        "local" : "Restaurant Lastarria",
+        "lat" : -33.439582,
+        "lng" : -70.641336,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:19",
+        "descarga" : "16:19",
+        "esperaMin" : 0,
+        "probabilidad" : 0.72
+      }, {
+        "pos" : 28,
+        "local" : "Restaurant Monjitas",
+        "lat" : -33.436711,
+        "lng" : -70.644546,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:32",
+        "descarga" : "16:32",
+        "esperaMin" : 0,
+        "probabilidad" : 0.72
+      }, {
+        "pos" : 29,
+        "local" : "Restaurant Alameda",
+        "lat" : -33.445884,
+        "lng" : -70.653969,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:45",
+        "descarga" : "16:45",
+        "esperaMin" : 0,
+        "probabilidad" : 0.72
+      }, {
+        "pos" : 30,
+        "local" : "Restaurant San Diego",
+        "lat" : -33.456309,
+        "lng" : -70.649562,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:58",
+        "descarga" : "16:58",
+        "esperaMin" : 0,
+        "probabilidad" : 0.64
+      }, {
+        "pos" : 31,
+        "local" : "Bar El Tranque",
+        "lat" : -33.455309,
+        "lng" : -70.647987,
+        "ventana" : "18:00–20:00",
+        "llega" : "17:09",
+        "descarga" : "18:00",
+        "esperaMin" : 50,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 32,
+        "local" : "Bar El Farol",
+        "lat" : -33.450374,
+        "lng" : -70.638593,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:13",
+        "descarga" : "18:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 33,
+        "local" : "Bar Merced",
+        "lat" : -33.438161,
+        "lng" : -70.646772,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:27",
+        "descarga" : "18:27",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 34,
+        "local" : "Bar Bellavista",
+        "lat" : -33.432768,
+        "lng" : -70.63611,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:40",
+        "descarga" : "18:40",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 35,
+        "local" : "Bar La Terraza",
+        "lat" : -33.432795,
+        "lng" : -70.617536,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:56",
+        "descarga" : "18:56",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 36,
+        "local" : "Bar Manuel Montt",
+        "lat" : -33.437644,
+        "lng" : -70.615823,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:07",
+        "descarga" : "19:07",
+        "esperaMin" : 0,
+        "probabilidad" : 0.89
+      }, {
+        "pos" : 37,
+        "local" : "Bar Bilbao",
+        "lat" : -33.441534,
+        "lng" : -70.625609,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:19",
+        "descarga" : "19:19",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 38,
+        "local" : "Bar Dublé Almeyda",
+        "lat" : -33.455885,
+        "lng" : -70.601745,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:36",
+        "descarga" : "19:36",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 39,
+        "local" : "Bar La Esquina de Ñuñoa",
+        "lat" : -33.454179,
+        "lng" : -70.593643,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:49",
+        "descarga" : "19:49",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 40,
+        "local" : "Bar El Clavel",
+        "lat" : -33.453964,
+        "lng" : -70.605204,
+        "ventana" : "18:00–20:00",
+        "llega" : "20:01",
+        "descarga" : "20:01",
+        "esperaMin" : 0,
+        "probabilidad" : 0.2
+      } ]
+    },
+    "prototipo" : {
+      "paradas" : 40,
+      "km" : 77.992,
+      "kmConVuelta" : 79.764,
+      "salida" : "08:56",
+      "ultimaEntrega" : "20:59",
+      "vuelta" : "21:02",
+      "jornadaMin" : 726,
+      "esperaMin" : 183,
+      "primeraVisitaEsperada" : 0.7061875,
+      "entregasFallidasEsperadas" : 11.752500000000001,
+      "fueraDeVentana" : 8,
+      "detalle" : [ {
+        "pos" : 1,
+        "local" : "Minimarket Portugal",
+        "lat" : -33.451812,
+        "lng" : -70.634275,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:00",
+        "descarga" : "09:00",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 2,
+        "local" : "Minimarket Carmen",
+        "lat" : -33.450027,
+        "lng" : -70.641394,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:13",
+        "descarga" : "09:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 3,
+        "local" : "Minimarket Don Lucho",
+        "lat" : -33.437229,
+        "lng" : -70.640901,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:28",
+        "descarga" : "09:28",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 4,
+        "local" : "Minimarket Valdivia Norte",
+        "lat" : -33.424542,
+        "lng" : -70.611415,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:43",
+        "descarga" : "09:43",
+        "esperaMin" : 0,
+        "probabilidad" : 0.68
+      }, {
+        "pos" : 5,
+        "local" : "Minimarket Pedro de Valdivia",
+        "lat" : -33.434241,
+        "lng" : -70.608945,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:56",
+        "descarga" : "10:00",
+        "esperaMin" : 3,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 6,
+        "local" : "Minimarket Los Andes",
+        "lat" : -33.447757,
+        "lng" : -70.602405,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:13",
+        "descarga" : "10:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 7,
+        "local" : "Minimarket Simón Bolívar",
+        "lat" : -33.448593,
+        "lng" : -70.594306,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:25",
+        "descarga" : "10:25",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 8,
+        "local" : "Minimarket Plaza Ñuñoa",
+        "lat" : -33.454837,
+        "lng" : -70.594391,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:38",
+        "descarga" : "10:38",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 9,
+        "local" : "Minimarket Irarrázaval",
+        "lat" : -33.454343,
+        "lng" : -70.599834,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:50",
+        "descarga" : "10:50",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 10,
+        "local" : "Minimarket Cañas",
+        "lat" : -33.456723,
+        "lng" : -70.608382,
+        "ventana" : "09:00–11:00",
+        "llega" : "11:02",
+        "descarga" : "11:02",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 11,
+        "local" : "Botillería El Paradero",
+        "lat" : -33.453503,
+        "lng" : -70.609235,
+        "ventana" : "12:00–14:00",
+        "llega" : "11:13",
+        "descarga" : "12:00",
+        "esperaMin" : 46,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 12,
+        "local" : "Botillería Manuel Montt",
+        "lat" : -33.451307,
+        "lng" : -70.61279,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:11",
+        "descarga" : "12:11",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 13,
+        "local" : "Botillería Pedro de Valdivia",
+        "lat" : -33.449881,
+        "lng" : -70.60522,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:23",
+        "descarga" : "12:23",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 14,
+        "local" : "Botillería Chile España",
+        "lat" : -33.450969,
+        "lng" : -70.598213,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:35",
+        "descarga" : "13:00",
+        "esperaMin" : 24,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 15,
+        "local" : "Botillería Los Leones",
+        "lat" : -33.423419,
+        "lng" : -70.604389,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:14",
+        "descarga" : "13:14",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 16,
+        "local" : "Botillería El Roble",
+        "lat" : -33.422072,
+        "lng" : -70.611427,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:26",
+        "descarga" : "13:26",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 17,
+        "local" : "Botillería Providencia",
+        "lat" : -33.428584,
+        "lng" : -70.620205,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:38",
+        "descarga" : "13:38",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 18,
+        "local" : "Botillería Portugal",
+        "lat" : -33.455322,
+        "lng" : -70.633432,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:56",
+        "descarga" : "13:56",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 19,
+        "local" : "Botillería Carmen",
+        "lat" : -33.453905,
+        "lng" : -70.640345,
+        "ventana" : "12:00–14:00",
+        "llega" : "14:08",
+        "descarga" : "14:08",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 20,
+        "local" : "Botillería Santa Rosa",
+        "lat" : -33.450207,
+        "lng" : -70.644395,
+        "ventana" : "12:00–14:00",
+        "llega" : "14:20",
+        "descarga" : "14:20",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 21,
+        "local" : "Restaurant Nueva Providencia",
+        "lat" : -33.42528,
+        "lng" : -70.613628,
+        "ventana" : "15:00–17:00",
+        "llega" : "14:37",
+        "descarga" : "15:00",
+        "esperaMin" : 22,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 22,
+        "local" : "Restaurant El Mirador",
+        "lat" : -33.418501,
+        "lng" : -70.603204,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:11",
+        "descarga" : "15:11",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 23,
+        "local" : "Restaurant El Encuentro",
+        "lat" : -33.420578,
+        "lng" : -70.607977,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:23",
+        "descarga" : "15:23",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 24,
+        "local" : "Restaurant Suecia",
+        "lat" : -33.446332,
+        "lng" : -70.600794,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:38",
+        "descarga" : "15:38",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 25,
+        "local" : "Restaurant Barrio Italia",
+        "lat" : -33.445361,
+        "lng" : -70.625269,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:54",
+        "descarga" : "16:00",
+        "esperaMin" : 5,
+        "probabilidad" : 0.64
+      }, {
+        "pos" : 26,
+        "local" : "Restaurant Santa Isabel",
+        "lat" : -33.448313,
+        "lng" : -70.635424,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:14",
+        "descarga" : "16:14",
+        "esperaMin" : 0,
+        "probabilidad" : 0.64
+      }, {
+        "pos" : 27,
+        "local" : "Restaurant Lastarria",
+        "lat" : -33.439582,
+        "lng" : -70.641336,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:26",
+        "descarga" : "16:26",
+        "esperaMin" : 0,
+        "probabilidad" : 0.72
+      }, {
+        "pos" : 28,
+        "local" : "Restaurant Monjitas",
+        "lat" : -33.436711,
+        "lng" : -70.644546,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:38",
+        "descarga" : "16:38",
+        "esperaMin" : 0,
+        "probabilidad" : 0.72
+      }, {
+        "pos" : 29,
+        "local" : "Restaurant San Diego",
+        "lat" : -33.456309,
+        "lng" : -70.649562,
+        "ventana" : "15:00–17:00",
+        "llega" : "16:54",
+        "descarga" : "16:54",
+        "esperaMin" : 0,
+        "probabilidad" : 0.64
+      }, {
+        "pos" : 30,
+        "local" : "Restaurant Alameda",
+        "lat" : -33.445884,
+        "lng" : -70.653969,
+        "ventana" : "15:00–17:00",
+        "llega" : "17:08",
+        "descarga" : "17:08",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 31,
+        "local" : "Bar El Tranque",
+        "lat" : -33.455309,
+        "lng" : -70.647987,
+        "ventana" : "18:00–20:00",
+        "llega" : "17:20",
+        "descarga" : "18:00",
+        "esperaMin" : 39,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 32,
+        "local" : "Bar Dublé Almeyda",
+        "lat" : -33.455885,
+        "lng" : -70.601745,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:18",
+        "descarga" : "19:00",
+        "esperaMin" : 41,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 33,
+        "local" : "Bar La Esquina de Ñuñoa",
+        "lat" : -33.454179,
+        "lng" : -70.593643,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:13",
+        "descarga" : "19:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 34,
+        "local" : "Bar El Clavel",
+        "lat" : -33.453964,
+        "lng" : -70.605204,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:25",
+        "descarga" : "19:25",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 35,
+        "local" : "Bar Bilbao",
+        "lat" : -33.441534,
+        "lng" : -70.625609,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:40",
+        "descarga" : "19:40",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 36,
+        "local" : "Bar El Farol",
+        "lat" : -33.450374,
+        "lng" : -70.638593,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:54",
+        "descarga" : "19:54",
+        "esperaMin" : 0,
+        "probabilidad" : 0.89
+      }, {
+        "pos" : 37,
+        "local" : "Bar Merced",
+        "lat" : -33.438161,
+        "lng" : -70.646772,
+        "ventana" : "18:00–20:00",
+        "llega" : "20:08",
+        "descarga" : "20:08",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 38,
+        "local" : "Bar Bellavista",
+        "lat" : -33.432768,
+        "lng" : -70.63611,
+        "ventana" : "18:00–20:00",
+        "llega" : "20:22",
+        "descarga" : "20:22",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 39,
+        "local" : "Bar La Terraza",
+        "lat" : -33.432795,
+        "lng" : -70.617536,
+        "ventana" : "18:00–20:00",
+        "llega" : "20:38",
+        "descarga" : "20:38",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 40,
+        "local" : "Bar Manuel Montt",
+        "lat" : -33.437644,
+        "lng" : -70.615823,
+        "ventana" : "18:00–20:00",
+        "llega" : "20:49",
+        "descarga" : "20:49",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      } ]
+    }
+  },
+  "hoy" : {
+    "fecha" : "2026-11-12",
+    "hoy" : {
+      "paradas" : 24,
+      "km" : 48.162,
+      "kmConVuelta" : 51.954,
+      "salida" : "08:00",
+      "ultimaEntrega" : "19:19",
+      "vuelta" : "19:25",
+      "jornadaMin" : 685,
+      "esperaMin" : 353,
+      "primeraVisitaEsperada" : 0.6442708333333333,
+      "entregasFallidasEsperadas" : 8.537500000000001,
+      "fueraDeVentana" : 0,
+      "detalle" : [ {
+        "pos" : 1,
+        "local" : "Minimarket Cañas",
+        "lat" : -33.456723,
+        "lng" : -70.608382,
+        "ventana" : "09:00–11:00",
+        "llega" : "08:04",
+        "descarga" : "09:00",
+        "esperaMin" : 55,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 2,
+        "local" : "Minimarket Simón Bolívar",
+        "lat" : -33.448593,
+        "lng" : -70.594306,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:13",
+        "descarga" : "09:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 3,
+        "local" : "Minimarket Plaza Ñuñoa",
+        "lat" : -33.454837,
+        "lng" : -70.594391,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:25",
+        "descarga" : "09:25",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 4,
+        "local" : "Minimarket Los Andes",
+        "lat" : -33.447757,
+        "lng" : -70.602405,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:38",
+        "descarga" : "09:38",
+        "esperaMin" : 0,
+        "probabilidad" : 0.68
+      }, {
+        "pos" : 5,
+        "local" : "Minimarket Pedro de Valdivia",
+        "lat" : -33.434241,
+        "lng" : -70.608945,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:51",
+        "descarga" : "09:51",
+        "esperaMin" : 0,
+        "probabilidad" : 0.68
+      }, {
+        "pos" : 6,
+        "local" : "Minimarket Don Lucho",
+        "lat" : -33.437229,
+        "lng" : -70.640901,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:08",
+        "descarga" : "10:08",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 7,
+        "local" : "Minimarket Carmen",
+        "lat" : -33.450027,
+        "lng" : -70.641394,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:22",
+        "descarga" : "10:22",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 8,
+        "local" : "Botillería Santa Rosa",
+        "lat" : -33.450207,
+        "lng" : -70.644395,
+        "ventana" : "12:00–14:00",
+        "llega" : "10:33",
+        "descarga" : "12:00",
+        "esperaMin" : 86,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 9,
+        "local" : "Botillería Portugal",
+        "lat" : -33.455322,
+        "lng" : -70.633432,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:13",
+        "descarga" : "12:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 10,
+        "local" : "Botillería Manuel Montt",
+        "lat" : -33.451307,
+        "lng" : -70.61279,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:28",
+        "descarga" : "12:28",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 11,
+        "local" : "Botillería El Paradero",
+        "lat" : -33.453503,
+        "lng" : -70.609235,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:40",
+        "descarga" : "12:40",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 12,
+        "local" : "Botillería Chile España",
+        "lat" : -33.450969,
+        "lng" : -70.598213,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:53",
+        "descarga" : "12:53",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 13,
+        "local" : "Botillería El Roble",
+        "lat" : -33.422072,
+        "lng" : -70.611427,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:10",
+        "descarga" : "13:10",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 14,
+        "local" : "Botillería Providencia",
+        "lat" : -33.428584,
+        "lng" : -70.620205,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:22",
+        "descarga" : "13:22",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 15,
+        "local" : "Restaurant Barrio Italia",
+        "lat" : -33.445361,
+        "lng" : -70.625269,
+        "ventana" : "15:00–17:00",
+        "llega" : "13:36",
+        "descarga" : "15:00",
+        "esperaMin" : 83,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 16,
+        "local" : "Restaurant Monjitas",
+        "lat" : -33.436711,
+        "lng" : -70.644546,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:14",
+        "descarga" : "15:14",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 17,
+        "local" : "Restaurant Alameda",
+        "lat" : -33.445884,
+        "lng" : -70.653969,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:28",
+        "descarga" : "15:28",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 18,
+        "local" : "Restaurant San Diego",
+        "lat" : -33.456309,
+        "lng" : -70.649562,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:41",
+        "descarga" : "15:41",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 19,
+        "local" : "Bar El Tranque",
+        "lat" : -33.455309,
+        "lng" : -70.647987,
+        "ventana" : "18:00–20:00",
+        "llega" : "15:52",
+        "descarga" : "18:00",
+        "esperaMin" : 127,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 20,
+        "local" : "Bar El Farol",
+        "lat" : -33.450374,
+        "lng" : -70.638593,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:13",
+        "descarga" : "18:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 21,
+        "local" : "Bar Bilbao",
+        "lat" : -33.441534,
+        "lng" : -70.625609,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:27",
+        "descarga" : "18:27",
+        "esperaMin" : 0,
+        "probabilidad" : 0.2
+      }, {
+        "pos" : 22,
+        "local" : "Bar Manuel Montt",
+        "lat" : -33.437644,
+        "lng" : -70.615823,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:40",
+        "descarga" : "18:40",
+        "esperaMin" : 0,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 23,
+        "local" : "Bar Dublé Almeyda",
+        "lat" : -33.455885,
+        "lng" : -70.601745,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:55",
+        "descarga" : "18:55",
+        "esperaMin" : 0,
+        "probabilidad" : 0.2
+      }, {
+        "pos" : 24,
+        "local" : "Bar La Esquina de Ñuñoa",
+        "lat" : -33.454179,
+        "lng" : -70.593643,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:09",
+        "descarga" : "19:09",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      } ]
+    },
+    "prototipo" : {
+      "paradas" : 24,
+      "km" : 56.888,
+      "kmConVuelta" : 60.68,
+      "salida" : "08:55",
+      "ultimaEntrega" : "20:05",
+      "vuelta" : "20:12",
+      "jornadaMin" : 676,
+      "esperaMin" : 329,
+      "primeraVisitaEsperada" : 0.7398958333333333,
+      "entregasFallidasEsperadas" : 6.242500000000001,
+      "fueraDeVentana" : 1,
+      "detalle" : [ {
+        "pos" : 1,
+        "local" : "Minimarket Cañas",
+        "lat" : -33.456723,
+        "lng" : -70.608382,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:00",
+        "descarga" : "09:00",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 2,
+        "local" : "Minimarket Simón Bolívar",
+        "lat" : -33.448593,
+        "lng" : -70.594306,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:13",
+        "descarga" : "09:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 3,
+        "local" : "Minimarket Plaza Ñuñoa",
+        "lat" : -33.454837,
+        "lng" : -70.594391,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:25",
+        "descarga" : "09:25",
+        "esperaMin" : 0,
+        "probabilidad" : 0.78
+      }, {
+        "pos" : 4,
+        "local" : "Minimarket Los Andes",
+        "lat" : -33.447757,
+        "lng" : -70.602405,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:38",
+        "descarga" : "09:38",
+        "esperaMin" : 0,
+        "probabilidad" : 0.68
+      }, {
+        "pos" : 5,
+        "local" : "Minimarket Pedro de Valdivia",
+        "lat" : -33.434241,
+        "lng" : -70.608945,
+        "ventana" : "09:00–11:00",
+        "llega" : "09:51",
+        "descarga" : "10:00",
+        "esperaMin" : 8,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 6,
+        "local" : "Minimarket Don Lucho",
+        "lat" : -33.437229,
+        "lng" : -70.640901,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:17",
+        "descarga" : "10:17",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 7,
+        "local" : "Minimarket Carmen",
+        "lat" : -33.450027,
+        "lng" : -70.641394,
+        "ventana" : "09:00–11:00",
+        "llega" : "10:31",
+        "descarga" : "10:31",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 8,
+        "local" : "Botillería Santa Rosa",
+        "lat" : -33.450207,
+        "lng" : -70.644395,
+        "ventana" : "12:00–14:00",
+        "llega" : "10:42",
+        "descarga" : "12:00",
+        "esperaMin" : 77,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 9,
+        "local" : "Botillería Portugal",
+        "lat" : -33.455322,
+        "lng" : -70.633432,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:13",
+        "descarga" : "12:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 10,
+        "local" : "Botillería Manuel Montt",
+        "lat" : -33.451307,
+        "lng" : -70.61279,
+        "ventana" : "12:00–14:00",
+        "llega" : "12:28",
+        "descarga" : "13:00",
+        "esperaMin" : 31,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 11,
+        "local" : "Botillería El Paradero",
+        "lat" : -33.453503,
+        "lng" : -70.609235,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:12",
+        "descarga" : "13:12",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 12,
+        "local" : "Botillería El Roble",
+        "lat" : -33.422072,
+        "lng" : -70.611427,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:29",
+        "descarga" : "13:29",
+        "esperaMin" : 0,
+        "probabilidad" : 0.82
+      }, {
+        "pos" : 13,
+        "local" : "Botillería Providencia",
+        "lat" : -33.428584,
+        "lng" : -70.620205,
+        "ventana" : "12:00–14:00",
+        "llega" : "13:41",
+        "descarga" : "13:41",
+        "esperaMin" : 0,
+        "probabilidad" : 0.74
+      }, {
+        "pos" : 14,
+        "local" : "Restaurant Monjitas",
+        "lat" : -33.436711,
+        "lng" : -70.644546,
+        "ventana" : "15:00–17:00",
+        "llega" : "13:56",
+        "descarga" : "15:00",
+        "esperaMin" : 63,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 15,
+        "local" : "Restaurant Alameda",
+        "lat" : -33.445884,
+        "lng" : -70.653969,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:13",
+        "descarga" : "15:13",
+        "esperaMin" : 0,
+        "probabilidad" : 0.65
+      }, {
+        "pos" : 16,
+        "local" : "Restaurant San Diego",
+        "lat" : -33.456309,
+        "lng" : -70.649562,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:26",
+        "descarga" : "15:26",
+        "esperaMin" : 0,
+        "probabilidad" : 0.55
+      }, {
+        "pos" : 17,
+        "local" : "Restaurant Barrio Italia",
+        "lat" : -33.445361,
+        "lng" : -70.625269,
+        "ventana" : "15:00–17:00",
+        "llega" : "15:43",
+        "descarga" : "16:00",
+        "esperaMin" : 16,
+        "probabilidad" : 0.64
+      }, {
+        "pos" : 18,
+        "local" : "Botillería Chile España",
+        "lat" : -33.450969,
+        "lng" : -70.598213,
+        "ventana" : "12:00–14:00",
+        "llega" : "16:15",
+        "descarga" : "17:00",
+        "esperaMin" : 44,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 19,
+        "local" : "Bar El Tranque",
+        "lat" : -33.455309,
+        "lng" : -70.647987,
+        "ventana" : "18:00–20:00",
+        "llega" : "17:19",
+        "descarga" : "18:00",
+        "esperaMin" : 40,
+        "probabilidad" : 0.6
+      }, {
+        "pos" : 20,
+        "local" : "Bar El Farol",
+        "lat" : -33.450374,
+        "lng" : -70.638593,
+        "ventana" : "18:00–20:00",
+        "llega" : "18:13",
+        "descarga" : "19:00",
+        "esperaMin" : 46,
+        "probabilidad" : 0.89
+      }, {
+        "pos" : 21,
+        "local" : "Bar Bilbao",
+        "lat" : -33.441534,
+        "lng" : -70.625609,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:14",
+        "descarga" : "19:14",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 22,
+        "local" : "Bar Manuel Montt",
+        "lat" : -33.437644,
+        "lng" : -70.615823,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:27",
+        "descarga" : "19:27",
+        "esperaMin" : 0,
+        "probabilidad" : 0.89
+      }, {
+        "pos" : 23,
+        "local" : "Bar Dublé Almeyda",
+        "lat" : -33.455885,
+        "lng" : -70.601745,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:42",
+        "descarga" : "19:42",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      }, {
+        "pos" : 24,
+        "local" : "Bar La Esquina de Ñuñoa",
+        "lat" : -33.454179,
+        "lng" : -70.593643,
+        "ventana" : "18:00–20:00",
+        "llega" : "19:55",
+        "descarga" : "19:55",
+        "esperaMin" : 0,
+        "probabilidad" : 0.84
+      } ]
+    }
+  }
+}

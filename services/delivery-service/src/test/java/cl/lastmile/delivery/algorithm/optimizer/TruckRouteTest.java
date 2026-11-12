@@ -1,5 +1,6 @@
 package cl.lastmile.delivery.algorithm.optimizer;
 
+import cl.lastmile.delivery.algorithm.optimizer.flexible.FlexibleRouteOptimizer;
 import cl.lastmile.delivery.algorithm.RouteOptimizationService;
 import cl.lastmile.delivery.geo.OsrmRoutingClient;
 import org.junit.jupiter.api.Test;
@@ -131,11 +132,16 @@ class TruckRouteTest {
     void elOptimizadorSeEligePorConfiguracion() {
         TimefoldRouteOptimizer timefold = mock(TimefoldRouteOptimizer.class);
         NearestNeighborOptimizer nn = new NearestNeighborOptimizer(mock(RouteOptimizationService.class));
+        FlexibleRouteOptimizer flexible = mock(FlexibleRouteOptimizer.class);
         OptimizerConfig config = new OptimizerConfig();
-        assertThat(config.routeOptimizer("timefold", timefold, nn)).isSameAs(timefold);
-        assertThat(config.routeOptimizer(" Nearest-Neighbor ", timefold, nn)).isSameAs(nn);
-        assertThatThrownBy(() -> config.routeOptimizer("jsprit", timefold, nn))
+        assertThat(config.routeOptimizer("timefold", "windows", timefold, flexible, nn)).isSameAs(timefold);
+        assertThat(config.routeOptimizer(" Nearest-Neighbor ", "windows", timefold, flexible, nn)).isSameAs(nn);
+        assertThatThrownBy(() -> config.routeOptimizer("jsprit", "windows", timefold, flexible, nn))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("jsprit");
+        // Prototipo de HU-37: solo con el flag encendido.
+        assertThat(config.routeOptimizer("timefold", "risk", timefold, flexible, nn)).isSameAs(flexible);
+        assertThatThrownBy(() -> config.routeOptimizer("timefold", "otro", timefold, flexible, nn))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("otro");
     }
     /** HU-15: cada parada puede tener su propio tiempo de descarga; sin él, usa el del camión. */
     @Test
