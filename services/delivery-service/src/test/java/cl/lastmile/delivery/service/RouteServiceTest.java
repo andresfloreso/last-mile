@@ -70,10 +70,23 @@ class RouteServiceTest {
         a1 = envio("T-01", a, 1, 10);
         b1 = envio("T-02", b, 2, 20);
         a2 = envio("T-03", a, 3, 30);
-        when(repository.findByScheduledDate(DAY)).thenReturn(List.of(a1, b1, a2));
+        when(repository.findByScheduledDateAndStatusIn(DAY, RouteService.ROUTABLE)).thenReturn(List.of(a1, b1, a2));
         // El optimizador decide B primero y A después.
         when(optimizer.optimize(any())).thenReturn(new OptimizedRoute(
                 List.of(routeStop(b1, 1), routeStop(a1, 2)), RouteOptimizer.VRPTW, null));
+    }
+
+    @Test
+    void soloPideLosEnviosPendientesOYaRuteados() {
+        when(vehicles.findByActiveTrueOrderByPlateAsc()).thenReturn(List.of());
+
+        service.buildRouteForDate(DAY, -33.44, -70.62, EIGHT, 10, null);
+
+        // #70: nunca lee (ni reescribe) los envíos cerrados de la fecha.
+        verify(repository).findByScheduledDateAndStatusIn(DAY, RouteService.ROUTABLE);
+        verify(repository, org.mockito.Mockito.never()).findByScheduledDate(any());
+        assertThat(RouteService.ROUTABLE).containsExactlyInAnyOrder(
+                Shipment.ShipmentStatus.PENDING, Shipment.ShipmentStatus.ROUTED);
     }
 
     @Test
