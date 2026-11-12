@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, TileLayer } from "react-leaflet";
-import type L from "leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { TimeWindow } from "@/types";
 import type { StopView } from "@/lib/routeView";
@@ -39,6 +39,13 @@ const COVER_MARGIN = 24;
  */
 const ROUTE_SMOOTH_FACTOR = 1.5;
 
+/**
+ * Margen que Leaflet dibuja fuera de la pantalla, como fracción del mapa visible (#86). Leaflet solo
+ * vuelve a dibujar las líneas al soltar el mapa: con el margen por defecto (0,1), al arrastrar más de un
+ * 10 % la línea aparece cortada y se completa al soltar. Con 1, cubre un arrastre de una pantalla entera.
+ */
+const ROUTE_PADDING = 1;
+
 /** Ruta en el color de la polilínea del tema (token --color-route). */
 function routeColor(): string {
   return getComputedStyle(document.documentElement).getPropertyValue("--color-route").trim();
@@ -50,6 +57,9 @@ export default function RouteMap(props: Props) {
   const wrapper = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const [color, setColor] = useState(routeColor);
+  // La polilínea va en SVG y no en el canvas de preferCanvas (#86): con un margen de una pantalla, un canvas
+  // tendría 9 veces los píxeles del mapa; el SVG solo guarda el trazado, ya simplificado por zoom (HU-32).
+  const routeRenderer = useMemo(() => L.svg({ padding: ROUTE_PADDING }), []);
 
   const selected = stops.find((s) => s.shipmentId === selectedId) ?? null;
   const ordered = useMemo(() => [...stops].sort((a, b) => a.position - b.position), [stops]);
@@ -114,7 +124,7 @@ export default function RouteMap(props: Props) {
           maxZoom={19}
           maxNativeZoom={TILE_MAX_NATIVE_ZOOM}
         />
-        {polyline.length > 1 && <Polyline positions={polyline} pathOptions={{ color, weight: 5, opacity: 0.9 }} smoothFactor={ROUTE_SMOOTH_FACTOR} />}
+        {polyline.length > 1 && <Polyline positions={polyline} renderer={routeRenderer} pathOptions={{ color, weight: 5, opacity: 0.9 }} smoothFactor={ROUTE_SMOOTH_FACTOR} />}
         <Marker position={[DEPOT.lat, DEPOT.lng]} icon={depotIcon()} title="Bodega" alt="Bodega" keyboard={false} />
         {ordered.map((s) => (
           <StopMarker

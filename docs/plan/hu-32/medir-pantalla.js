@@ -1,8 +1,9 @@
 // HU-32: consultas a OSRM, llamadas a la API y fluidez del mapa, antes y después.
 // Uso: con el stack arriba y infra/seed/tools/contar_osrm.py en el puerto 5099,
 // TAG=antes node medir-pantalla.js (necesita playwright 1.48; ver docs/plan/hu-32/medicion.md).
+// HOY=aaaa-mm-dd: un día con ruta armada (por defecto el de la medición original); BASE: URL del frontend.
 const { chromium } = require("playwright");
-const BASE = "http://localhost:5173";
+const BASE = process.env.BASE || "http://localhost:5173";
 const PROXY = "http://localhost:5099";
 const count = async (path) => (await fetch(PROXY + path)).json();
 const osrmTotal = (c) => Object.values(c).reduce((a, b) => a + b, 0);
@@ -37,7 +38,7 @@ async function setDate(page, d) {
   await count("/__reset");
   const d = await session(browser, "despacho@lastmile.cl");
   await setDate(d.page, "2027-01-04");
-  await setDate(d.page, "2026-11-10");
+  await setDate(d.page, (process.env.HOY || "2026-11-10"));
   await setDate(d.page, "2027-01-04");
   await d.page.reload();
   await d.page.getByRole("option").first().waitFor({ timeout: 90000 });
