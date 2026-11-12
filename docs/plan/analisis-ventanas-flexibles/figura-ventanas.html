@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ventanas flexibles</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root { --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --surface:#fcfcfb;
+          --morning:#2563eb; --midday:#0d9488; --afternoon:#c2410c; --night:#7c3aed; --wait:#9ca3af; }
+  body { margin:0; background:var(--surface); color:var(--ink); font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { padding:20px 24px; width:1352px; }
+  h1 { font-size:20px; margin:0 0 2px; } .sub { color:var(--muted); margin:0 0 14px; }
+  .maps { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .card { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff; }
+  .card h2 { font-size:15px; margin:0; padding:10px 12px 2px; }
+  .card .kpis { color:var(--muted); padding:0 12px 8px; font-size:13px; }
+  .map { height:430px; }
+  .legend { display:flex; gap:18px; margin:12px 0 4px; font-size:13px; color:var(--ink); flex-wrap:wrap; }
+  .legend i { display:inline-block; width:22px; height:4px; border-radius:2px; vertical-align:middle; margin-right:6px; }
+  .legend i.wait { height:10px; background:repeating-linear-gradient(135deg,var(--wait) 0 2px,transparent 2px 5px); border:1px solid var(--wait); }
+  .legend i.unload { height:10px; background:var(--ink); }
+  .tl { margin-top:8px; }
+  .row { display:grid; grid-template-columns:110px 1fr; align-items:center; margin:6px 0; }
+  .row .name { font-size:13px; font-weight:600; }
+  .bar { position:relative; height:22px; background:#f3f4f6; border-radius:4px; }
+  .seg { position:absolute; top:0; height:22px; }
+  .seg.wait { background:repeating-linear-gradient(135deg,var(--wait) 0 2px,transparent 2px 5px); border-top:1px solid var(--wait); border-bottom:1px solid var(--wait); box-sizing:border-box; }
+  .seg.unload { background:var(--ink); top:5px; height:12px; }
+  .axis { position:relative; height:18px; margin-left:110px; color:var(--muted); font-size:12px; }
+  .axis span { position:absolute; transform:translateX(-50%); }
+  .pin { background:#fff; border:2px solid var(--ink); border-radius:50%; width:20px; height:20px; font:600 11px/20px system-ui; text-align:center; color:var(--ink); box-sizing:border-box; line-height:16px; }
+  .pin.low { border-color:#b91c1c; color:#b91c1c; }
+  .depot { background:var(--ink); color:#fff; border-radius:4px; font:600 11px/18px system-ui; padding:0 4px; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title"></h1>
+  <p class="sub" id="sub"></p>
+  <div class="maps">
+    <div class="card"><h2>Ruta de hoy (respeta la ventana real)</h2><div class="kpis" id="k-hoy"></div><div class="map" id="m-hoy"></div></div>
+    <div class="card"><h2>Prototipo (riesgo de no entrega)</h2><div class="kpis" id="k-prototipo"></div><div class="map" id="m-prototipo"></div></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--morning)"></i>Maneja 07:00–11:59</span>
+    <span><i style="background:var(--midday)"></i>12:00–14:59</span>
+    <span><i style="background:var(--afternoon)"></i>15:00–18:59</span>
+    <span><i style="background:var(--night)"></i>19:00 en adelante</span>
+    <span><i class="wait"></i>Esperando frente al local</span>
+    <span><i class="unload"></i>Descargando</span>
+    <span>Número en rojo: menos de 50% de probabilidad de que reciba a esa hora</span>
+  </div>
+  <div class="tl">
+    <div class="row"><div class="name">Hoy</div><div class="bar" id="t-hoy"></div></div>
+    <div class="row"><div class="name">Prototipo</div><div class="bar" id="t-prototipo"></div></div>
+    <div class="axis" id="axis"></div>
+  </div>
+</div>
+<script>
+const STOP_MIN = 10;
+const FROM = 8 * 60, TO = 21.5 * 60;
+const band = (min) => { const h = Math.floor(min / 60) % 24;
+  return h < 12 ? "var(--morning)" : h < 15 ? "var(--midday)" : h < 19 ? "var(--afternoon)" : "var(--night)"; };
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v.slice(4, -1)).trim();
+const toMin = (s) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+const pct = (x) => Math.round(x * 100) + "%";
+
+async function osrmLegs(points) {
+  const coords = points.map((p) => `${p[1]},${p[0]}`).join(";");
+  const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=false&steps=true&geometries=geojson`);
+  const j = await r.json();
+  return j.routes[0].legs.map((leg) => leg.steps.flatMap((s) => s.geometry.coordinates.map(([lng, lat]) => [lat, lng])));
+}
+
+async function draw(data, key, depot) {
+  const r = data[key];
+  document.getElementById("k-" + key).textContent =
+    `${r.kmConVuelta.toFixed(1)} km · sale ${r.salida}, vuelve ${r.vuelta} · ${r.esperaMin} min de espera · primera visita esperada ${pct(r.primeraVisitaEsperada)}`;
+  const map = L.map("m-" + key, { zoomControl: false, attributionControl: true });
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
+  const stops = r.detalle;
+  const pts = [depot, ...stops.map((s) => [s.lat, s.lng])];
+  const legs = await osrmLegs(pts);
+  let leave = toMin(r.salida);
+  legs.forEach((line, i) => {
+    L.polyline(line, { color: css(band(leave)), weight: 4, opacity: 0.85 }).addTo(map);
+    leave = toMin(stops[i].descarga) + STOP_MIN;
+  });
+  stops.forEach((s) => L.marker([s.lat, s.lng], { icon: L.divIcon({ className: "", html:
+    `<div class="pin${s.probabilidad < 0.5 ? " low" : ""}">${s.pos}</div>`, iconSize: [20, 20] }) }).addTo(map));
+  L.marker(depot, { icon: L.divIcon({ className: "", html: '<div class="depot">Bodega</div>', iconSize: [48, 18] }) }).addTo(map);
+  map.fitBounds(L.latLngBounds(pts), { padding: [18, 18] });
+
+  // Línea de tiempo: maneja (color por hora), espera (gris rayado), descarga (negro).
+  const bar = document.getElementById("t-" + key);
+  const x = (m) => ((m - FROM) / (TO - FROM)) * 100 + "%";
+  const w = (a, b) => ((b - a) / (TO - FROM)) * 100 + "%";
+  const seg = (cls, a, b, color) => { if (b <= a) return; const d = document.createElement("div");
+    d.className = "seg " + cls; d.style.left = x(a); d.style.width = w(a, b); if (color) d.style.background = color; bar.appendChild(d); };
+  let t = toMin(r.salida);
+  stops.forEach((s) => {
+    const arrive = toMin(s.llega), start = toMin(s.descarga);
+    seg("drive", t, arrive, band(t));
+    seg("wait", arrive, start);
+    seg("unload", start, start + STOP_MIN);
+    t = start + STOP_MIN;
+  });
+  seg("drive", t, toMin(r.vuelta), band(t));
+}
+
+window.render = async function (all, dayKey, title, sub) {
+  document.getElementById("title").textContent = title;
+  document.getElementById("sub").textContent = sub;
+  const axis = document.getElementById("axis");
+  for (let h = 8; h <= 21; h++) { const s = document.createElement("span");
+    s.style.left = ((h * 60 - FROM) / (TO - FROM)) * 100 + "%"; s.textContent = String(h).padStart(2, "0") + ":00"; axis.appendChild(s); }
+  const depot = [-33.446393, -70.624979];
+  await draw(all[dayKey], "hoy", depot);
+  await draw(all[dayKey], "prototipo", depot);
+  await new Promise((ok) => setTimeout(ok, 2500));
+  return true;
+};
+</script>
+</body>
+</html>
