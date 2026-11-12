@@ -1,0 +1,70 @@
+{
+ "antes-1": {
+  "abrir_osrm": 1,
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 8727,
+   "cuadros": 483,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.3,
+   "cuadrosLentos": 3,
+   "tareasLargasMs": 201,
+   "scriptMs": 617,
+   "layoutYEstiloMs": 1110,
+   "cpuX": 4,
+   "osrmTotal": 0
+  }
+ },
+ "antes-2": {
+  "abrir_osrm": 0,
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 8994,
+   "cuadros": 493,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.3,
+   "cuadrosLentos": 2,
+   "tareasLargasMs": 132,
+   "scriptMs": 607,
+   "layoutYEstiloMs": 1102,
+   "cpuX": 4,
+   "osrmTotal": 0
+  }
+ },
+ "despues-1": {
+  "abrir_osrm": 0,
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 8275,
+   "cuadros": 463,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.2,
+   "cuadrosLentos": 2,
+   "tareasLargasMs": 200,
+   "scriptMs": 588,
+   "layoutYEstiloMs": 1068,
+   "cpuX": 4,
+   "osrmTotal": 0
+  }
+ },
+ "despues-2": {
+  "abrir_osrm": 0,
+  "mover": {
+   "api": [],
+   "osrm": {},
+   "ms": 8632,
+   "cuadros": 481,
+   "cuadroMedianoMs": 16.7,
+   "cuadroP95Ms": 33.3,
+   "cuadrosLentos": 2,
+   "tareasLargasMs": 135,
+   "scriptMs": 599,
+   "layoutYEstiloMs": 1150,
+   "cpuX": 4,
+   "osrmTotal": 0
+  }
+ }
+}
