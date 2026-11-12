@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -143,5 +145,42 @@ class UserManagementIT {
         mvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/users'].post").exists());
+    }
+
+    /** HU-17: despacho lista los conductores activos para asignarles la ruta; otros roles no. */
+    @Test
+    void despachoListaLosConductoresActivos() throws Exception {
+        String admin = loginAsBootstrapAdmin();
+        String driver = uniqueEmail("conductor");
+        String dispatcher = uniqueEmail("despacho");
+        String operator = uniqueEmail("operador");
+        for (String[] u : new String[][]{{driver, "DRIVER"}, {dispatcher, "DISPATCHER"}, {operator, "OPERATOR"}}) {
+            mvc.perform(post("/api/users").header("Authorization", "Bearer " + admin)
+                            .contentType(MediaType.APPLICATION_JSON).content(createUserBody(u[0], u[1])))
+                    .andExpect(status().isCreated());
+        }
+
+        String body = mvc.perform(get("/api/users/drivers").header("Authorization", "Bearer " + login(dispatcher)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        JsonNode drivers = json.readTree(body);
+        List<String> emails = new ArrayList<>();
+        drivers.forEach(d -> {
+            assertThat(d.get("role").asText()).isEqualTo("DRIVER");
+            emails.add(d.get("email").asText());
+        });
+        assertThat(emails).contains(driver).doesNotContain(dispatcher, operator);
+
+        mvc.perform(get("/api/users/drivers").header("Authorization", "Bearer " + login(operator)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/users/drivers")).andExpect(status().isUnauthorized());
+    }
+
+    private String login(String email) throws Exception {
+        String body = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"email":"%s","password":"clave12345"}""".formatted(email)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return json.readTree(body).get("accessToken").asText();
     }
 }

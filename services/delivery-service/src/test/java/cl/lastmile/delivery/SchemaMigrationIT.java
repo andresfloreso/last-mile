@@ -39,8 +39,8 @@ class SchemaMigrationIT {
     @Test
     void aplicaLasMigracionesYHibernateValidaElEsquema() {
         // V1 baseline (HU-02) + V2 modulación y tipo de local (HU-25) + V3 geocodificación (HU-09)
-        // + V4 vehículos, peso y volumen (HU-29).
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("4");
+        // + V4 vehículos, peso y volumen (HU-29) + V5 ajuste de descarga por local (HU-15) + V6 rutas (HU-17).
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
         assertThat(flyway.info().pending()).isEmpty();
     }
 

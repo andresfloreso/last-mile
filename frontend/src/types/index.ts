@@ -54,6 +54,59 @@ export interface RouteStop {
   /** Envíos que se entregan en la parada; el primero es shipmentId. */
   shipmentIds?: string[];
   shipmentCount?: number;
+  // ---- HU-15: tiempo de descarga por parada ----
+  /** Minutos de descarga: base + minutos por bulto + ajuste del local. */
+  serviceMinutes?: number;
+  /** Ajuste de descarga del local, en minutos (0 si no tiene). */
+  unloadExtraMinutes?: number;
+  /** Por qué el local tiene ajuste ("estacionamiento difícil"). */
+  unloadNote?: string | null;
+}
+
+/** HU-15: indicadores de una ruta (POST /api/routes/preview). */
+export interface RouteSummaryDto {
+  /** Metros de la ruta, con la vuelta a la bodega. */
+  distanceMeters: number;
+  /** Hora de vuelta a la bodega (HH:mm); null si ninguna parada tiene coordenadas. */
+  returnTime: string | null;
+  returnDayOffset: number;
+  outsideWindowStops: number;
+  waitMinutes: number;
+  /** Tramo de vuelta a la bodega. */
+  returnPath: [number, number][];
+}
+
+/** HU-17: estado de la ruta del día. */
+export type RouteStatus = "DRAFT" | "CONFIRMED" | "IN_PROGRESS" | "CLOSED";
+
+export interface RouteState {
+  id: string;
+  date: string;
+  status: RouteStatus;
+  /** Solo un borrador se rearma o se reordena. */
+  editable: boolean;
+  optimizer: "VRPTW" | "NEAREST_NEIGHBOR" | null;
+  optimizerNote: string | null;
+  vehiclePlate: string | null;
+  driverId: string | null;
+  driverName: string | null;
+  confirmedAt: string | null;
+}
+
+/** HU-17: conductor activo (GET /api/users/drivers). */
+export interface Driver {
+  id: string;
+  fullName: string;
+  email: string;
+  role: "DRIVER";
+}
+
+/** HU-15: la ruta en otro orden, sin guardar. */
+export interface RoutePreview {
+  stops: RouteStop[];
+  summary: RouteSummaryDto;
+  optimizer: "VRPTW" | "NEAREST_NEIGHBOR" | null;
+  optimizerNote: string | null;
 }
 
 /** Parada tal como la ve/edita el usuario antes de optimizar — igual al panel de detalle de la app de referencia. */

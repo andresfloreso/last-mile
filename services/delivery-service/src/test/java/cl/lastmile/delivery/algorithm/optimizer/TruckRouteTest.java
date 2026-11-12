@@ -143,4 +143,14 @@ class TruckRouteTest {
         assertThatThrownBy(() -> config.routeOptimizer("timefold", "otro", timefold, flexible, nn))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("otro");
     }
+    /** HU-15: cada parada puede tener su propio tiempo de descarga; sin él, usa el del camión. */
+    @Test
+    void cadaParadaUsaSuTiempoDeDescargaSiLoTiene() {
+        Visit own = new Visit(UUID.randomUUID(), 1, 8 * H, 12 * H, "AUTO", 1, 0.1, 1500);   // 25 min
+        Visit truckDefault = visit(2, 8, 12, "AUTO", 1);                                     // 10 min
+        TruckRoute route = new TruckRoute("T", uniform(3), 8 * H, 600, Double.NaN, Double.NaN, null,
+                List.of(own, truckDefault));
+        // 08:00 + 10 viaje + 25 descarga + 10 viaje + 10 descarga = 08:55
+        assertThat(route.schedule().endSec()).isEqualTo(8 * H + 55 * 60);
+    }
 }
