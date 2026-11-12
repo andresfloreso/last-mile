@@ -273,8 +273,8 @@ hora estimada.
   importó después de armar la ruta), no aparece. La pantalla avisa cuántos
   faltan.
 - **Fecha sin ruta armada:** devuelve `[]`.
-- **Campos en `null`:** `optimizer`, `optimizerNote` y `vehiclePlate`, porque
-  no se guardan.
+- **Optimizador y camión:** desde HU-17, `optimizer`, `optimizerNote` y
+  `vehiclePlate` salen de la ruta guardada (antes venían en `null`).
 
 La pantalla de rutas usa este `GET` al abrir y al cambiar de fecha. Solo
 llama a `build` cuando despacho aprieta "Armar ruta" o "Reoptimizar", o
@@ -332,6 +332,42 @@ escribe nada.**
 `{ "date": "...", "order": [...] }` guarda el orden: cada envío toma la
 posición de su parada. Responde `204`. Con HU-17, una ruta confirmada ya no se
 podrá editar.
+
+### Estado de la ruta y conductor (HU-17)
+
+La ruta del día es una entidad (`routes`, migración `V6__rutas.sql`). Guarda
+el estado, con qué optimizador y camión se armó, y el conductor asignado. El
+orden sigue en `shipments.route_position`, y `shipments.route_id` dice a qué
+ruta pertenece cada envío. Hay una ruta por fecha mientras haya un camión por
+día; HU-16 la hará por camión.
+
+| Estado | Qué significa | Se rearma / reordena |
+|---|---|---|
+| `DRAFT` | Borrador | Sí |
+| `CONFIRMED` | Confirmada y asignada a un conductor | No: `build` y `PUT /order` responden `409` |
+| `IN_PROGRESS` | El conductor salió a repartir | No |
+| `CLOSED` | Terminó el día | No |
+
+- `GET /api/routes/state?date=` (`ADMIN`, `DISPATCHER`, `OPERATOR`) devuelve
+  `status`, `editable`, `optimizer`, `optimizerNote`, `vehiclePlate`,
+  `driverId`, `driverName` y `confirmedAt`. Si la fecha no tiene ruta armada,
+  responde `404`.
+- `PUT /api/routes/state` (`ADMIN`, `DISPATCHER`) con
+  `{ "date", "status", "driverId", "driverName" }` cambia el estado. Los
+  cambios permitidos son:
+  - `DRAFT → CONFIRMED`, que exige `driverId`;
+  - `CONFIRMED → DRAFT`, que libera al conductor;
+  - `CONFIRMED → IN_PROGRESS`;
+  - `IN_PROGRESS → CLOSED`.
+
+  Confirmar de nuevo una ruta confirmada cambia el conductor. Cualquier otro
+  cambio responde `409`.
+- `GET /api/routes` ya no trae `optimizer`, `optimizerNote` ni `vehiclePlate`
+  en `null`: salen de la ruta guardada.
+- `GET /api/users/drivers` (auth-service; `ADMIN`, `DISPATCHER`) lista los
+  conductores activos para elegir uno al confirmar. `driverId` es el id del
+  usuario (el `sub` de su JWT). `driverName` se guarda como texto para mostrarlo
+  sin consultar auth-service.
 
 ### Paradas consolidadas (HU-30)
 

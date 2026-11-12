@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -24,6 +26,14 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         User user = createUser(request.fullName(), request.email(), request.password(), User.Role.CLIENT);
         return buildAuthResponse(user);
+    }
+
+    /** HU-17: conductores activos, por nombre, para asignarles la ruta del día. */
+    @Transactional(readOnly = true)
+    public List<UserResponse> drivers() {
+        return userRepository.findByRoleAndEnabledTrueOrderByFullNameAsc(User.Role.DRIVER).stream()
+                .map(UserResponse::from)
+                .toList();
     }
 
     /** Alta de usuarios con rol arbitrario. Solo la invoca UserController, protegido para ADMIN. */

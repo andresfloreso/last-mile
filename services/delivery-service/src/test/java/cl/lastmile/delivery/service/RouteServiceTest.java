@@ -41,7 +41,8 @@ class RouteServiceTest {
     private final ShipmentRepository repository = mock(ShipmentRepository.class);
     private final VehicleRepository vehicles = mock(VehicleRepository.class);
     private final RouteOptimizer optimizer = mock(RouteOptimizer.class);
-    private final RouteService service = new RouteService(repository, vehicles, optimizer);
+    private final RouteStateService routeState = mock(RouteStateService.class);
+    private final RouteService service = new RouteService(repository, vehicles, optimizer, routeState);
 
     private Shipment a1;
     private Shipment b1;

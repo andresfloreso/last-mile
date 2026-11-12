@@ -76,6 +76,31 @@ export interface RouteSummaryDto {
   returnPath: [number, number][];
 }
 
+/** HU-17: estado de la ruta del día. */
+export type RouteStatus = "DRAFT" | "CONFIRMED" | "IN_PROGRESS" | "CLOSED";
+
+export interface RouteState {
+  id: string;
+  date: string;
+  status: RouteStatus;
+  /** Solo un borrador se rearma o se reordena. */
+  editable: boolean;
+  optimizer: "VRPTW" | "NEAREST_NEIGHBOR" | null;
+  optimizerNote: string | null;
+  vehiclePlate: string | null;
+  driverId: string | null;
+  driverName: string | null;
+  confirmedAt: string | null;
+}
+
+/** HU-17: conductor activo (GET /api/users/drivers). */
+export interface Driver {
+  id: string;
+  fullName: string;
+  email: string;
+  role: "DRIVER";
+}
+
 /** HU-15: la ruta en otro orden, sin guardar. */
 export interface RoutePreview {
   stops: RouteStop[];

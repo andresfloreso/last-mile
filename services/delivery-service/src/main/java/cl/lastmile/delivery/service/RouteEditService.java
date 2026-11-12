@@ -47,6 +47,7 @@ public class RouteEditService {
     private final ShipmentRepository shipmentRepository;
     private final RouteService routeService;
     private final RouteOptimizer routeOptimizer;
+    private final RouteStateService routeStateService;
 
     /**
      * La ruta guardada en otro orden.
@@ -91,6 +92,7 @@ public class RouteEditService {
     /** Guarda el orden: cada envío de la parada toma la posición de su parada. */
     @Transactional
     public void saveOrder(LocalDate date, List<UUID> order) {
+        routeStateService.checkEditable(date); // HU-17: una ruta confirmada no se reordena
         ConsolidatedRoute saved = savedRouteService.savedRouteForDate(date);
         checkSameStops(stopsById(saved).keySet(), order);
         Map<UUID, Integer> positionByShipment = new HashMap<>();
