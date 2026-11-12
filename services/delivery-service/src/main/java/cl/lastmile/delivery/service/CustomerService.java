@@ -7,6 +7,7 @@ import cl.lastmile.delivery.dto.DeliveryDtos.TimeWindowResponse;
 import cl.lastmile.delivery.repository.DeliveryAttemptRepository;
 import cl.lastmile.delivery.dto.DeliveryDtos.DeclaredWindowRequest;
 import cl.lastmile.delivery.dto.DeliveryDtos.LocationRequest;
+import cl.lastmile.delivery.dto.DeliveryDtos.UnloadAdjustmentRequest;
 import cl.lastmile.delivery.exception.BadRequestException;
 import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.repository.CustomerRepository;
@@ -45,6 +46,16 @@ public class CustomerService {
     public CustomerResponse updateDeclaredWindow(String customerId, DeclaredWindowRequest req) {
         Customer customer = find(customerId);
         customer.applyDeclaredWindow(req.toDeclaredWindow().validate());
+        return CustomerResponse.from(customer);
+    }
+
+    /** Ajuste del tiempo de descarga del local (HU-15); 0 minutos lo quita. */
+    @Transactional
+    public CustomerResponse updateUnloadAdjustment(String customerId, UnloadAdjustmentRequest req) {
+        Customer customer = find(customerId);
+        customer.setUnloadExtraMinutes(req.extraMinutes());
+        String note = req.note() == null || req.note().isBlank() ? null : req.note().strip();
+        customer.setUnloadNote(req.extraMinutes() == 0 ? null : note);
         return CustomerResponse.from(customer);
     }
 

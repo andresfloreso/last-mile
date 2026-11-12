@@ -2,6 +2,7 @@ package cl.lastmile.delivery.service;
 
 import cl.lastmile.delivery.algorithm.RouteOptimizationService.RouteStop;
 import cl.lastmile.delivery.algorithm.optimizer.RouteOptimizer;
+import cl.lastmile.delivery.algorithm.optimizer.UnloadTime;
 import cl.lastmile.delivery.algorithm.optimizer.RouteOptimizer.OptimizedRoute;
 import cl.lastmile.delivery.algorithm.optimizer.RouteOptimizer.RouteProblem;
 import cl.lastmile.delivery.exception.BadRequestException;
@@ -64,6 +65,16 @@ public class RouteService {
     @Transactional
     public ConsolidatedRoute buildRouteForDate(LocalDate date, double depotLat, double depotLng,
                                                LocalTime departure, int stopMinutes, String vehicleId) {
+        return buildRouteForDate(date, depotLat, depotLng, departure, UnloadTime.fixed(stopMinutes), vehicleId);
+    }
+
+    /**
+     * Igual, con el tiempo de descarga de HU-15 en cada parada: base + minutos por bulto + ajuste del
+     * local. El optimizador lo usa para calcular a qué hora llega a cada parada.
+     */
+    @Transactional
+    public ConsolidatedRoute buildRouteForDate(LocalDate date, double depotLat, double depotLng,
+                                               LocalTime departure, UnloadTime unload, String vehicleId) {
         Vehicle vehicle = vehicle(vehicleId);
         List<Shipment> shipments = shipmentRepository.findByScheduledDate(date);
         List<DeliveryStop> stops = StopConsolidator.consolidate(shipments);
@@ -71,11 +82,7 @@ public class RouteService {
         Map<UUID, DeliveryStop> stopByRepresentative = new LinkedHashMap<>();
         stops.forEach(s -> stopByRepresentative.put(s.representative().getId(), s));
 
-        OptimizedRoute optimized = routeOptimizer.optimize(new RouteProblem(
-                stops.stream().map(s -> new RouteOptimizer.Stop(s.representative(), s.weightKg(), s.volumeM3())).toList(),
-                depotLat, depotLng, departure, stopMinutes,
-                vehicle == null ? null : new RouteOptimizer.Vehicle(vehicle.getPlate(), vehicle.getCapacityKg(),
-                        vehicle.getCapacityM3(), vehicle.getShiftEnd())));
+        OptimizedRoute optimized = routeOptimizer.optimize(problem(stops, depotLat, depotLng, departure, unload, vehicle));
 
         List<RouteStop> route = new ArrayList<>();
         Map<UUID, StopLoad> loads = new LinkedHashMap<>();
@@ -94,7 +101,19 @@ public class RouteService {
                 vehicle == null ? null : vehicle.getPlate());
     }
 
-    private Vehicle vehicle(String vehicleId) {
+    /** El problema del optimizador para estas paradas, con el tiempo de descarga de cada una (HU-15). */
+    static RouteProblem problem(List<DeliveryStop> stops, double depotLat, double depotLng, LocalTime departure,
+                                UnloadTime unload, Vehicle vehicle) {
+        return new RouteProblem(
+                stops.stream().map(s -> new RouteOptimizer.Stop(s.representative(), s.weightKg(), s.volumeM3(),
+                        unload.seconds(s.packageCount(), s.load().unloadExtraMinutes()))).toList(),
+                depotLat, depotLng, departure, unload.baseMinutes(),
+                vehicle == null ? null : new RouteOptimizer.Vehicle(vehicle.getPlate(), vehicle.getCapacityKg(),
+                        vehicle.getCapacityM3(), vehicle.getShiftEnd()));
+    }
+
+    /** El camión pedido, o el activo de mayor capacidad si no se pide ninguno (null si no hay). */
+    Vehicle vehicle(String vehicleId) {
         if (vehicleId == null || vehicleId.isBlank()) {
             return vehicleRepository.findByActiveTrueOrderByPlateAsc().stream()
                     .max(Comparator.comparingDouble(Vehicle::getCapacityKg))

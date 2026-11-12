@@ -1,5 +1,6 @@
 package cl.lastmile.delivery.service;
 
+import cl.lastmile.delivery.model.Customer;
 import cl.lastmile.delivery.model.Shipment;
 import cl.lastmile.delivery.model.Shipment.OrderPreference;
 
@@ -32,11 +33,19 @@ public final class StopConsolidator {
     /**
      * Lo que se entrega en una parada: sus envíos (el representante primero) y la suma de su peso y
      * volumen (HU-29). Peso y volumen son null si no se conocen (paradas armadas sin consolidar).
+     *
+     * @param unloadExtraMinutes ajuste de descarga del local (HU-15), 0 si no tiene
+     * @param unloadNote         por qué el local tiene ajuste ("estacionamiento difícil"), o null
      */
-    public record StopLoad(List<UUID> shipmentIds, Double weightKg, Double volumeM3) {
+    public record StopLoad(List<UUID> shipmentIds, Double weightKg, Double volumeM3,
+                           int unloadExtraMinutes, String unloadNote) {
 
         public StopLoad {
             shipmentIds = List.copyOf(shipmentIds);
+        }
+
+        public StopLoad(List<UUID> shipmentIds, Double weightKg, Double volumeM3) {
+            this(shipmentIds, weightKg, volumeM3, 0, null);
         }
 
         /** Parada de un solo envío, sin peso ni volumen conocidos. */
@@ -77,7 +86,10 @@ public final class StopConsolidator {
         }
 
         public StopLoad load() {
-            return new StopLoad(shipmentIds(), weightKg(), volumeM3());
+            Customer customer = representative.getCustomer();
+            return new StopLoad(shipmentIds(), weightKg(), volumeM3(),
+                    customer == null ? 0 : customer.getUnloadExtraMinutes(),
+                    customer == null ? null : customer.getUnloadNote());
         }
     }
 

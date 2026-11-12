@@ -71,6 +71,17 @@ public class Customer {
     @Column(name = "declared_window2_end")
     private LocalTime declaredWindow2End;
 
+    /*
+     * HU-15: minutos que se suman a la descarga en este local (por ejemplo, "+10 min,
+     * estacionamiento difícil"), sobre la base y los minutos por bulto. 0 = sin ajuste.
+     */
+    @Builder.Default
+    @Column(name = "unload_extra_minutes", nullable = false)
+    private int unloadExtraMinutes = 0;
+
+    @Column(name = "unload_note", length = 120)
+    private String unloadNote;
+
     /** Reemplaza la modulación completa (ya validada con {@link DeclaredWindow#validate}). */
     public void applyDeclaredWindow(DeclaredWindow window) {
         this.declaredWindowStart = window.start();

@@ -4,6 +4,7 @@ import cl.lastmile.delivery.dto.DeliveryDtos.CustomerResponse;
 import cl.lastmile.delivery.dto.DeliveryDtos.DeclaredWindowRequest;
 import cl.lastmile.delivery.dto.DeliveryDtos.LocationRequest;
 import cl.lastmile.delivery.dto.DeliveryDtos.TimeWindowResponse;
+import cl.lastmile.delivery.dto.DeliveryDtos.UnloadAdjustmentRequest;
 import cl.lastmile.delivery.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -68,6 +69,24 @@ public class CustomerController {
             @Parameter(description = "Id del local") @PathVariable String customerId,
             @RequestBody DeclaredWindowRequest req) {
         return ResponseEntity.ok(customerService.updateDeclaredWindow(customerId, req));
+    }
+
+    @PutMapping("/{customerId}/unload-adjustment")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'OPERATOR')")
+    @Operation(
+            summary = "Ajuste del tiempo de descarga de un local",
+            description = """
+                    El tiempo que el camión pasa en cada parada es base (routing.stop-minutes, 8 min) + minutos \
+                    por bulto (routing.unload.per-package-minutes, 1,5) + este ajuste del local, por ejemplo \
+                    "+10 min, estacionamiento difícil" (HU-15). 0 minutos quita el ajuste y la nota.""")
+    @ApiResponse(responseCode = "200", description = "Ajuste actualizado")
+    @ApiResponse(responseCode = "400", description = "extraMinutes falta o está fuera de 0–120, o la nota pasa de 120 caracteres")
+    @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN, DISPATCHER u OPERATOR)")
+    @ApiResponse(responseCode = "404", description = "El local no existe")
+    public ResponseEntity<CustomerResponse> updateUnloadAdjustment(
+            @Parameter(description = "Id del local") @PathVariable String customerId,
+            @Valid @RequestBody UnloadAdjustmentRequest req) {
+        return ResponseEntity.ok(customerService.updateUnloadAdjustment(customerId, req));
     }
 
     @PutMapping("/{customerId}/location")

@@ -1,6 +1,7 @@
 package cl.lastmile.delivery.service;
 
 import cl.lastmile.delivery.algorithm.RouteOptimizationService.RouteStop;
+import cl.lastmile.delivery.algorithm.optimizer.UnloadTime;
 import cl.lastmile.delivery.dto.DeliveryDtos.PlannedStopResponse;
 import cl.lastmile.delivery.geo.OsrmRoutingClient;
 import cl.lastmile.delivery.geo.OsrmRoutingClient.Leg;
@@ -204,5 +205,43 @@ class RouteTimingServiceTest {
         assertThat(plan.get(1).shipmentIds()).containsExactly(single.shipmentId());
         assertThat(plan.get(1).shipmentCount()).isEqualTo(1);
         assertThat(plan.get(1).weightKg()).isNull();
+    }
+    /** HU-15: descarga = base + minutos por bulto + ajuste del local, y la vuelta a la bodega. */
+    @Test
+    void laDescargaDependeDeLosBultosYDelAjusteDelLocalYCalculaLaVuelta() {
+        RouteStop a = new RouteStop(UUID.randomUUID(), "A", "Dir A", 1, LocalTime.of(8, 0), LocalTime.of(12, 0), 1.0,
+                List.of(), "DELIVERY", 4, "AUTO", "Default", -33.40, -70.60);
+        RouteStop b = stop(2, "B", 8, 12, "AUTO", -33.41, -70.61);
+        when(osrm.route(anyList())).thenReturn(Optional.of(List.of(leg(10, 3000), leg(10, 2000), leg(25, 7000))));
+
+        RouteTimingService.TimedRoute timed = timing.plan(List.of(a, b),
+                Map.of(a.shipmentId(), new StopLoad(List.of(a.shipmentId()), 10.0, 0.1, 10, "estacionamiento difícil")),
+                DEPOT_LAT, DEPOT_LNG, LocalTime.of(8, 0), new UnloadTime(8, 1.5), true);
+
+        // A: llega 08:10; 8 + 4 × 1,5 + 10 = 24 min: sale 08:34.
+        PlannedStopResponse first = timed.stops().get(0);
+        assertThat(first.serviceMinutes()).isEqualTo(24);
+        assertThat(first.estimatedDeparture()).isEqualTo(LocalTime.of(8, 34));
+        assertThat(first.unloadExtraMinutes()).isEqualTo(10);
+        assertThat(first.unloadNote()).isEqualTo("estacionamiento difícil");
+        // B: llega 08:44; 8 + 1,5 = 9,5 min (sin ajuste): sale 08:53:30, vuelve 25 min después.
+        PlannedStopResponse second = timed.stops().get(1);
+        assertThat(second.serviceMinutes()).isEqualTo(10);
+        assertThat(second.unloadExtraMinutes()).isZero();
+        assertThat(timed.returnLeg().arrival()).isEqualTo(LocalTime.of(9, 18, 30));
+        assertThat(timed.returnLeg().distanceMeters()).isEqualTo(7000);
+        assertThat(timed.returnLeg().dayOffset()).isZero();
+    }
+
+    @Test
+    void sinVueltaNoPideElTramoDeRegreso() {
+        RouteStop a = stop(1, "A", 8, 12, "AUTO", -33.40, -70.60);
+        when(osrm.route(anyList())).thenReturn(Optional.of(List.of(leg(10, 3000))));
+
+        RouteTimingService.TimedRoute timed = timing.plan(List.of(a), Map.of(), DEPOT_LAT, DEPOT_LNG,
+                LocalTime.of(8, 0), new UnloadTime(8, 1.5), false);
+
+        assertThat(timed.returnLeg()).isNull();
+        assertThat(timed.stops().get(0).serviceMinutes()).isEqualTo(10);
     }
 }

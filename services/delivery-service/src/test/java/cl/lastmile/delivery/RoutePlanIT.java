@@ -114,15 +114,19 @@ class RoutePlanIT {
             if (stop.get("dayOffset").asInt() == 0) {
                 assertThat(t(stop, "serviceStart").toSecondOfDay() / 60).as(name).isGreaterThanOrEqualTo(windowStart);
             }
-            // Salida = inicio + 10 minutos de parada (valor por defecto).
-            assertThat(t(stop, "estimatedDeparture")).as(name).isEqualTo(t(stop, "serviceStart").plusMinutes(10));
+            // HU-15: salida = inicio + descarga; descarga = 8 min de base (por defecto) + 1,5 por bulto + ajuste
+            // del local. Las horas se muestran truncadas al minuto: ± 1 min.
+            int service = (int) Math.round(8 + 1.5 * stop.get("packageCount").asInt() + stop.get("unloadExtraMinutes").asInt());
+            assertThat(stop.get("serviceMinutes").asInt()).as(name).isEqualTo(service);
+            assertThat(abs(stop, "estimatedDeparture") - abs(stop, "serviceStart")).as(name)
+                    .isCloseTo(service, org.assertj.core.data.Offset.offset(1));
             // Fuera de ventana ⇔ empieza cuando la ventana ya cerró (o al día siguiente).
             assertThat(stop.get("outsideWindow").asBoolean()).as(name).isEqualTo(start >= windowEnd);
             // Tramo para la polilínea: en línea recta sin OSRM.
             assertThat(stop.get("path")).as(name).hasSize(2);
             assertThat(stop.get("legDistanceMeters").asInt()).as(name).isGreaterThanOrEqualTo(0);
             totalMeters += stop.get("legDistanceMeters").asInt();
-            clock = start + 10;
+            clock = start + service;
         }
         assertThat(totalMeters).isPositive();
     }
@@ -134,8 +138,12 @@ class RoutePlanIT {
         // La hora se muestra truncada al minuto y travelMinutes va redondeado: ± 1 min.
         LocalTime expected = LocalTime.of(7, 30).plusMinutes(first.get("travelMinutes").asInt());
         assertThat(t(first, "estimatedArrival")).isBetween(expected.minusMinutes(1), expected);
+        // HU-15: stopMinutes es la base de la descarga; se suman los bultos y el ajuste del local (± 1 min).
         for (JsonNode stop : route) {
-            assertThat(t(stop, "estimatedDeparture")).isEqualTo(t(stop, "serviceStart").plusMinutes(25));
+            int service = (int) Math.round(25 + 1.5 * stop.get("packageCount").asInt() + stop.get("unloadExtraMinutes").asInt());
+            assertThat(stop.get("serviceMinutes").asInt()).isEqualTo(service);
+            assertThat(abs(stop, "estimatedDeparture") - abs(stop, "serviceStart"))
+                    .isCloseTo(service, org.assertj.core.data.Offset.offset(1));
         }
     }
 
