@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Layout from "@/components/Layout";
 import RouteSidebar, { type LoadState } from "@/components/RouteSidebar";
+import RouteEditorPanel from "@/components/RouteEditorPanel";
 import RouteMap from "@/components/RouteMap";
 import DayTimeline from "@/components/DayTimeline";
 import type { DeclaredWindowPayload } from "@/lib/declaredWindow";
 import { CloseIcon, ListIcon } from "@/components/icons";
 import { customersApi, routesApi, shipmentsApi } from "@/api/endpoints";
 import { buildStopViews, summarize } from "@/lib/routeView";
+import { draftLine } from "@/lib/routeEdit";
+import { useRouteEditor } from "@/hooks/useRouteEditor";
 import { DEPARTURE_TIME, DEPOT } from "@/lib/config";
 import { canBuildRoutes, canViewRoutes, unroutedCount } from "@/lib/routeAccess";
 import { useAuthStore } from "@/store/authStore";
@@ -108,13 +111,44 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
     [date, loadTimeWindows]
   );
 
+  // HU-15: armado manual. Al guardar, se vuelve a leer la ruta guardada.
+  const editor = useRouteEditor(date, () => load(false));
+  const { exit: exitEditor, current: editCurrent, baseline: editBaseline } = editor;
+
   useEffect(() => {
     setSelectedId(null);
     setRelocatingId(null);
+    exitEditor();
     load();
-  }, [load]);
+  }, [load, exitEditor]);
 
-  const stops = useMemo(() => buildStopViews(route, shipments, timeWindows), [route, shipments, timeWindows]);
+  const savedStops = useMemo(() => buildStopViews(route, shipments, timeWindows), [route, shipments, timeWindows]);
+  const editStops = useMemo(
+    () => (editCurrent ? buildStopViews(editCurrent.stops, shipments, timeWindows) : []),
+    [editCurrent, shipments, timeWindows]
+  );
+  const baselineStops = useMemo(
+    () => (editBaseline ? buildStopViews(editBaseline.stops, shipments, timeWindows) : []),
+    [editBaseline, shipments, timeWindows]
+  );
+  const editing = editor.editing;
+  const stops = editing ? editStops : savedStops;
+  /** Mientras se arrastra, la lista va en el orden provisional. */
+  const shownEditStops = useMemo(() => {
+    if (!editor.draft) return editStops;
+    const byId = new Map(editStops.map((s) => [s.shipmentId, s]));
+    return editor.draft.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+  }, [editor.draft, editStops]);
+  const dragLine = useMemo(
+    () => (editing && editor.draft ? draftLine(editor.draft, editStops, [DEPOT.lat, DEPOT.lng]) : null),
+    [editing, editor.draft, editStops]
+  );
+  const ghostLine = useMemo(() => {
+    if (!editing || !editor.dirty || !editor.baseline) return null;
+    const line = baselineStops.flatMap((s, i) => (i === 0 ? s.path : s.path.slice(1)));
+    const back = editor.baseline.summary.returnPath;
+    return line.length > 1 ? [...line, ...back.slice(1)] : null;
+  }, [editing, editor.dirty, editor.baseline, baselineStops]);
   const summary = useMemo(() => (state === "ready" ? summarize(stops, route) : null), [state, stops, route]);
   const unrouted = useMemo(
     () => (state === "ready" ? unroutedCount(shipments.map((s) => s.id), route.flatMap((r) => r.shipmentIds ?? [r.shipmentId])) : 0),
@@ -173,7 +207,9 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
     }
   }
 
-  const sidebar = (
+  const sidebar = editing ? (
+    <RouteEditorPanel date={date} editor={editor} stops={shownEditStops} selectedId={selectedId} onSelect={selectFromList} />
+  ) : (
     <RouteSidebar
       date={date}
       state={state}
@@ -187,6 +223,9 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
       reoptimizing={reoptimizing}
       canBuild={canBuild}
       unrouted={unrouted}
+      onEdit={() => editor.start(route.map((r) => r.shipmentId))}
+      editStarting={editor.busy === "start"}
+      editError={editor.error}
     />
   );
 
@@ -236,6 +275,9 @@ function RouteScreen({ canBuild }: { canBuild: boolean }) {
               onSaveDeclared={saveDeclared}
               onStartRelocate={() => selected && setRelocatingId(selected.shipmentId)}
               onRelocated={relocate}
+              returnPath={editing ? editor.current?.summary.returnPath : undefined}
+              ghostLine={ghostLine}
+              draftLine={dragLine}
               leftAction={
                 <button
                   type="button"

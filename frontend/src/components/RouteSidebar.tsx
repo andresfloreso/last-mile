@@ -28,6 +28,11 @@ interface Props {
   canBuild: boolean;
   /** Envíos de la fecha que no están en la ruta guardada. */
   unrouted: number;
+  /** HU-15: empieza el armado manual (solo despacho y administración). */
+  onEdit?: () => void;
+  editStarting?: boolean;
+  /** No se pudo empezar a editar. */
+  editError?: string | null;
 }
 
 function Skeleton() {
@@ -48,7 +53,7 @@ function Skeleton() {
 
 /** Panel izquierdo de la pantalla de rutas (HU-27): camión, KPIs, buscador, paradas y acciones. */
 export default function RouteSidebar(props: Props) {
-  const { date, state, error, stops, summary, selectedId, onSelect, onBuild, onRetry, reoptimizing, canBuild, unrouted } = props;
+  const { date, state, error, stops, summary, selectedId, onSelect, onBuild, onRetry, reoptimizing, canBuild, unrouted, onEdit } = props;
   const [query, setQuery] = useState("");
   const visible = useMemo(() => listOrder(stops).filter((s) => matchesSearch(s, query)), [stops, query]);
 
@@ -145,7 +150,22 @@ export default function RouteSidebar(props: Props) {
         </div>
       </div>
 
-      <div className="flex shrink-0 gap-2 border-t border-line bg-panel p-3">
+      <div className="flex shrink-0 flex-wrap gap-2 border-t border-line bg-panel p-3">
+        {props.editError && (
+          <p className="w-full rounded-lg bg-warning-bg px-3 py-2 text-13 text-warning-ink" role="alert">
+            {props.editError}
+          </p>
+        )}
+        {canBuild && onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            disabled={reoptimizing || props.editStarting || state !== "ready"}
+            className="h-11 w-full rounded-lg border border-border text-sm font-semibold text-ink hover:bg-tile disabled:opacity-60"
+          >
+            {props.editStarting ? "Abriendo…" : "Editar orden"}
+          </button>
+        )}
         {canBuild ? (
           <button
             type="button"

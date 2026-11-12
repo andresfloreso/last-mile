@@ -1,5 +1,6 @@
 import type { BusinessType, DeclaredWindow, RouteStop, Shipment, TimeWindow } from "@/types";
 import { bandForWindowStart, declaredDiffers, hourOf, type Band } from "@/lib/timeWindows";
+import { windowAlert, type WindowAlert } from "@/lib/routeEdit";
 
 /**
  * Una parada tal como la muestra la pantalla de rutas (HU-27). Junta, sin recalcular nada:
@@ -43,6 +44,15 @@ export interface StopView {
   declaredDiffers: boolean;
   needsReview: boolean;
   path: [number, number][];
+  /** HU-15: salida del local (HH:mm), de la que toma su color el tramo siguiente. */
+  departure: string;
+  /** HU-15: minutos de descarga (base + bultos + ajuste del local); null si el backend no lo informa. */
+  serviceMinutes: number | null;
+  unloadExtraMinutes: number;
+  unloadNote: string | null;
+  /** HU-15: fuera de su ventana real (rojo) o a menos de 60 min del cierre (ámbar). */
+  alert: WindowAlert;
+  minutesToClose: number | null;
 }
 
 export const BUSINESS_LABEL: Record<BusinessType, string> = {
@@ -102,6 +112,11 @@ export function buildStopViews(
       declaredDiffers: !isNew && declaredDiffers(declared, r.windowStart),
       needsReview: s?.customer.geocodeStatus === "REVIEW",
       path: r.path ?? [],
+      departure: r.estimatedDeparture.substring(0, 5),
+      serviceMinutes: r.serviceMinutes ?? null,
+      unloadExtraMinutes: r.unloadExtraMinutes ?? 0,
+      unloadNote: r.unloadNote ?? null,
+      ...windowAlert(r.serviceStart, r.windowEnd, r.outsideWindow, r.dayOffset),
     };
   });
 }

@@ -63,7 +63,9 @@ routing:
     ttl: 6h
   # HU-14: hora estimada por parada.
   default-departure: "08:00"   # salida del depósito si la request no la indica
-  stop-minutes: 10             # minutos de entrega en cada local
+  stop-minutes: 8              # HU-15: base del tiempo de descarga en cada local
+  unload:
+    per-package-minutes: 1.5   # HU-15: minutos por bulto (más el ajuste de cada local)
   fallback-speed-kmh: 25       # velocidad urbana para estimar tramos cuando OSRM no responde
   # HU-28: optimizador de la ruta del día.
   optimizer:

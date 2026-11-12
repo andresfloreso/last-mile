@@ -185,11 +185,12 @@ guarda el orden y devuelve cada parada con su hora estimada.
 
 ```json
 { "date": "2026-12-15", "depotLat": -33.446393, "depotLng": -70.624979,
-  "departureTime": "08:00", "stopMinutes": 10 }
+  "departureTime": "08:00", "stopMinutes": 8 }
 ```
 
 `departureTime` (por defecto `routing.default-departure`, 08:00) y
-`stopMinutes` (1–120, por defecto `routing.stop-minutes`, 10) son opcionales.
+`stopMinutes` (1–120, por defecto `routing.stop-minutes`, 8) son opcionales.
+Desde HU-15, `stopMinutes` es la **base** del tiempo de descarga (ver más abajo).
 La respuesta sigue siendo un arreglo de paradas en orden, con estos campos
 nuevos:
 
@@ -198,7 +199,7 @@ nuevos:
 | `estimatedArrival` | Llegada del camión: salida anterior + tramo |
 | `serviceStart` | Inicio de la entrega: la llegada, o la apertura de la ventana real si llega antes |
 | `waitMinutes` | Espera hasta que abre la ventana real. Llegar antes y esperar cuenta como dentro de ventana (lo realista en B2B) |
-| `estimatedDeparture` | `serviceStart` + `stopMinutes` |
+| `estimatedDeparture` | `serviceStart` + `serviceMinutes` (HU-15) |
 | `travelMinutes`, `legDistanceMeters` | Tramo desde la parada anterior (o el depósito) |
 | `outsideWindow` | La entrega empezaría cuando la ventana real ya cerró |
 | `dayOffset` | 1 si la ruta no alcanza en el día y la llegada es al día siguiente |
@@ -283,6 +284,54 @@ La hora estimada pide a OSRM una `route` por orden de paradas. Las últimas 64
 quedan en memoria por 6 h (`routing.osrm-route-cache.size` y `.ttl`). Volver a
 abrir un día no consulta OSRM mientras el orden no cambie. La medición está en
 [`docs/plan/hu-32/medicion.md`](../plan/hu-32/medicion.md).
+
+### Armado manual y tiempo de descarga (HU-15)
+
+**Tiempo de descarga por parada.** Reemplaza el `stopMinutes` fijo:
+
+```
+descarga = base (stopMinutes, por defecto routing.stop-minutes = 8)
+         + routing.unload.per-package-minutes (1,5) × bultos de la parada
+         + ajuste del local (0 si no tiene)
+```
+
+Lo usan la hora estimada y el optimizador. Cada parada trae `serviceMinutes`
+(la descarga, redondeada), `unloadExtraMinutes` y `unloadNote`.
+
+`PUT /api/customers/{id}/unload-adjustment` (`ADMIN`, `DISPATCHER`,
+`OPERATOR`) fija el ajuste del local:
+
+```json
+{ "extraMinutes": 10, "note": "estacionamiento difícil" }
+```
+
+`extraMinutes` va de 0 a 120; 0 quita el ajuste y la nota. La migración es
+`V5__ajuste_descarga_por_local.sql`.
+
+**Vista previa.** `POST /api/routes/preview` (`ADMIN`, `DISPATCHER`) devuelve la
+ruta guardada en el orden que se pide, con hora estimada e indicadores. **No
+escribe nada.**
+
+```json
+{ "date": "2026-11-12", "depotLat": -33.446393, "depotLng": -70.624979,
+  "order": ["<shipmentId>", "..."], "pinned": ["<shipmentId>"], "reoptimize": false }
+```
+
+- `order` tiene que traer exactamente las paradas de la ruta guardada (por el
+  `shipmentId` de cada parada). Si no, responde `409`: la ruta cambió mientras
+  se editaba. Una parada repetida da `400`.
+- Con `reoptimize: true` ("Reoptimizar el resto"), las paradas de `pinned`
+  quedan en su posición y el optimizador ordena las demás en los lugares
+  libres. Ojo: el optimizador ordena las libres como si fueran solas; no sabe a
+  qué hora pasa el camión por las fijadas.
+- La respuesta es `{ stops, summary, optimizer, optimizerNote }`. `summary`
+  trae `distanceMeters` (con la vuelta a la bodega), `returnTime`,
+  `returnDayOffset`, `outsideWindowStops`, `waitMinutes` y `returnPath`.
+
+**Guardar.** `PUT /api/routes/order` (`ADMIN`, `DISPATCHER`) con
+`{ "date": "...", "order": [...] }` guarda el orden: cada envío toma la
+posición de su parada. Responde `204`. Con HU-17, una ruta confirmada ya no se
+podrá editar.
 
 ### Paradas consolidadas (HU-30)
 

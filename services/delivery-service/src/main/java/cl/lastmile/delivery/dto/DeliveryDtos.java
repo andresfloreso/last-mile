@@ -111,6 +111,66 @@ public class DeliveryDtos {
             String vehicleId
     ) {}
 
+    @Schema(description = "Ruta del día en otro orden, para la vista previa del armado manual (HU-15). No guarda nada")
+    public record RoutePreviewRequest(
+            @NotNull LocalDate date,
+            double depotLat,
+            double depotLng,
+            @Schema(description = "Hora de salida del depósito. Por defecto routing.default-departure (08:00)", type = "string", example = "08:00")
+            LocalTime departureTime,
+            @Schema(description = "Base del tiempo de descarga en cada parada (HU-15). Por defecto routing.stop-minutes (8)", example = "8",
+                    minimum = "1", maximum = "120")
+            @Min(1) @Max(120) Integer stopMinutes,
+            @NotNull @Schema(description = "Paradas en el orden pedido, por su shipmentId (el envío representante). Deben ser exactamente las de la ruta guardada")
+            List<UUID> order,
+            @Schema(description = "Paradas fijadas con candado: al reoptimizar quedan en su posición")
+            List<UUID> pinned,
+            @Schema(description = "true: el optimizador ordena las paradas no fijadas en los lugares libres (\"Reoptimizar el resto\")")
+            boolean reoptimize,
+            @Schema(description = "Camión para reoptimizar (capacidad y jornada). Por defecto, el activo de mayor capacidad")
+            String vehicleId
+    ) {}
+
+    @Schema(description = "Orden de la ruta que guarda el despachador (HU-15)")
+    public record RouteOrderRequest(
+            @NotNull LocalDate date,
+            @NotNull @Schema(description = "Paradas en el orden nuevo, por su shipmentId. Deben ser exactamente las de la ruta guardada")
+            List<UUID> order
+    ) {}
+
+    @Schema(description = "Ruta con hora estimada e indicadores (HU-15)")
+    public record RoutePreviewResponse(
+            @Schema(description = "Paradas en el orden pedido (o reoptimizado), con hora estimada")
+            List<PlannedStopResponse> stops,
+            RouteSummaryResponse summary,
+            @Schema(description = "Quién ordenó las paradas libres al reoptimizar; null si no se reoptimizó",
+                    allowableValues = {"VRPTW", "NEAREST_NEIGHBOR"})
+            String optimizer,
+            @Schema(description = "Aviso del optimizador (fallback); null si no hubo")
+            String optimizerNote
+    ) {}
+
+    @Schema(description = "Indicadores de la ruta (HU-15)")
+    public record RouteSummaryResponse(
+            @Schema(description = "Metros de la ruta, incluida la vuelta a la bodega", example = "48500") int distanceMeters,
+            @JsonFormat(pattern = "HH:mm") @Schema(description = "Hora de vuelta a la bodega; null si ninguna parada tiene coordenadas",
+                    type = "string", example = "19:17")
+            LocalTime returnTime,
+            @Schema(description = "1 si la vuelta a la bodega es al día siguiente", example = "0") int returnDayOffset,
+            @Schema(description = "Paradas cuya entrega empezaría fuera de su ventana real", example = "2") int outsideWindowStops,
+            @Schema(description = "Minutos de espera sumados, hasta que abre la ventana real de cada parada", example = "141") int waitMinutes,
+            @Schema(description = "Tramo de vuelta a la bodega como pares [lat, lng]")
+            List<double[]> returnPath
+    ) {}
+
+    @Schema(description = "Ajuste del tiempo de descarga de un local (HU-15)")
+    public record UnloadAdjustmentRequest(
+            @NotNull @Min(0) @Max(120) @Schema(description = "Minutos que se suman a la descarga en este local; 0 lo quita", example = "10")
+            Integer extraMinutes,
+            @Size(max = 120) @Schema(description = "Por qué", example = "estacionamiento difícil")
+            String note
+    ) {}
+
     @Schema(description = "Parada de la ruta con su hora estimada (HU-14)")
     public record PlannedStopResponse(
             UUID shipmentId,
@@ -161,7 +221,13 @@ public class DeliveryDtos {
             @Schema(description = "Por qué se usó el fallback (solver con error o sin solución factible para la capacidad o la jornada del camión); null si no hubo aviso")
             String optimizerNote,
             @Schema(description = "Patente del camión con que se armó la ruta; null si no hay camiones registrados", example = "KXPT-21")
-            String vehiclePlate
+            String vehiclePlate,
+            @Schema(description = "Minutos de descarga en la parada (HU-15): base + minutos por bulto + ajuste del local", example = "17")
+            int serviceMinutes,
+            @Schema(description = "Ajuste de descarga del local en minutos (HU-15); 0 si no tiene", example = "10")
+            int unloadExtraMinutes,
+            @Schema(description = "Por qué el local tiene ajuste de descarga (HU-15); null si no tiene", example = "estacionamiento difícil")
+            String unloadNote
     ) {
         /** La misma parada con quién ordenó la ruta y con qué camión (HU-28). */
         public PlannedStopResponse withOptimizer(String optimizer, String optimizerNote, String vehiclePlate) {
@@ -169,20 +235,21 @@ public class DeliveryDtos {
                     confidence, hoursToAvoid, stopType, packageCount, orderPreference, label, latitude, longitude,
                     estimatedArrival, serviceStart, estimatedDeparture, waitMinutes, travelMinutes, legDistanceMeters,
                     outsideWindow, path, timingSource, dayOffset, shipmentIds, shipmentCount, weightKg, volumeM3,
-                    optimizer, optimizerNote, vehiclePlate);
+                    optimizer, optimizerNote, vehiclePlate, serviceMinutes, unloadExtraMinutes, unloadNote);
         }
 
         public static PlannedStopResponse of(RouteOptimizationService.RouteStop s,
                                              LocalTime arrival, LocalTime serviceStart, LocalTime departure,
                                              int waitMinutes, Integer travelMinutes, Integer legDistanceMeters,
                                              boolean outsideWindow, List<double[]> path, String timingSource,
-                                             int dayOffset, StopConsolidator.StopLoad load) {
+                                             int dayOffset, StopConsolidator.StopLoad load, int serviceMinutes) {
             return new PlannedStopResponse(s.shipmentId(), s.customerName(), s.address(), s.position(),
                     s.windowStart(), s.windowEnd(), s.confidence(), s.hoursToAvoid(), s.stopType(),
                     s.packageCount(), s.orderPreference(), s.label(), s.latitude(), s.longitude(),
                     arrival, serviceStart, departure, waitMinutes, travelMinutes, legDistanceMeters,
                     outsideWindow, path, timingSource, dayOffset, load.shipmentIds(), load.shipmentIds().size(),
-                    load.weightKg(), load.volumeM3(), null, null, null);
+                    load.weightKg(), load.volumeM3(), null, null, null, serviceMinutes,
+                    load.unloadExtraMinutes(), load.unloadNote());
         }
     }
 
@@ -224,13 +291,17 @@ public class DeliveryDtos {
             DeclaredWindowResponse declaredWindow,
             @Schema(description = "Origen de las coordenadas: PROVIDED (usuario), GEOCODED (Nominatim, precisa) o REVIEW (aproximada o no encontrada: revisar)",
                     allowableValues = {"PROVIDED", "GEOCODED", "REVIEW"})
-            String geocodeStatus
+            String geocodeStatus,
+            @Schema(description = "Minutos que se suman a la descarga en este local (HU-15); 0 si no tiene ajuste", example = "10")
+            int unloadExtraMinutes,
+            @Schema(description = "Por qué el local tiene ajuste de descarga (HU-15)", example = "estacionamiento difícil")
+            String unloadNote
     ) {
         public static CustomerResponse from(Customer c) {
             return new CustomerResponse(c.getId(), c.getFullName(), c.getPhone(), c.getAddress(),
                     c.getCommune(), c.getLatitude(), c.getLongitude(), c.getExternalCode(),
                     name(c.getBusinessType()), DeclaredWindowResponse.from(c.declaredWindow()),
-                    name(c.getGeocodeStatus()));
+                    name(c.getGeocodeStatus()), c.getUnloadExtraMinutes(), c.getUnloadNote());
         }
     }
 

@@ -169,6 +169,14 @@ ON CONFLICT (id) DO UPDATE SET
     declared_window2_start = EXCLUDED.declared_window2_start,
     declared_window2_end   = EXCLUDED.declared_window2_end;
 
+-- HU-15: ajuste del tiempo de descarga de dos locales de calle angosta, sin
+-- dónde estacionar el camión (la base y los minutos por bulto son de la config).
+UPDATE customers c
+SET unload_extra_minutes = a.extra, unload_note = a.note
+FROM (VALUES ('SEED-C10', 10, 'estacionamiento difícil'),
+             ('SEED-C14', 5,  'descarga por pasaje lateral')) AS a(code, extra, note)
+WHERE c.external_code = a.code;
+
 -- ---------------------------------------------------------------------
 -- 2. Historial de 60 días (una sola vez)
 --    Cada local tiene un intento cada 3 días (20 intentos). k numera los

@@ -118,7 +118,8 @@ public class TimefoldRouteOptimizer implements RouteOptimizer {
             }
             RouteOptimizer.Stop stop = stopById.get(s.shipmentId());
             visits.add(new Visit(s.shipmentId(), point, s.windowStart().toSecondOfDay(), s.windowEnd().toSecondOfDay(),
-                    s.orderPreference(), stop == null ? 0 : stop.weightKg(), stop == null ? 0 : stop.volumeM3()));
+                    s.orderPreference(), stop == null ? 0 : stop.weightKg(), stop == null ? 0 : stop.volumeM3(),
+                    stop == null ? -1 : stop.serviceSeconds()));
         }
         TravelTimes travel = TravelTimes.of(points, osrm, fallbackSpeedKmh);
         Vehicle v = problem.vehicle();

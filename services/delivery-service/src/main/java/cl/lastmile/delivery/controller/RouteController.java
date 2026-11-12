@@ -1,11 +1,19 @@
 package cl.lastmile.delivery.controller;
 
+import cl.lastmile.delivery.algorithm.optimizer.UnloadTime;
 import cl.lastmile.delivery.dto.DeliveryDtos.PlannedStopResponse;
+import cl.lastmile.delivery.dto.DeliveryDtos.RouteOrderRequest;
+import cl.lastmile.delivery.dto.DeliveryDtos.RoutePreviewRequest;
+import cl.lastmile.delivery.dto.DeliveryDtos.RoutePreviewResponse;
 import cl.lastmile.delivery.dto.DeliveryDtos.RouteRequest;
+import cl.lastmile.delivery.dto.DeliveryDtos.RouteSummaryResponse;
 import cl.lastmile.delivery.exception.BadRequestException;
+import cl.lastmile.delivery.service.RouteEditService;
+import cl.lastmile.delivery.service.RouteEditService.ArrangedRoute;
 import cl.lastmile.delivery.service.RouteService;
 import cl.lastmile.delivery.service.RouteService.ConsolidatedRoute;
 import cl.lastmile.delivery.service.RouteTimingService;
+import cl.lastmile.delivery.service.RouteTimingService.TimedRoute;
 import cl.lastmile.delivery.service.SavedRouteService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,19 +39,30 @@ public class RouteController {
     private final RouteService routeService;
     private final RouteTimingService routeTimingService;
     private final SavedRouteService savedRouteService;
+    private final RouteEditService routeEditService;
     private final LocalTime defaultDeparture;
     private final int defaultStopMinutes;
+    private final double perPackageMinutes;
 
     public RouteController(RouteService routeService,
                            RouteTimingService routeTimingService,
                            SavedRouteService savedRouteService,
+                           RouteEditService routeEditService,
                            @Value("${routing.default-departure:08:00}") LocalTime defaultDeparture,
-                           @Value("${routing.stop-minutes:10}") int defaultStopMinutes) {
+                           @Value("${routing.stop-minutes:8}") int defaultStopMinutes,
+                           @Value("${routing.unload.per-package-minutes:1.5}") double perPackageMinutes) {
         this.routeService = routeService;
         this.routeTimingService = routeTimingService;
         this.savedRouteService = savedRouteService;
+        this.routeEditService = routeEditService;
         this.defaultDeparture = defaultDeparture;
         this.defaultStopMinutes = defaultStopMinutes;
+        this.perPackageMinutes = perPackageMinutes;
+    }
+
+    /** Tiempo de descarga (HU-15): la base que pide la request (o la configurada) + bultos + ajuste del local. */
+    private UnloadTime unload(Integer stopMinutes) {
+        return new UnloadTime(stopMinutes != null ? stopMinutes : defaultStopMinutes, perPackageMinutes);
     }
 
     /**
@@ -71,11 +90,11 @@ public class RouteController {
     @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN o DISPATCHER)")
     public ResponseEntity<List<PlannedStopResponse>> buildRoute(@Valid @RequestBody RouteRequest req) {
         LocalTime departure = req.departureTime() != null ? req.departureTime() : defaultDeparture;
-        int stopMinutes = req.stopMinutes() != null ? req.stopMinutes() : defaultStopMinutes;
+        UnloadTime unload = unload(req.stopMinutes());
         ConsolidatedRoute route = routeService.buildRouteForDate(req.date(), req.depotLat(), req.depotLng(),
-                departure, stopMinutes, req.vehicleId());
+                departure, unload, req.vehicleId());
         List<PlannedStopResponse> planned = routeTimingService.schedule(route.stops(), route.loads(),
-                        req.depotLat(), req.depotLng(), departure, stopMinutes).stream()
+                        req.depotLat(), req.depotLng(), departure, unload).stream()
                 .map(p -> p.withOptimizer(route.optimizer(), route.note(), route.vehicle()))
                 .toList();
         return ResponseEntity.ok().header(OPTIMIZER_HEADER, route.optimizer()).body(planned);
@@ -106,9 +125,70 @@ public class RouteController {
         if (stopMinutes != null && (stopMinutes < 1 || stopMinutes > 120)) {
             throw new BadRequestException("stopMinutes debe estar entre 1 y 120");
         }
-        int minutes = stopMinutes != null ? stopMinutes : defaultStopMinutes;
         ConsolidatedRoute route = savedRouteService.savedRouteForDate(date);
-        return routeTimingService.schedule(route.stops(), route.loads(), depotLat, depotLng, departure, minutes);
+        return routeTimingService.schedule(route.stops(), route.loads(), depotLat, depotLng, departure, unload(stopMinutes));
+    }
+
+    /**
+     * Vista previa del armado manual (HU-15): la ruta guardada en el orden que pide el despachador, con
+     * hora estimada e indicadores. No escribe nada.
+     */
+    @PostMapping("/preview")
+    @Operation(
+            summary = "Vista previa de la ruta en otro orden (armado manual)",
+            description = """
+                    Recalcula la hora estimada de cada parada con el orden pedido, sin guardarlo, y devuelve los \
+                    indicadores de la ruta: km (con la vuelta a la bodega), hora de vuelta, paradas fuera de \
+                    ventana real y minutos de espera. order debe traer exactamente las paradas de la ruta \
+                    guardada (por su shipmentId). Con reoptimize = true ("Reoptimizar el resto"), las paradas \
+                    de pinned quedan en su posición y el optimizador ordena las demás en los lugares libres. \
+                    Con el orden guardado, sirve de línea base para comparar ("+1,2 km vs. sistema").""")
+    @ApiResponse(responseCode = "200", description = "Paradas en el orden pedido (o reoptimizado), con hora estimada e indicadores")
+    @ApiResponse(responseCode = "400", description = "order vacío o con paradas repetidas, una parada fijada que no está en la ruta, o stopMinutes fuera de 1–120")
+    @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN o DISPATCHER)")
+    @ApiResponse(responseCode = "409", description = "La fecha no tiene ruta armada, o la ruta cambió (order no trae las mismas paradas)")
+    public RoutePreviewResponse preview(@Valid @RequestBody RoutePreviewRequest req) {
+        LocalTime departure = req.departureTime() != null ? req.departureTime() : defaultDeparture;
+        UnloadTime unload = unload(req.stopMinutes());
+        ArrangedRoute arranged = routeEditService.arrange(req.date(), req.order(), req.pinned(), req.reoptimize(),
+                req.depotLat(), req.depotLng(), departure, unload, req.vehicleId());
+        TimedRoute timed = routeTimingService.plan(arranged.route().stops(), arranged.route().loads(),
+                req.depotLat(), req.depotLng(), departure, unload, true);
+        return new RoutePreviewResponse(timed.stops(), summary(timed), arranged.optimizer(), arranged.note());
+    }
+
+    /**
+     * Guarda el orden que armó el despachador (HU-15). La hora estimada se vuelve a pedir con
+     * {@code GET /api/routes}.
+     */
+    @PutMapping("/order")
+    @Operation(
+            summary = "Guarda el orden de la ruta (armado manual)",
+            description = """
+                    Cada envío toma la posición de su parada en order. No llama al optimizador ni cambia el estado \
+                    de los envíos. order debe traer exactamente las paradas de la ruta guardada (por su shipmentId).""")
+    @ApiResponse(responseCode = "204", description = "Orden guardado")
+    @ApiResponse(responseCode = "400", description = "order vacío o con paradas repetidas")
+    @ApiResponse(responseCode = "403", description = "Rol sin permiso (solo ADMIN o DISPATCHER)")
+    @ApiResponse(responseCode = "409", description = "La fecha no tiene ruta armada, o la ruta cambió (order no trae las mismas paradas)")
+    public ResponseEntity<Void> saveOrder(@Valid @RequestBody RouteOrderRequest req) {
+        routeEditService.saveOrder(req.date(), req.order());
+        return ResponseEntity.noContent().build();
+    }
+
+    static RouteSummaryResponse summary(TimedRoute timed) {
+        long meters = 0;
+        int outside = 0;
+        int wait = 0;
+        for (PlannedStopResponse s : timed.stops()) {
+            if (s.legDistanceMeters() != null) meters += s.legDistanceMeters();
+            if (s.outsideWindow()) outside++;
+            wait += s.waitMinutes();
+        }
+        RouteTimingService.ReturnLeg back = timed.returnLeg();
+        if (back != null) meters += back.distanceMeters();
+        return new RouteSummaryResponse((int) meters, back == null ? null : back.arrival(),
+                back == null ? 0 : back.dayOffset(), outside, wait, back == null ? List.of() : back.path());
     }
 
     /** Quién ordenó la ruta (HU-28), también en un encabezado para no tener que leer las paradas. */
