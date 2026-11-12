@@ -17,6 +17,9 @@ public interface ShipmentRepository extends JpaRepository<Shipment, UUID>, JpaSp
     Optional<Shipment> findByTrackingCode(String trackingCode);
     boolean existsByTrackingCode(String trackingCode);
     List<Shipment> findByScheduledDate(LocalDate date);
+
+    /** Envíos de la fecha en alguno de los estados dados (#70: la ruta solo toma los que se pueden repartir). */
+    List<Shipment> findByScheduledDateAndStatusIn(LocalDate date, java.util.Collection<Shipment.ShipmentStatus> statuses);
     List<Shipment> findByScheduledDateOrderByRoutePositionAsc(LocalDate date);
 
     /** Listado paginado (HU-10). Trae el local en la misma consulta para no hacer una por fila. */

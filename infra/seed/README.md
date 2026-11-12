@@ -180,6 +180,11 @@ request por segundo y con un User-Agent genérico:
 python -I infra/seed/tools/verificar_direcciones.py infra/seed/tools/direcciones.json /tmp/resultado.json
 ```
 
+**Enganche a la calle (Sprint 5, #85).** `tools/revisar_enganche.py` revisa que
+OSRM enganche cada local en la calle de su dirección y no en la transversal.
+Los locales de esquina 2, 4, 19, 29, 31, 32, 33 y 38 se movieron entre 13 y
+117 m al punto de su propia calle (ver `docs/plan/vueltas-ruta/medicion.md`).
+
 El resultado con el que se armó la semilla está en
 `tools/direcciones-verificadas.json` (coordenadas, dirección según OSM,
 distancia a la calle y calle más cercana). En la semilla anterior, por ejemplo,
@@ -187,6 +192,42 @@ distancia a la calle y calle más cercana). En la semilla anterior, por ejemplo,
 estaba unos 350 m corrida. Esta semilla descarta todo lo que no pasa los tres
 chequeos. Cualquier dirección se puede abrir en Google Maps con su
 `lat,lng`.
+
+### Auditoría de coordenadas (Sprint 5, #84)
+
+`tools/auditar_coordenadas.py` lee los locales directamente de
+`delivery/afterMigrate.sql` y compara la coordenada de cada uno con su
+dirección:
+
+1. **Nominatim estructurado, con número de calle** (1 req/s): es la
+   comparación que decide. Umbral: 100 m.
+2. **Nominatim de texto libre**, solo informativo (a veces elige otra comuna).
+3. **Esri World Geocoder** (`--esri`), como segunda opinión que no sale de
+   OpenStreetMap. Solo se compara (`forStorage=false`); ninguna coordenada de
+   la semilla viene de Esri.
+
+```bash
+python -I infra/seed/tools/auditar_coordenadas.py infra/seed/delivery/afterMigrate.sql /tmp/auditoria.json --esri
+```
+
+Resultado del 12 de noviembre de 2026 (`tools/auditoria-coordenadas.json`):
+
+- **Los 40 locales quedan a 0 m de su dirección en Nominatim** (máximo 0,1 m).
+  Ninguno pasa el umbral de 100 m, así que la semilla no cambia.
+- **Esri coincide a menos de 100 m en 35 de 40.** En los otros 5, Esri no tiene el
+  número exacto: interpola a lo largo de la calle (`StreetAddressExt`: Lira 600
+  y Av. Libertador Bernardo O'Higgins 1302), solo
+  encuentra la calle o la comuna (Pío Nono 150, Arturo Prat 800), o queda a
+  131 m (Carmen 800, interpolado).
+- **Para los dudosos se revisó la numeración vecina en OSM**, que es coherente:
+  Carmen 750 queda 80 m al norte y 850, 61 m al sur de Carmen 800; Lira 550 y
+  650 quedan 73 m al norte y 74 m al sur de Lira 600.
+- **Av. Santa Rosa 500** (Botillería Santa Rosa, local 10): Nominatim lo pone
+  sobre Av. Santa Rosa (la geocodificación inversa del punto devuelve
+  "500, Avenida Santa Rosa"), y Esri a 25 m. La numeración vecina va en orden:
+  el 400 queda 95 m al norte y el 600, 156 m al sur. Google Maps no se puede
+  consultar sin API key y sus términos no permiten guardar sus coordenadas, así
+  que no se comparó.
 
 ## Recrear la semilla desde cero
 

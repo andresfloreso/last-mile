@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: delivery-service
+  # HU-12: Redis guarda el perfil horario de cada local. Es una caché: si no responde, el perfil se calcula
+  # de nuevo, así que los tiempos de espera son cortos y Redis no cuenta para el health check.
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 500ms
+      connect-timeout: 500ms
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/deliverydb}
     username: ${SPRING_DATASOURCE_USERNAME:lastmile}
@@ -71,6 +80,9 @@ shipments:
   default-volume-m3: 0.05
 
 management:
+  health:
+    redis:
+      enabled: false   # HU-12: la caché del perfil es opcional
   endpoints:
     web:
       exposure:
@@ -81,3 +93,13 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# HU-12: aprendizaje de la ventana real.
+time-window:
+  decay:
+    # Vida media del peso de un intento, en días: uno de hace 90 días pesa la mitad que uno de hoy.
+    # 0 = sin decaimiento (todos los intentos pesan igual, como hasta HU-11).
+    half-life-days: ${TIME_WINDOW_HALF_LIFE_DAYS:90}
+  cache:
+    enabled: ${TIME_WINDOW_CACHE_ENABLED:true}   # perfil en Redis; false = calcularlo siempre
+    ttl: ${TIME_WINDOW_CACHE_TTL:6h}

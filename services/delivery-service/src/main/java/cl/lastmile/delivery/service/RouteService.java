@@ -21,9 +21,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -57,7 +59,14 @@ public class RouteService {
     }
 
     /**
-     * Agrupa los envíos de la fecha en paradas (uno por local), las ordena con el
+     * Estados que la ruta puede tomar y reordenar (#70). Un envío entregado, rechazado, reagendado o ya en
+     * reparto no entra a la ruta y armarla nunca le cambia el estado.
+     */
+    public static final Set<Shipment.ShipmentStatus> ROUTABLE =
+            EnumSet.of(Shipment.ShipmentStatus.PENDING, Shipment.ShipmentStatus.ROUTED);
+
+    /**
+     * Agrupa los envíos de la fecha que todavía se pueden repartir ({@link #ROUTABLE}) en paradas (uno por local), las ordena con el
      * {@link RouteOptimizer} configurado y guarda la posición de la parada en cada uno de sus envíos.
      *
      * @param vehicleId camión de la ruta; null usa el activo de mayor capacidad (o ninguno si no hay)
@@ -76,7 +85,7 @@ public class RouteService {
     public ConsolidatedRoute buildRouteForDate(LocalDate date, double depotLat, double depotLng,
                                                LocalTime departure, UnloadTime unload, String vehicleId) {
         Vehicle vehicle = vehicle(vehicleId);
-        List<Shipment> shipments = shipmentRepository.findByScheduledDate(date);
+        List<Shipment> shipments = shipmentRepository.findByScheduledDateAndStatusIn(date, ROUTABLE);
         List<DeliveryStop> stops = StopConsolidator.consolidate(shipments);
 
         Map<UUID, DeliveryStop> stopByRepresentative = new LinkedHashMap<>();
