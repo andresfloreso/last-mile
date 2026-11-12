@@ -88,10 +88,17 @@ const StopRow = forwardRef<HTMLLIElement, Props>(function StopRow({ stop, select
               {stop.shipmentCount} envíos
             </span>
           )}
-          {stop.outsideWindow && (
+          {stop.alert === "outside" && (
             <span className="flex items-center gap-1 font-semibold text-reject">
               <ClockIcon className="h-3.5 w-3.5" />
               Fuera de ventana
+            </span>
+          )}
+          {/* HU-15: ámbar si la entrega empieza a menos de 60 min del cierre de la ventana real. */}
+          {stop.alert === "near" && (
+            <span className="flex items-center gap-1 rounded bg-warning-bg px-1.5 py-0.5 font-semibold text-warning-ink">
+              <ClockIcon className="h-3.5 w-3.5" />
+              {stop.minutesToClose} min antes del cierre
             </span>
           )}
           {stop.needsReview && (

@@ -6,6 +6,7 @@ import type {
   GeocodeResult,
   ImportSummary,
   Page,
+  RoutePreview,
   RouteStop,
   Shipment,
   ShipmentQuery,
@@ -29,6 +30,21 @@ export const routesApi = {
     apiClient
       .post<RouteStop[]>("/api/routes/build", { date, depotLat, depotLng, departureTime, stopMinutes })
       .then((r) => r.data),
+  /**
+   * HU-15: la ruta guardada en otro orden, con hora estimada e indicadores; no guarda nada. Con
+   * reoptimize, las paradas de pinned quedan en su lugar y el optimizador ordena las demás.
+   */
+  preview: (req: {
+    date: string;
+    depotLat: number;
+    depotLng: number;
+    departureTime?: string;
+    order: string[];
+    pinned?: string[];
+    reoptimize?: boolean;
+  }) => apiClient.post<RoutePreview>("/api/routes/preview", req).then((r) => r.data),
+  /** HU-15: guarda el orden armado a mano. */
+  saveOrder: (date: string, order: string[]) => apiClient.put<void>("/api/routes/order", { date, order }).then(() => undefined),
 };
 
 export const importApi = {

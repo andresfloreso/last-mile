@@ -79,6 +79,9 @@ Si ya existe un usuario con ese email (por ejemplo, el ADMIN de
   | `JRHL-48` | Furgón | 1.200 kg, 8 m³ | 08:00–18:00 |
 
   Si ya existen, no se tocan.
+- **Ajuste de descarga (HU-15):** la **Botillería Santa Rosa** (10) suma
+  10 min ("estacionamiento difícil") y la **Botillería El Paradero** (14),
+  5 min ("descarga por pasaje lateral"). Se vuelve a fijar en cada arranque.
 - **Peso y volumen de cada envío semilla** = bultos × lo que pesa y ocupa un
   bulto según el tipo de local. Se recalcula en cada arranque.
 
