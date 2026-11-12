@@ -11,7 +11,9 @@ modulación no coincide con su ventana real: Minimarket Los Leones declara
 
 ## Diferencias intencionales
 
-1. **Mapa base: Esri Gray Canvas en vez de CARTO.**
+1. **Mapa base: Esri Gray Canvas en vez de CARTO.** *(Sprint 5, #57: ahora el
+   valor por defecto es Stadia Alidade Smooth, que tiene detalle hasta zoom 20;
+   ver [mapa-base.md](mapa-base.md). Lo que sigue describe HU-27.)*
    - Desde 2026, los mapas base públicos de CARTO exigen API key. Sin ella,
      cada tesela muestra "API KEY REQUIRED".
    - Por defecto se usa Gray Canvas de Esri (claro y oscuro), igual de neutro
