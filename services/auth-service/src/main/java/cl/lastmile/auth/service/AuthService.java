@@ -73,6 +73,10 @@ public class AuthService {
         }
         User user = userRepository.findById(java.util.UUID.fromString(jwtUtil.extractUserId(refreshToken)))
                 .orElseThrow(() -> new InvalidCredentialsException("Usuario no encontrado"));
+        // HU-06: el frontend renueva la sesión solo; un usuario deshabilitado no debe seguir dentro.
+        if (!user.isEnabled()) {
+            throw new InvalidCredentialsException("Usuario deshabilitado");
+        }
         return buildAuthResponse(user);
     }
 
